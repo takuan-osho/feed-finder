@@ -1,0 +1,87 @@
+# Qodo Merge (PR-Agent) Configuration
+# Configuration for better Japanese review experience
+
+[config]
+# Response in Japanese
+response_language = "ja-JP"
+
+# Log level setting for debugging
+log_level = "INFO"
+
+# Enable detailed output
+verbosity_level = 2
+
+[pr_reviewer]
+# Additional instructions for reviews in Japanese
+extra_instructions = """\
+- Please conduct reviews in Japanese
+- Focus on code readability and maintainability
+- Emphasize TypeScript type safety
+- Point out security issues if any
+- Suggest performance improvements
+- Follow Japanese web application development best practices
+"""
+
+# Disable ticket analysis review if not needed
+require_ticket_analysis_review = false
+
+[pr_description]
+# Enable AI-generated titles
+generate_ai_title = true
+
+# Enable automatic label generation
+publish_labels = true
+
+# Enable Mermaid diagram generation for architecture understanding
+enable_pr_diagram = true
+
+[pr_code_suggestions]
+# Additional instructions for code suggestions in Japanese
+extra_instructions = """\
+- Please explain suggestions in Japanese
+- Suggest improvements focusing on TypeScript type safety
+- Consider optimizations for Cloudflare Workers execution
+- Suggest improvements following security best practices
+- Prioritize suggestions that improve performance
+- Welcome suggestions for code readability improvements
+"""
+
+# Enable self-review checkbox
+demand_code_suggestions_self_review = true
+
+# Customize self-review checkbox text
+code_suggestions_self_review_text = "I have reviewed the code suggestions and applied them as needed"
+
+# Set minimum score threshold for suggestions (only show high-quality suggestions)
+suggestions_score_threshold = 5
+
+# Enable chat functionality for discussing suggestions
+enable_chat_in_code_suggestions = true
+
+[github_app]
+# Commands to automatically run when a new PR is opened
+pr_commands = [
+    "/describe",
+    "/review",
+    "/improve"
+]
+
+# Enable automatic execution on push
+handle_push_trigger = true
+push_commands = [
+    "/describe",
+    "/review"
+]
+
+[custom_labels]
+# Project-specific custom labels
+"feature" = "Implementation of new features or extension of existing ones"
+"bugfix" = "Bug fixes and error corrections"
+"refactor" = "Code improvements without functional changes"
+"docs" = "Documentation additions or updates"
+"config" = "Configuration file or build setting changes"
+"deps" = "Package or library updates"
+"security" = "Security-related improvements or fixes"
+"performance" = "Changes to improve performance"
+"test" = "Test additions or fixes"
+"cicd" = "Continuous integration and deployment related"

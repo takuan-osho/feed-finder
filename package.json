@@ -1,14 +1,29 @@
 {
   "name": "feed-finder",
+  "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
     "deploy": "wrangler deploy --minify",
-    "cf-typegen": "wrangler types --env-interface CloudflareBindings"
+    "cf-typegen": "wrangler types --env-interface CloudflareBindings",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
+    "format": "biome format --write .",
+    "check": "biome check --write .",
+    "ci": "biome ci ."
   },
   "dependencies": {
-    "hono": "^4.7.10"
+    "@cloudflare/vite-plugin": "^1.9.4",
+    "@tailwindcss/vite": "^4.1.11",
+    "daisyui": "^5.0.46",
+    "hono": "^4.7.10",
+    "neverthrow": "^8.2.0",
+    "tailwindcss": "^4.1.11",
+    "vite": "^7.0.4"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.1.1",
     "@cloudflare/workers-types": "^4.20250506.0",
     "wrangler": "^4.14.1"
   }
