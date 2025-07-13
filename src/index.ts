@@ -347,6 +347,28 @@ function searchFeeds(url: string): ResultAsync<SearchResult, FeedSearchError> {
 }
 
 /**
+ * Escapes HTML special characters to prevent XSS attacks
+ *
+ * @param unsafe - The unsafe string that may contain HTML special characters
+ * @returns The HTML-escaped safe string
+ *
+ * @example
+ * ```typescript
+ * escapeHtml('<script>alert("xss")</script>') // Returns '&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;'
+ * ```
+ *
+ * @internal
+ */
+function escapeHtml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+/**
  * Generates HTML markup for displaying search results
  *
  * @param result - Result containing SearchResult or FeedSearchError
@@ -357,6 +379,8 @@ function searchFeeds(url: string): ResultAsync<SearchResult, FeedSearchError> {
  * - Error messages for failed searches
  * - Warning messages when no feeds are found
  * - Success messages with feed cards showing URLs, titles, and action buttons
+ *
+ * All user-controlled data is properly HTML-escaped to prevent XSS attacks.
  *
  * @example
  * ```typescript
@@ -379,30 +403,33 @@ function generateResultHtml(result: Result<SearchResult, FeedSearchError>): stri
       }
 
       const feedItems = searchResult.feeds
-        .map(
-          (feed) => `
+        .map((feed) => {
+          const safeUrl = escapeHtml(feed.url);
+          const safeTitle = escapeHtml(feed.title || "フィード");
+
+          return `
         <div class="card bg-base-200 shadow-md">
           <div class="card-body">
             <h3 class="card-title text-lg">
-              ${feed.title || "フィード"}
+              ${safeTitle}
               <span class="badge badge-primary">${feed.type.toUpperCase()}</span>
             </h3>
             <p class="text-sm opacity-70">検索方法: ${feed.method === "html-meta" ? "HTML meta tag" : "一般的なパス"}</p>
             <div class="card-actions justify-end">
-              <a href="${feed.url}" target="_blank" class="btn btn-primary btn-sm">
+              <a href="${safeUrl}" target="_blank" class="btn btn-primary btn-sm">
                 フィードを開く
               </a>
-              <button onclick="navigator.clipboard.writeText('${feed.url}')" class="btn btn-outline btn-sm">
+              <button onclick="navigator.clipboard.writeText(${JSON.stringify(feed.url)})" class="btn btn-outline btn-sm">
                 URLをコピー
               </button>
             </div>
             <div class="text-xs font-mono bg-base-300 p-2 rounded mt-2">
-              ${feed.url}
+              ${safeUrl}
             </div>
           </div>
         </div>
-      `
-        )
+      `;
+        })
         .join("");
 
       return `
@@ -417,7 +444,7 @@ function generateResultHtml(result: Result<SearchResult, FeedSearchError>): stri
     (error) => {
       return `
         <div class="alert alert-error">
-          <span>エラー: ${error.message}</span>
+          <span>エラー: ${escapeHtml(error.message)}</span>
         </div>
       `;
     }
