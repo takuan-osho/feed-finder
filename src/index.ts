@@ -1,10 +1,11 @@
 import { Hono } from "hono";
+import { Result, ok, err, ResultAsync, okAsync, errAsync } from "neverthrow";
 
 const app = new Hono<{ Bindings: CloudflareBindings }>();
 
 /**
  * Represents a discovered feed with its metadata
- * 
+ *
  * @public
  */
 interface FeedResult {
@@ -19,8 +20,19 @@ interface FeedResult {
 }
 
 /**
+ * Possible error types that can occur during feed search operations
+ *
+ * @public
+ */
+type FeedSearchError =
+  | { type: 'invalid-url'; message: string }
+  | { type: 'network-error'; message: string }
+  | { type: 'parse-error'; message: string }
+  | { type: 'unknown-error'; message: string };
+
+/**
  * Result of a feed search operation
- * 
+ *
  * @public
  */
 interface SearchResult {
@@ -28,17 +40,15 @@ interface SearchResult {
   originalUrl: string;
   /** Array of discovered feeds */
   feeds: FeedResult[];
-  /** Error message if the search failed */
-  error?: string;
 }
 
 /**
  * Common feed paths used by popular CMS and blogging platforms
- * 
+ *
  * @remarks
- * This list includes standard paths used by WordPress, Jekyll, Hugo, 
+ * This list includes standard paths used by WordPress, Jekyll, Hugo,
  * and other popular content management systems and static site generators.
- * 
+ *
  * @internal
  */
 const COMMON_FEED_PATHS = [
@@ -58,57 +68,74 @@ const COMMON_FEED_PATHS = [
 
 /**
  * Normalizes URLs by ensuring they have a protocol and converting HTTP to HTTPS
- * 
+ *
  * @param url - The URL string to normalize
- * @returns The normalized URL string
- * 
- * @throws {@link Error}
- * Thrown when the URL is malformed and cannot be parsed
- * 
+ * @returns Result containing the normalized URL string or an error
+ *
  * @example
  * ```typescript
- * normalizeUrl('example.com') // Returns 'https://example.com'
- * normalizeUrl('http://example.com') // Returns 'https://example.com'
- * normalizeUrl('https://example.com') // Returns 'https://example.com'
+ * normalizeUrl('example.com') // Returns Ok('https://example.com')
+ * normalizeUrl('http://example.com') // Returns Ok('https://example.com')
+ * normalizeUrl('https://example.com') // Returns Ok('https://example.com')
+ * normalizeUrl('invalid-url') // Returns Err({ type: 'invalid-url', message: 'Invalid URL format' })
  * ```
- * 
+ *
  * @public
  */
-function normalizeUrl(url: string): string {
-  try {
-    const parsed = new URL(url);
-    // Convert http:// to https://
-    if (parsed.protocol === 'http:') {
-      parsed.protocol = 'https:';
+function normalizeUrl(url: string): Result<string, FeedSearchError> {
+  const parseUrlAttempt = (urlToTry: string): Result<URL, FeedSearchError> => {
+    try {
+      return ok(new URL(urlToTry));
+    } catch {
+      return err({ type: 'invalid-url', message: `Invalid URL format: ${urlToTry}` });
     }
-    return parsed.toString();
-  } catch {
-    // If URL is invalid, add https:// prefix and retry
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      return normalizeUrl(`https://${url}`);
-    }
-    throw new Error('Invalid URL');
-  }
+  };
+
+  return parseUrlAttempt(url)
+    .orElse<string, FeedSearchError>(() => {
+      // If URL is invalid, add https:// prefix and retry
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        return parseUrlAttempt(`https://${url}`)
+          .map(parsed => {
+            // Convert http:// to https://
+            if (parsed.protocol === 'http:') {
+              parsed.protocol = 'https:';
+            }
+            return parsed.toString();
+          });
+      }
+      return err({ type: 'invalid-url', message: `Invalid URL format: ${url}` } as FeedSearchError);
+    })
+    .map(parsedOrString => {
+      if (typeof parsedOrString === 'string') {
+        return parsedOrString;
+      }
+      // Convert http:// to https://
+      if (parsedOrString.protocol === 'http:') {
+        parsedOrString.protocol = 'https:';
+      }
+      return parsedOrString.toString();
+    });
 }
 
 /**
  * Extracts RSS/Atom feed links from HTML using standard autodiscovery meta tags
- * 
+ *
  * @param html - The HTML content to parse
  * @param baseUrl - The base URL for resolving relative feed URLs
  * @returns Array of discovered feed results
- * 
+ *
  * @remarks
  * This function implements the RSS Autodiscovery standard by searching for
  * `<link rel="alternate" type="application/rss+xml">` and similar tags.
- * 
+ *
  * @example
  * ```typescript
  * const html = '<link rel="alternate" type="application/rss+xml" href="/feed.xml" title="My Blog">';
  * const feeds = extractFeedLinksFromHtml(html, 'https://example.com');
  * // Returns: [{ url: 'https://example.com/feed.xml', title: 'My Blog', type: 'rss', method: 'html-meta' }]
  * ```
- * 
+ *
  * @public
  */
 function extractFeedLinksFromHtml(html: string, baseUrl: string): FeedResult[] {
@@ -151,224 +178,251 @@ function extractFeedLinksFromHtml(html: string, baseUrl: string): FeedResult[] {
 
 /**
  * Checks if a feed URL exists by sending a HEAD request
- * 
+ *
  * @param url - The feed URL to check
- * @returns Promise that resolves to true if the feed exists and is accessible
- * 
+ * @returns ResultAsync that resolves to true if the feed exists and is accessible
+ *
  * @remarks
  * Uses a HEAD request to minimize bandwidth usage while checking availability.
- * Returns false for any network errors or non-2xx status codes.
- * 
+ * Returns an error for any network errors or non-2xx status codes.
+ *
  * @example
  * ```typescript
- * const exists = await checkFeedExists('https://example.com/feed.xml');
- * if (exists) {
- *   console.log('Feed is available');
- * }
+ * const result = await checkFeedExists('https://example.com/feed.xml');
+ * result.match(
+ *   (exists) => console.log('Feed is available:', exists),
+ *   (error) => console.error('Error checking feed:', error)
+ * );
  * ```
- * 
+ *
  * @public
  */
-async function checkFeedExists(url: string): Promise<boolean> {
-  try {
-    const response = await fetch(url, {
+function checkFeedExists(url: string): ResultAsync<boolean, FeedSearchError> {
+  return ResultAsync.fromPromise(
+    fetch(url, {
       method: 'HEAD',
       headers: {
         'User-Agent': 'Feed-Finder/1.0'
       }
-    });
-    return response.ok;
-  } catch {
-    return false;
-  }
+    }),
+    (error) => ({
+      type: 'network-error',
+      message: error instanceof Error ? error.message : 'Network request failed'
+    } as FeedSearchError)
+  ).map(response => response.ok);
 }
 
 /**
  * Searches for feeds using common path patterns when HTML meta tags are not available
- * 
+ *
  * @param baseUrl - The base URL to search for common feed paths
- * @returns Promise that resolves to an array of discovered feeds
- * 
+ * @returns ResultAsync that resolves to an array of discovered feeds
+ *
  * @remarks
  * This function checks common paths used by popular CMS platforms like WordPress,
  * Jekyll, and Hugo. It serves as a fallback when standard autodiscovery fails.
- * 
+ *
  * @example
  * ```typescript
- * const feeds = await findCommonPathFeeds('https://blog.example.com');
- * // Might find feeds at: https://blog.example.com/feed, https://blog.example.com/rss.xml, etc.
+ * const result = await findCommonPathFeeds('https://blog.example.com');
+ * result.match(
+ *   (feeds) => console.log('Found feeds:', feeds),
+ *   (error) => console.error('Error finding feeds:', error)
+ * );
  * ```
- * 
+ *
  * @public
  */
-async function findCommonPathFeeds(baseUrl: string): Promise<FeedResult[]> {
-  const base = new URL(baseUrl);
-  const feeds: FeedResult[] = [];
+function findCommonPathFeeds(baseUrl: string): ResultAsync<FeedResult[], FeedSearchError> {
+  return ResultAsync.fromPromise(
+    (async () => {
+      const base = new URL(baseUrl);
+      const feeds: FeedResult[] = [];
 
-  for (const path of COMMON_FEED_PATHS) {
-    const feedUrl = `${base.protocol}//${base.host}${path}`;
-    
-    if (await checkFeedExists(feedUrl)) {
-      feeds.push({
-        url: feedUrl,
-        type: path.includes('atom') ? 'atom' : 'rss',
-        method: 'common-path'
-      });
-    }
-  }
+      for (const path of COMMON_FEED_PATHS) {
+        const feedUrl = `${base.protocol}//${base.host}${path}`;
 
-  return feeds;
+        const existsResult = await checkFeedExists(feedUrl);
+        if (existsResult.isOk() && existsResult.value) {
+          feeds.push({
+            url: feedUrl,
+            type: path.includes('atom') ? 'atom' : 'rss',
+            method: 'common-path'
+          });
+        }
+      }
+
+      return feeds;
+    })(),
+    (error) => ({
+      type: 'unknown-error',
+      message: error instanceof Error ? error.message : 'Unknown error in findCommonPathFeeds'
+    } as FeedSearchError)
+  );
 }
 
 /**
  * Main feed search function implementing a hybrid discovery approach
- * 
+ *
  * @param url - The URL to search for RSS/Atom feeds
- * @returns Promise that resolves to a SearchResult containing discovered feeds
- * 
+ * @returns ResultAsync that resolves to a SearchResult containing discovered feeds
+ *
  * @remarks
  * This function uses a two-step hybrid approach:
  * 1. First, it attempts to find feeds using HTML meta tags (RSS Autodiscovery standard)
  * 2. If no feeds are found, it falls back to checking common feed paths
- * 
+ *
  * The hybrid approach maximizes discovery success while minimizing false positives
  * and unnecessary HTTP requests.
- * 
+ *
  * @example
  * ```typescript
  * const result = await searchFeeds('https://blog.example.com');
- * if (result.feeds.length > 0) {
- *   console.log(`Found ${result.feeds.length} feeds`);
- *   result.feeds.forEach(feed => console.log(feed.url));
- * } else if (result.error) {
- *   console.error('Search failed:', result.error);
- * } else {
- *   console.log('No feeds found');
- * }
+ * result.match(
+ *   (searchResult) => {
+ *     if (searchResult.feeds.length > 0) {
+ *       console.log(`Found ${searchResult.feeds.length} feeds`);
+ *       searchResult.feeds.forEach(feed => console.log(feed.url));
+ *     } else {
+ *       console.log('No feeds found');
+ *     }
+ *   },
+ *   (error) => console.error('Search failed:', error)
+ * );
  * ```
- * 
+ *
  * @public
  */
-async function searchFeeds(url: string): Promise<SearchResult> {
-  try {
-    const normalizedUrl = normalizeUrl(url);
-    const result: SearchResult = {
-      originalUrl: url,
-      feeds: []
-    };
+function searchFeeds(url: string): ResultAsync<SearchResult, FeedSearchError> {
+  return normalizeUrl(url)
+    .asyncAndThen(normalizedUrl => {
+      // Step 1: Fetch HTML and search for feeds from meta tags
+      const fetchHtmlFeeds = ResultAsync.fromPromise(
+        fetch(normalizedUrl, {
+          headers: {
+            'User-Agent': 'Feed-Finder/1.0'
+          }
+        }),
+        (error) => ({
+          type: 'network-error',
+          message: error instanceof Error ? error.message : 'Failed to fetch HTML'
+        } as FeedSearchError)
+      )
+        .andThen(response => {
+          if (!response.ok) {
+            return err({
+              type: 'network-error',
+              message: `HTTP ${response.status}: ${response.statusText}`
+            } as FeedSearchError);
+          }
+          return ResultAsync.fromPromise(
+            response.text(),
+            (error) => ({
+              type: 'parse-error',
+              message: error instanceof Error ? error.message : 'Failed to parse HTML'
+            } as FeedSearchError)
+          );
+        })
+        .map(html => extractFeedLinksFromHtml(html, normalizedUrl))
+        .orElse(() => okAsync([] as FeedResult[]))
+        .andThen(htmlFeeds => {
+          // Step 2: If not found in meta tags, try common paths
+          if (htmlFeeds.length === 0) {
+            return findCommonPathFeeds(normalizedUrl);
+          }
+          return okAsync(htmlFeeds);
+        })
+        .map(feeds => ({
+          originalUrl: url,
+          feeds
+        } as SearchResult));
 
-    // Step 1: Fetch HTML and search for feeds from meta tags
-    try {
-      const response = await fetch(normalizedUrl, {
-        headers: {
-          'User-Agent': 'Feed-Finder/1.0'
-        }
-      });
-
-      if (response.ok) {
-        const html = await response.text();
-        const htmlFeeds = extractFeedLinksFromHtml(html, normalizedUrl);
-        result.feeds.push(...htmlFeeds);
-      }
-    } catch (error) {
-      console.error('HTML fetch failed:', error);
-    }
-
-    // Step 2: If not found in meta tags, try common paths
-    if (result.feeds.length === 0) {
-      const commonPathFeeds = await findCommonPathFeeds(normalizedUrl);
-      result.feeds.push(...commonPathFeeds);
-    }
-
-    return result;
-  } catch (error) {
-    return {
-      originalUrl: url,
-      feeds: [],
-      error: error instanceof Error ? error.message : 'Unknown error'
-    };
-  }
+      return fetchHtmlFeeds;
+    });
 }
 
 /**
  * Generates HTML markup for displaying search results
- * 
- * @param result - The SearchResult object containing feeds and potential errors
+ *
+ * @param result - Result containing SearchResult or FeedSearchError
  * @returns HTML string formatted for display in the web interface
- * 
+ *
  * @remarks
  * This function creates responsive HTML using DaisyUI components to display:
  * - Error messages for failed searches
  * - Warning messages when no feeds are found
  * - Success messages with feed cards showing URLs, titles, and action buttons
- * 
+ *
  * @example
  * ```typescript
- * const result = { originalUrl: 'https://example.com', feeds: [...], error: undefined };
+ * const result = ok({ originalUrl: 'https://example.com', feeds: [...] });
  * const html = generateResultHtml(result);
  * // Returns formatted HTML with feed cards
  * ```
- * 
+ *
  * @internal
  */
-function generateResultHtml(result: SearchResult): string {
-  if (result.error) {
-    return `
-      <div class="alert alert-error">
-        <span>エラー: ${result.error}</span>
-      </div>
-    `;
-  }
+function generateResultHtml(result: Result<SearchResult, FeedSearchError>): string {
+  return result.match(
+    (searchResult) => {
+      if (searchResult.feeds.length === 0) {
+        return `
+          <div class="alert alert-warning">
+            <span>フィードが見つかりませんでした。</span>
+          </div>
+        `;
+      }
 
-  if (result.feeds.length === 0) {
-    return `
-      <div class="alert alert-warning">
-        <span>フィードが見つかりませんでした。</span>
-      </div>
-    `;
-  }
-
-  const feedItems = result.feeds.map(feed => `
-    <div class="card bg-base-200 shadow-md">
-      <div class="card-body">
-        <h3 class="card-title text-lg">
-          ${feed.title || 'フィード'}
-          <span class="badge badge-primary">${feed.type.toUpperCase()}</span>
-        </h3>
-        <p class="text-sm opacity-70">検索方法: ${feed.method === 'html-meta' ? 'HTML meta tag' : '一般的なパス'}</p>
-        <div class="card-actions justify-end">
-          <a href="${feed.url}" target="_blank" class="btn btn-primary btn-sm">
-            フィードを開く
-          </a>
-          <button onclick="navigator.clipboard.writeText('${feed.url}')" class="btn btn-outline btn-sm">
-            URLをコピー
-          </button>
+      const feedItems = searchResult.feeds.map(feed => `
+        <div class="card bg-base-200 shadow-md">
+          <div class="card-body">
+            <h3 class="card-title text-lg">
+              ${feed.title || 'フィード'}
+              <span class="badge badge-primary">${feed.type.toUpperCase()}</span>
+            </h3>
+            <p class="text-sm opacity-70">検索方法: ${feed.method === 'html-meta' ? 'HTML meta tag' : '一般的なパス'}</p>
+            <div class="card-actions justify-end">
+              <a href="${feed.url}" target="_blank" class="btn btn-primary btn-sm">
+                フィードを開く
+              </a>
+              <button onclick="navigator.clipboard.writeText('${feed.url}')" class="btn btn-outline btn-sm">
+                URLをコピー
+              </button>
+            </div>
+            <div class="text-xs font-mono bg-base-300 p-2 rounded mt-2">
+              ${feed.url}
+            </div>
+          </div>
         </div>
-        <div class="text-xs font-mono bg-base-300 p-2 rounded mt-2">
-          ${feed.url}
-        </div>
-      </div>
-    </div>
-  `).join('');
+      `).join('');
 
-  return `
-    <div class="space-y-4">
-      <div class="alert alert-success">
-        <span>${result.feeds.length}個のフィードが見つかりました。</span>
-      </div>
-      ${feedItems}
-    </div>
-  `;
+      return `
+        <div class="space-y-4">
+          <div class="alert alert-success">
+            <span>${searchResult.feeds.length}個のフィードが見つかりました。</span>
+          </div>
+          ${feedItems}
+        </div>
+      `;
+    },
+    (error) => {
+      return `
+        <div class="alert alert-error">
+          <span>エラー: ${error.message}</span>
+        </div>
+      `;
+    }
+  );
 }
 
 /**
  * HTTP route handlers for the feed finder web application
- * 
+ *
  * @remarks
  * The application provides two main routes:
  * - GET / : Serves the main search form interface
  * - POST /search : Processes feed search requests and returns results
- * 
+ *
  * Both routes return complete HTML pages with embedded CSS styling.
  */
 
@@ -396,12 +450,12 @@ app.get("/", (c) => {
                 <label class="label">
                   <span class="label-text">サイトのURL</span>
                 </label>
-                <input 
-                  type="url" 
-                  name="url" 
-                  placeholder="https://example.com" 
-                  class="input input-bordered w-full" 
-                  required 
+                <input
+                  type="url"
+                  name="url"
+                  placeholder="https://example.com"
+                  class="input input-bordered w-full"
+                  required
                 />
               </div>
               <button type="submit" class="btn btn-primary w-full">
@@ -420,15 +474,55 @@ app.post("/search", async (c) => {
   const url = formData.get('url') as string;
 
   if (!url) {
+    const errorResult = err({ type: 'invalid-url', message: 'URLが入力されていません。' } as FeedSearchError);
+    const resultHtml = generateResultHtml(errorResult);
     return c.html(`
-      <div class="alert alert-error">
-        <span>URLが入力されていません。</span>
-      </div>
+      <!doctype html>
+      <html lang="ja">
+        <head>
+          <meta charset="UTF-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <title>Feed Finder - 検索結果</title>
+          <link rel="stylesheet" href="/src/styles.css" />
+        </head>
+        <body class="min-h-screen bg-base-100">
+          <div class="container mx-auto px-4 py-8">
+            <div class="text-center mb-8">
+              <h1 class="text-4xl font-bold text-primary mb-2">Feed Finder</h1>
+              <p class="text-base-content/70">サイトのRSS/Atomフィードを検索します</p>
+            </div>
+
+            <div class="max-w-2xl mx-auto mb-8">
+              <form method="POST" action="/search" class="space-y-4">
+                <div class="form-control">
+                  <label class="label">
+                    <span class="label-text">サイトのURL</span>
+                  </label>
+                  <input
+                    type="url"
+                    name="url"
+                    placeholder="https://example.com"
+                    class="input input-bordered w-full"
+                    required
+                  />
+                </div>
+                <button type="submit" class="btn btn-primary w-full">
+                  フィードを検索
+                </button>
+              </form>
+            </div>
+
+            <div class="max-w-4xl mx-auto">
+              ${resultHtml}
+            </div>
+          </div>
+        </body>
+      </html>
     `);
   }
 
-  const result = await searchFeeds(url);
-  const resultHtml = generateResultHtml(result);
+  const searchResult = await searchFeeds(url);
+  const resultHtml = generateResultHtml(searchResult);
 
   return c.html(`
     <!doctype html>
@@ -452,13 +546,13 @@ app.post("/search", async (c) => {
                 <label class="label">
                   <span class="label-text">サイトのURL</span>
                 </label>
-                <input 
-                  type="url" 
-                  name="url" 
-                  placeholder="https://example.com" 
-                  class="input input-bordered w-full" 
+                <input
+                  type="url"
+                  name="url"
+                  placeholder="https://example.com"
+                  class="input input-bordered w-full"
                   value="${url}"
-                  required 
+                  required
                 />
               </div>
               <button type="submit" class="btn btn-primary w-full">
