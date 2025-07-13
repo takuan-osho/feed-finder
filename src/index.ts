@@ -2,20 +2,45 @@ import { Hono } from "hono";
 
 const app = new Hono<{ Bindings: CloudflareBindings }>();
 
+/**
+ * Represents a discovered feed with its metadata
+ * 
+ * @public
+ */
 interface FeedResult {
+  /** The absolute URL of the RSS/Atom feed */
   url: string;
+  /** Optional title of the feed extracted from HTML meta tags */
   title?: string;
+  /** Feed format type - either RSS or Atom */
   type: 'rss' | 'atom';
+  /** Method used to discover the feed */
   method: 'html-meta' | 'common-path';
 }
 
+/**
+ * Result of a feed search operation
+ * 
+ * @public
+ */
 interface SearchResult {
+  /** The original URL that was searched */
   originalUrl: string;
+  /** Array of discovered feeds */
   feeds: FeedResult[];
+  /** Error message if the search failed */
   error?: string;
 }
 
-// Common feed paths list
+/**
+ * Common feed paths used by popular CMS and blogging platforms
+ * 
+ * @remarks
+ * This list includes standard paths used by WordPress, Jekyll, Hugo, 
+ * and other popular content management systems and static site generators.
+ * 
+ * @internal
+ */
 const COMMON_FEED_PATHS = [
   '/feed',
   '/rss',
@@ -31,7 +56,24 @@ const COMMON_FEED_PATHS = [
   '/blog/rss.xml'
 ];
 
-// Function to normalize URLs
+/**
+ * Normalizes URLs by ensuring they have a protocol and converting HTTP to HTTPS
+ * 
+ * @param url - The URL string to normalize
+ * @returns The normalized URL string
+ * 
+ * @throws {@link Error}
+ * Thrown when the URL is malformed and cannot be parsed
+ * 
+ * @example
+ * ```typescript
+ * normalizeUrl('example.com') // Returns 'https://example.com'
+ * normalizeUrl('http://example.com') // Returns 'https://example.com'
+ * normalizeUrl('https://example.com') // Returns 'https://example.com'
+ * ```
+ * 
+ * @public
+ */
 function normalizeUrl(url: string): string {
   try {
     const parsed = new URL(url);
@@ -49,7 +91,26 @@ function normalizeUrl(url: string): string {
   }
 }
 
-// Function to extract feed links from HTML
+/**
+ * Extracts RSS/Atom feed links from HTML using standard autodiscovery meta tags
+ * 
+ * @param html - The HTML content to parse
+ * @param baseUrl - The base URL for resolving relative feed URLs
+ * @returns Array of discovered feed results
+ * 
+ * @remarks
+ * This function implements the RSS Autodiscovery standard by searching for
+ * `<link rel="alternate" type="application/rss+xml">` and similar tags.
+ * 
+ * @example
+ * ```typescript
+ * const html = '<link rel="alternate" type="application/rss+xml" href="/feed.xml" title="My Blog">';
+ * const feeds = extractFeedLinksFromHtml(html, 'https://example.com');
+ * // Returns: [{ url: 'https://example.com/feed.xml', title: 'My Blog', type: 'rss', method: 'html-meta' }]
+ * ```
+ * 
+ * @public
+ */
 function extractFeedLinksFromHtml(html: string, baseUrl: string): FeedResult[] {
   const feeds: FeedResult[] = [];
   const linkRegex = /<link[^>]*rel="alternate"[^>]*>/gi;
@@ -88,7 +149,26 @@ function extractFeedLinksFromHtml(html: string, baseUrl: string): FeedResult[] {
   return feeds;
 }
 
-// Function to check if feed URL exists
+/**
+ * Checks if a feed URL exists by sending a HEAD request
+ * 
+ * @param url - The feed URL to check
+ * @returns Promise that resolves to true if the feed exists and is accessible
+ * 
+ * @remarks
+ * Uses a HEAD request to minimize bandwidth usage while checking availability.
+ * Returns false for any network errors or non-2xx status codes.
+ * 
+ * @example
+ * ```typescript
+ * const exists = await checkFeedExists('https://example.com/feed.xml');
+ * if (exists) {
+ *   console.log('Feed is available');
+ * }
+ * ```
+ * 
+ * @public
+ */
 async function checkFeedExists(url: string): Promise<boolean> {
   try {
     const response = await fetch(url, {
@@ -103,7 +183,24 @@ async function checkFeedExists(url: string): Promise<boolean> {
   }
 }
 
-// Function to search for feeds using common paths
+/**
+ * Searches for feeds using common path patterns when HTML meta tags are not available
+ * 
+ * @param baseUrl - The base URL to search for common feed paths
+ * @returns Promise that resolves to an array of discovered feeds
+ * 
+ * @remarks
+ * This function checks common paths used by popular CMS platforms like WordPress,
+ * Jekyll, and Hugo. It serves as a fallback when standard autodiscovery fails.
+ * 
+ * @example
+ * ```typescript
+ * const feeds = await findCommonPathFeeds('https://blog.example.com');
+ * // Might find feeds at: https://blog.example.com/feed, https://blog.example.com/rss.xml, etc.
+ * ```
+ * 
+ * @public
+ */
 async function findCommonPathFeeds(baseUrl: string): Promise<FeedResult[]> {
   const base = new URL(baseUrl);
   const feeds: FeedResult[] = [];
@@ -123,7 +220,35 @@ async function findCommonPathFeeds(baseUrl: string): Promise<FeedResult[]> {
   return feeds;
 }
 
-// Main feed search function
+/**
+ * Main feed search function implementing a hybrid discovery approach
+ * 
+ * @param url - The URL to search for RSS/Atom feeds
+ * @returns Promise that resolves to a SearchResult containing discovered feeds
+ * 
+ * @remarks
+ * This function uses a two-step hybrid approach:
+ * 1. First, it attempts to find feeds using HTML meta tags (RSS Autodiscovery standard)
+ * 2. If no feeds are found, it falls back to checking common feed paths
+ * 
+ * The hybrid approach maximizes discovery success while minimizing false positives
+ * and unnecessary HTTP requests.
+ * 
+ * @example
+ * ```typescript
+ * const result = await searchFeeds('https://blog.example.com');
+ * if (result.feeds.length > 0) {
+ *   console.log(`Found ${result.feeds.length} feeds`);
+ *   result.feeds.forEach(feed => console.log(feed.url));
+ * } else if (result.error) {
+ *   console.error('Search failed:', result.error);
+ * } else {
+ *   console.log('No feeds found');
+ * }
+ * ```
+ * 
+ * @public
+ */
 async function searchFeeds(url: string): Promise<SearchResult> {
   try {
     const normalizedUrl = normalizeUrl(url);
@@ -165,7 +290,27 @@ async function searchFeeds(url: string): Promise<SearchResult> {
   }
 }
 
-// Function to generate HTML response
+/**
+ * Generates HTML markup for displaying search results
+ * 
+ * @param result - The SearchResult object containing feeds and potential errors
+ * @returns HTML string formatted for display in the web interface
+ * 
+ * @remarks
+ * This function creates responsive HTML using DaisyUI components to display:
+ * - Error messages for failed searches
+ * - Warning messages when no feeds are found
+ * - Success messages with feed cards showing URLs, titles, and action buttons
+ * 
+ * @example
+ * ```typescript
+ * const result = { originalUrl: 'https://example.com', feeds: [...], error: undefined };
+ * const html = generateResultHtml(result);
+ * // Returns formatted HTML with feed cards
+ * ```
+ * 
+ * @internal
+ */
 function generateResultHtml(result: SearchResult): string {
   if (result.error) {
     return `
@@ -215,6 +360,17 @@ function generateResultHtml(result: SearchResult): string {
     </div>
   `;
 }
+
+/**
+ * HTTP route handlers for the feed finder web application
+ * 
+ * @remarks
+ * The application provides two main routes:
+ * - GET / : Serves the main search form interface
+ * - POST /search : Processes feed search requests and returns results
+ * 
+ * Both routes return complete HTML pages with embedded CSS styling.
+ */
 
 // Route definitions
 app.get("/", (c) => {
