@@ -590,7 +590,7 @@ app.post("/search", async (c) => {
                   name="url"
                   placeholder="https://example.com"
                   class="input input-bordered w-full"
-                  value="${url}"
+                  value="${escapeHtml(url)}"
                   required
                 />
               </div>
