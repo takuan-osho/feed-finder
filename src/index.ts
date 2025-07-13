@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { Result, ok, err, ResultAsync, okAsync, errAsync } from "neverthrow";
+import { err, ok, okAsync, type Result, ResultAsync } from "neverthrow";
 
 const app = new Hono<{ Bindings: CloudflareBindings }>();
 
@@ -14,9 +14,9 @@ interface FeedResult {
   /** Optional title of the feed extracted from HTML meta tags */
   title?: string;
   /** Feed format type - either RSS or Atom */
-  type: 'rss' | 'atom';
+  type: "rss" | "atom";
   /** Method used to discover the feed */
-  method: 'html-meta' | 'common-path';
+  method: "html-meta" | "common-path";
 }
 
 /**
@@ -25,10 +25,10 @@ interface FeedResult {
  * @public
  */
 type FeedSearchError =
-  | { type: 'invalid-url'; message: string }
-  | { type: 'network-error'; message: string }
-  | { type: 'parse-error'; message: string }
-  | { type: 'unknown-error'; message: string };
+  | { type: "invalid-url"; message: string }
+  | { type: "network-error"; message: string }
+  | { type: "parse-error"; message: string }
+  | { type: "unknown-error"; message: string };
 
 /**
  * Result of a feed search operation
@@ -52,18 +52,18 @@ interface SearchResult {
  * @internal
  */
 const COMMON_FEED_PATHS = [
-  '/feed',
-  '/rss',
-  '/feed.xml',
-  '/rss.xml',
-  '/atom.xml',
-  '/feeds/all.atom.xml',
-  '/feed/rss',
-  '/index.xml',
-  '/blog/feed',
-  '/blog/rss',
-  '/blog/feed.xml',
-  '/blog/rss.xml'
+  "/feed",
+  "/rss",
+  "/feed.xml",
+  "/rss.xml",
+  "/atom.xml",
+  "/feeds/all.atom.xml",
+  "/feed/rss",
+  "/index.xml",
+  "/blog/feed",
+  "/blog/rss",
+  "/blog/feed.xml",
+  "/blog/rss.xml",
 ];
 
 /**
@@ -87,32 +87,31 @@ function normalizeUrl(url: string): Result<string, FeedSearchError> {
     try {
       return ok(new URL(urlToTry));
     } catch {
-      return err({ type: 'invalid-url', message: `Invalid URL format: ${urlToTry}` });
+      return err({ type: "invalid-url", message: `Invalid URL format: ${urlToTry}` });
     }
   };
 
   return parseUrlAttempt(url)
     .orElse<string, FeedSearchError>(() => {
       // If URL is invalid, add https:// prefix and retry
-      if (!url.startsWith('http://') && !url.startsWith('https://')) {
-        return parseUrlAttempt(`https://${url}`)
-          .map(parsed => {
-            // Convert http:// to https://
-            if (parsed.protocol === 'http:') {
-              parsed.protocol = 'https:';
-            }
-            return parsed.toString();
-          });
+      if (!url.startsWith("http://") && !url.startsWith("https://")) {
+        return parseUrlAttempt(`https://${url}`).map((parsed) => {
+          // Convert http:// to https://
+          if (parsed.protocol === "http:") {
+            parsed.protocol = "https:";
+          }
+          return parsed.toString();
+        });
       }
-      return err({ type: 'invalid-url', message: `Invalid URL format: ${url}` } as FeedSearchError);
+      return err({ type: "invalid-url", message: `Invalid URL format: ${url}` } as FeedSearchError);
     })
-    .map(parsedOrString => {
-      if (typeof parsedOrString === 'string') {
+    .map((parsedOrString) => {
+      if (typeof parsedOrString === "string") {
         return parsedOrString;
       }
       // Convert http:// to https://
-      if (parsedOrString.protocol === 'http:') {
-        parsedOrString.protocol = 'https:';
+      if (parsedOrString.protocol === "http:") {
+        parsedOrString.protocol = "https:";
       }
       return parsedOrString.toString();
     });
@@ -156,10 +155,10 @@ function extractFeedLinksFromHtml(html: string, baseUrl: string): FeedResult[] {
       const title = titleMatch?.[1];
 
       // Convert relative URLs to absolute URLs
-      if (feedUrl.startsWith('/')) {
+      if (feedUrl.startsWith("/")) {
         const base = new URL(baseUrl);
         feedUrl = `${base.protocol}//${base.host}${feedUrl}`;
-      } else if (!feedUrl.startsWith('http')) {
+      } else if (!feedUrl.startsWith("http")) {
         const base = new URL(baseUrl);
         feedUrl = `${base.protocol}//${base.host}/${feedUrl}`;
       }
@@ -167,8 +166,8 @@ function extractFeedLinksFromHtml(html: string, baseUrl: string): FeedResult[] {
       feeds.push({
         url: feedUrl,
         title,
-        type: type.includes('atom') ? 'atom' : 'rss',
-        method: 'html-meta'
+        type: type.includes("atom") ? "atom" : "rss",
+        method: "html-meta",
       });
     }
   }
@@ -200,16 +199,17 @@ function extractFeedLinksFromHtml(html: string, baseUrl: string): FeedResult[] {
 function checkFeedExists(url: string): ResultAsync<boolean, FeedSearchError> {
   return ResultAsync.fromPromise(
     fetch(url, {
-      method: 'HEAD',
+      method: "HEAD",
       headers: {
-        'User-Agent': 'Feed-Finder/1.0'
-      }
+        "User-Agent": "Feed-Finder/1.0",
+      },
     }),
-    (error) => ({
-      type: 'network-error',
-      message: error instanceof Error ? error.message : 'Network request failed'
-    } as FeedSearchError)
-  ).map(response => response.ok);
+    (error) =>
+      ({
+        type: "network-error",
+        message: error instanceof Error ? error.message : "Network request failed",
+      }) as FeedSearchError
+  ).map((response) => response.ok);
 }
 
 /**
@@ -246,18 +246,19 @@ function findCommonPathFeeds(baseUrl: string): ResultAsync<FeedResult[], FeedSea
         if (existsResult.isOk() && existsResult.value) {
           feeds.push({
             url: feedUrl,
-            type: path.includes('atom') ? 'atom' : 'rss',
-            method: 'common-path'
+            type: path.includes("atom") ? "atom" : "rss",
+            method: "common-path",
           });
         }
       }
 
       return feeds;
     })(),
-    (error) => ({
-      type: 'unknown-error',
-      message: error instanceof Error ? error.message : 'Unknown error in findCommonPathFeeds'
-    } as FeedSearchError)
+    (error) =>
+      ({
+        type: "unknown-error",
+        message: error instanceof Error ? error.message : "Unknown error in findCommonPathFeeds",
+      }) as FeedSearchError
   );
 }
 
@@ -294,51 +295,55 @@ function findCommonPathFeeds(baseUrl: string): ResultAsync<FeedResult[], FeedSea
  * @public
  */
 function searchFeeds(url: string): ResultAsync<SearchResult, FeedSearchError> {
-  return normalizeUrl(url)
-    .asyncAndThen(normalizedUrl => {
-      // Step 1: Fetch HTML and search for feeds from meta tags
-      const fetchHtmlFeeds = ResultAsync.fromPromise(
-        fetch(normalizedUrl, {
-          headers: {
-            'User-Agent': 'Feed-Finder/1.0'
-          }
-        }),
-        (error) => ({
-          type: 'network-error',
-          message: error instanceof Error ? error.message : 'Failed to fetch HTML'
-        } as FeedSearchError)
-      )
-        .andThen(response => {
-          if (!response.ok) {
-            return err({
-              type: 'network-error',
-              message: `HTTP ${response.status}: ${response.statusText}`
-            } as FeedSearchError);
-          }
-          return ResultAsync.fromPromise(
-            response.text(),
-            (error) => ({
-              type: 'parse-error',
-              message: error instanceof Error ? error.message : 'Failed to parse HTML'
-            } as FeedSearchError)
-          );
-        })
-        .map(html => extractFeedLinksFromHtml(html, normalizedUrl))
-        .orElse(() => okAsync([] as FeedResult[]))
-        .andThen(htmlFeeds => {
-          // Step 2: If not found in meta tags, try common paths
-          if (htmlFeeds.length === 0) {
-            return findCommonPathFeeds(normalizedUrl);
-          }
-          return okAsync(htmlFeeds);
-        })
-        .map(feeds => ({
-          originalUrl: url,
-          feeds
-        } as SearchResult));
+  return normalizeUrl(url).asyncAndThen((normalizedUrl) => {
+    // Step 1: Fetch HTML and search for feeds from meta tags
+    const fetchHtmlFeeds = ResultAsync.fromPromise(
+      fetch(normalizedUrl, {
+        headers: {
+          "User-Agent": "Feed-Finder/1.0",
+        },
+      }),
+      (error) =>
+        ({
+          type: "network-error",
+          message: error instanceof Error ? error.message : "Failed to fetch HTML",
+        }) as FeedSearchError
+    )
+      .andThen((response) => {
+        if (!response.ok) {
+          return err({
+            type: "network-error",
+            message: `HTTP ${response.status}: ${response.statusText}`,
+          } as FeedSearchError);
+        }
+        return ResultAsync.fromPromise(
+          response.text(),
+          (error) =>
+            ({
+              type: "parse-error",
+              message: error instanceof Error ? error.message : "Failed to parse HTML",
+            }) as FeedSearchError
+        );
+      })
+      .map((html) => extractFeedLinksFromHtml(html, normalizedUrl))
+      .orElse(() => okAsync([] as FeedResult[]))
+      .andThen((htmlFeeds) => {
+        // Step 2: If not found in meta tags, try common paths
+        if (htmlFeeds.length === 0) {
+          return findCommonPathFeeds(normalizedUrl);
+        }
+        return okAsync(htmlFeeds);
+      })
+      .map(
+        (feeds) =>
+          ({
+            originalUrl: url,
+            feeds,
+          }) as SearchResult
+      );
 
-      return fetchHtmlFeeds;
-    });
+    return fetchHtmlFeeds;
+  });
 }
 
 /**
@@ -373,14 +378,16 @@ function generateResultHtml(result: Result<SearchResult, FeedSearchError>): stri
         `;
       }
 
-      const feedItems = searchResult.feeds.map(feed => `
+      const feedItems = searchResult.feeds
+        .map(
+          (feed) => `
         <div class="card bg-base-200 shadow-md">
           <div class="card-body">
             <h3 class="card-title text-lg">
-              ${feed.title || 'フィード'}
+              ${feed.title || "フィード"}
               <span class="badge badge-primary">${feed.type.toUpperCase()}</span>
             </h3>
-            <p class="text-sm opacity-70">検索方法: ${feed.method === 'html-meta' ? 'HTML meta tag' : '一般的なパス'}</p>
+            <p class="text-sm opacity-70">検索方法: ${feed.method === "html-meta" ? "HTML meta tag" : "一般的なパス"}</p>
             <div class="card-actions justify-end">
               <a href="${feed.url}" target="_blank" class="btn btn-primary btn-sm">
                 フィードを開く
@@ -394,7 +401,9 @@ function generateResultHtml(result: Result<SearchResult, FeedSearchError>): stri
             </div>
           </div>
         </div>
-      `).join('');
+      `
+        )
+        .join("");
 
       return `
         <div class="space-y-4">
@@ -471,10 +480,13 @@ app.get("/", (c) => {
 
 app.post("/search", async (c) => {
   const formData = await c.req.formData();
-  const url = formData.get('url') as string;
+  const url = formData.get("url") as string;
 
   if (!url) {
-    const errorResult = err({ type: 'invalid-url', message: 'URLが入力されていません。' } as FeedSearchError);
+    const errorResult = err({
+      type: "invalid-url",
+      message: "URLが入力されていません。",
+    } as FeedSearchError);
     const resultHtml = generateResultHtml(errorResult);
     return c.html(`
       <!doctype html>
