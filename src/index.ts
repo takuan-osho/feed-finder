@@ -471,8 +471,8 @@ app.get("/", (c) => {
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Feed Finder - RSS/Atomフィード検索</title>
-        <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
-        <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+        <link href="https://cdn.jsdelivr.net/npm/daisyui@5.0.46/daisyui.min.css" rel="stylesheet" type="text/css" integrity="sha384-2pptqoG1x6yhaWVXAvysHbSJhjtylYz2btkmT2JiVfQFlqR3HGDh7vQcgk+urixn" crossorigin="anonymous" />
+        <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.11/dist/index.global.min.js" integrity="sha384-A1XhMANHciQ8ED89Ap5K0zOdmQKiEeXSjaN0sakNxIzq9Z2YfXV/BwHp7oP3z5ip" crossorigin="anonymous"></script>
       </head>
       <body class="min-h-screen bg-base-100">
         <div class="container mx-auto px-4 py-8">
@@ -523,8 +523,8 @@ app.post("/search", async (c) => {
           <meta charset="UTF-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
           <title>Feed Finder - 検索結果</title>
-          <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
-          <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+          <link href="https://cdn.jsdelivr.net/npm/daisyui@5.0.46/daisyui.min.css" rel="stylesheet" type="text/css" integrity="sha384-2pptqoG1x6yhaWVXAvysHbSJhjtylYz2btkmT2JiVfQFlqR3HGDh7vQcgk+urixn" crossorigin="anonymous" />
+          <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.11/dist/index.global.min.js" integrity="sha384-A1XhMANHciQ8ED89Ap5K0zOdmQKiEeXSjaN0sakNxIzq9Z2YfXV/BwHp7oP3z5ip" crossorigin="anonymous"></script>
         </head>
         <body class="min-h-screen bg-base-100">
           <div class="container mx-auto px-4 py-8">
@@ -572,8 +572,8 @@ app.post("/search", async (c) => {
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Feed Finder - 検索結果</title>
-        <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
-        <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+        <link href="https://cdn.jsdelivr.net/npm/daisyui@5.0.46/daisyui.min.css" rel="stylesheet" type="text/css" integrity="sha384-2pptqoG1x6yhaWVXAvysHbSJhjtylYz2btkmT2JiVfQFlqR3HGDh7vQcgk+urixn" crossorigin="anonymous" />
+        <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.11/dist/index.global.min.js" integrity="sha384-A1XhMANHciQ8ED89Ap5K0zOdmQKiEeXSjaN0sakNxIzq9Z2YfXV/BwHp7oP3z5ip" crossorigin="anonymous"></script>
       </head>
       <body class="min-h-screen bg-base-100">
         <div class="container mx-auto px-4 py-8">
