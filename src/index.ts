@@ -471,7 +471,8 @@ app.get("/", (c) => {
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Feed Finder - RSS/Atomフィード検索</title>
-        <link rel="stylesheet" href="/src/styles.css" />
+        <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
+        <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
       </head>
       <body class="min-h-screen bg-base-100">
         <div class="container mx-auto px-4 py-8">
@@ -522,7 +523,8 @@ app.post("/search", async (c) => {
           <meta charset="UTF-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
           <title>Feed Finder - 検索結果</title>
-          <link rel="stylesheet" href="/src/styles.css" />
+          <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
+          <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
         </head>
         <body class="min-h-screen bg-base-100">
           <div class="container mx-auto px-4 py-8">
@@ -570,7 +572,8 @@ app.post("/search", async (c) => {
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Feed Finder - 検索結果</title>
-        <link rel="stylesheet" href="/src/styles.css" />
+        <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
+        <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
       </head>
       <body class="min-h-screen bg-base-100">
         <div class="container mx-auto px-4 py-8">
