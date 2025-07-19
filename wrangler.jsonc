@@ -7,10 +7,6 @@
   "name": "feed-finder",
   "main": "src/index.ts",
   "compatibility_date": "2025-05-06",
-  "assets": {
-    "binding": "ASSETS",
-    "directory": "./public"
-  },
   "observability": {
     "enabled": true
   },
