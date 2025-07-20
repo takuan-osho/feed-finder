@@ -27,7 +27,7 @@ require_ticket_analysis_review = false
 
 [pr_description]
 # Enable AI-generated titles
-generate_ai_title = true
+generate_ai_title = false
 
 # Enable automatic label generation
 publish_labels = true
