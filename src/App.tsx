@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ResultDisplay, SearchResult } from "@/components/ResultDisplay";
+import type { SearchResult } from "@/components/ResultDisplay";
+import { ResultDisplay } from "@/components/ResultDisplay";
 import { SearchForm } from "@/components/SearchForm";
 
 function App() {
