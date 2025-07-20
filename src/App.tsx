@@ -1,14 +1,52 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { ResultDisplay, SearchResult } from "@/components/ResultDisplay";
+import { SearchForm } from "@/components/SearchForm";
 
 function App() {
-	const [url, setUrl] = useState("");
+	const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
+	const [isLoading, setIsLoading] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 
-	const handleSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-		console.log("Searching for feeds:", url);
-		// TODO: Implement feed search functionality
+	const handleSearch = async (url: string) => {
+		setIsLoading(true);
+		setError(null);
+		setSearchResult(null);
+
+		try {
+			// TODO: Implement actual feed search API call
+			// For now, simulate a search with mock data
+			await new Promise((resolve) => setTimeout(resolve, 1500));
+
+			// Mock successful result
+			const mockResult: SearchResult = {
+				success: true,
+				searchedUrl: url,
+				totalFound: 2,
+				feeds: [
+					{
+						url: `${url}/feed.xml`,
+						title: "サイトのメインフィード",
+						type: "RSS",
+						description: "最新記事やアップデートをお届けします",
+						discoveryMethod: "meta-tag",
+					},
+					{
+						url: `${url}/rss.xml`,
+						title: "RSS フィード",
+						type: "RSS",
+						discoveryMethod: "common-path",
+					},
+				],
+			};
+
+			setSearchResult(mockResult);
+		} catch {
+			setError(
+				"フィード検索中にエラーが発生しました。しばらく後にもう一度お試しください。",
+			);
+		} finally {
+			setIsLoading(false);
+		}
 	};
 
 	return (
@@ -49,32 +87,24 @@ function App() {
 						</div>
 					</div>
 				</header>
-				<div className="px-40 flex flex-1 justify-center py-5">
-					<div className="layout-content-container flex flex-col max-w-[960px] flex-1">
-						<h2 className="text-white tracking-light text-[28px] font-bold leading-tight px-4 text-center pb-3 pt-5">
-							Find RSS Feeds
-						</h2>
-						<form
-							onSubmit={handleSubmit}
-							className="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3"
-						>
-							<label className="flex flex-col min-w-40 flex-1">
-								<Input
-									placeholder="URLを入力してください"
-									className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-white focus:outline-0 focus:ring-0 border border-[#314d68] bg-[#182734] focus:border-[#314d68] h-14 placeholder:text-[#90aecb] p-[15px] text-base font-normal leading-normal"
-									value={url}
-									onChange={(e) => setUrl(e.target.value)}
-								/>
-							</label>
-						</form>
-						<div className="flex px-4 py-3 justify-center">
-							<Button
-								onClick={handleSubmit}
-								className="bg-[#0b80ee] hover:bg-[#0b80ee]/80"
-							>
-								Find Feeds
-							</Button>
+				<div className="px-10 lg:px-40 flex flex-1 justify-center py-8">
+					<div className="layout-content-container flex flex-col max-w-[960px] flex-1 space-y-8">
+						<div className="text-center">
+							<h1 className="text-white tracking-light text-[28px] font-bold leading-tight">
+								RSS・Atomフィード検索
+							</h1>
+							<p className="text-[#90aecb] mt-2 text-base">
+								ウェブサイトのURLを入力して、RSSやAtomフィードを自動検索します
+							</p>
 						</div>
+
+						<SearchForm
+							onSubmit={handleSearch}
+							isLoading={isLoading}
+							error={error}
+						/>
+
+						<ResultDisplay result={searchResult} error={error} />
 					</div>
 				</div>
 			</div>
