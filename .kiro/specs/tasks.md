@@ -6,7 +6,7 @@
 
 ## タスクリスト
 
-- [ ] 1. プロジェクト基盤セットアップ
+- [x] 1. プロジェクト基盤セットアップ
 
   - React + Vite + TypeScript 環境の構築
   - shadcn/ui + TailwindCSS v4 の導入
