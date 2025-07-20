@@ -392,7 +392,84 @@ lefthook を選択
 - staged_files と push_files の効率的な処理
 - 開発者の初回セットアップが必要
 
-## ADR-013: アクセシビリティ実装方針
+## ADR-013: テスト駆動開発（TDD）戦略
+
+### ステータス
+
+承認済み
+
+### コンテキスト
+
+Agentic coding（AI エージェントによるコード生成）環境において、t-wada 氏が提唱する TDD 手法を適用し、高品質で保守性の高いコードを効率的に生成する必要がある。AI エージェントが理解しやすく、実行しやすい TDD プロセスを確立する必要がある。
+
+### 検討した選択肢
+
+1. **t-wada 式 TDD** - Red-Green-Refactor サイクルの厳格な適用
+2. **従来の TDD** - 一般的なテストファースト開発
+3. **テスト後書き** - 実装後のテスト作成
+4. **テストなし** - テストを書かない開発
+
+### 決定
+
+t-wada 式 TDD を Agentic coding 向けに最適化して採用
+
+### 理由
+
+- **明確なプロセス**: AI エージェントが従いやすい明確な手順
+- **品質保証**: テストファーストによる高品質なコード
+- **リファクタリング安全性**: テストによる変更の安全性確保
+- **仕様の明確化**: テストが仕様書として機能
+- **デバッグ効率**: 問題の早期発見と修正
+
+### 影響
+
+- **厳格な Red-Green-Refactor サイクル**: 各ステップを明確に分離
+- **テストファースト**: 実装前に必ずテストを作成
+- **小さなステップ**: 一度に一つの機能のみ実装
+- **継続的リファクタリング**: Green 後の必須リファクタリング
+
+### Agentic Coding 向け最適化
+
+#### 1. テスト作成フェーズ（Red）
+
+```typescript
+// 1. 失敗するテストを最初に作成
+describe("normalizeUrl", () => {
+  it("should add https protocol to URL without protocol", () => {
+    const result = normalizeUrl("example.com");
+    expect(result.isOk()).toBe(true);
+    expect(result.value).toBe("https://example.com");
+  });
+});
+```
+
+#### 2. 最小実装フェーズ（Green）
+
+```typescript
+// 2. テストを通すための最小限の実装
+function normalizeUrl(url: string): Result<string, FeedSearchError> {
+  if (!url.startsWith("http")) {
+    return ok(`https://${url}`);
+  }
+  return ok(url);
+}
+```
+
+#### 3. リファクタリングフェーズ（Refactor）
+
+```typescript
+// 3. コードの改善（テストは変更しない）
+function normalizeUrl(url: string): Result<string, FeedSearchError> {
+  try {
+    const parsed = new URL(url.startsWith("http") ? url : `https://${url}`);
+    return ok(parsed.toString());
+  } catch {
+    return err({ type: "invalid-url", message: "Invalid URL format" });
+  }
+}
+```
+
+## ADR-014: アクセシビリティ実装方針
 
 ### ステータス
 
