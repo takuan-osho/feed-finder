@@ -212,8 +212,8 @@
   - [x] 11.1 Git フック（lefthook）の設定強化
 
     - TypeScript 型チェックの追加（tsc --noEmit）
-    - 依存関係脆弱性チェックの追加（npm audit）
-    - pre-commit と pre-push の分離による高速化（pre-pushを0.41秒に最適化）
+    - 依存関係脆弱性チェックの追加（security-audit: npm audit --audit-level moderate）
+    - pre-commit と pre-push の分離による高速化
     - _要件: 要件 7（CI/CD 自動化）_
 
   - [x] 11.2 GitHub Actions ワークフローの設定
@@ -226,7 +226,6 @@
 
   - [x] 11.3 デプロイメントワークフローの設定
 
-    - .github/workflows/deploy.yml の作成（コメントアウト状態で準備）
     - 手動デプロイ手順の文書化
     - **変更点**: 自動デプロイは無効化し、手動デプロイを推奨
     - **理由**: セキュリティとコントロールのため
