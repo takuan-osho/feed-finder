@@ -28,7 +28,7 @@ export function SearchForm({
 
 		// Basic URL validation - allow with or without protocol
 		const urlPattern =
-			/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/i;
+			/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})(\/[a-zA-Z0-9_.-]*)*\/?$/i;
 		const hasProtocol = /^https?:\/\//i.test(input);
 		const testUrl = hasProtocol ? input : `https://${input}`;
 
