@@ -1,0 +1,22 @@
+pre-commit:
+  commands:
+    biome:
+      glob: "src/**/*.{js,ts,jsx,tsx}"
+      run: npx @biomejs/biome check --write --no-errors-on-unmatched --files-ignore-unknown=true --colors=off {staged_files}
+      stage_fixed: true
+
+    typecheck:
+      glob: "*.{ts,tsx}"
+      run: npx tsc --noEmit
+
+pre-push:
+  commands:
+    biome:
+      glob: "src/**/*.{js,ts,jsx,tsx}"
+      run: npx @biomejs/biome check --no-errors-on-unmatched --files-ignore-unknown=true --colors=off {push_files}
+
+    typecheck:
+      run: npx tsc --noEmit
+
+    security-audit:
+      run: npm audit --audit-level moderate
