@@ -6,7 +6,7 @@
 	"linter": {
 		"enabled": true,
 		"rules": { "recommended": false },
-		"includes": ["**", "!dist", "**", "!dist"]
+		"includes": ["**", "!dist"]
 	},
 	"javascript": { "formatter": { "quoteStyle": "double" } },
 	"overrides": [
