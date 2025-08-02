@@ -58,6 +58,9 @@ jobs:
           name: build-artifacts
           path: dist
 
+      - name: Install the same version's wrangler # refs: https://qiita.com/dev-cho/items/0e824cc1bb69b13913a7
+        run: npm install
+
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@da0e0dfe58b7a431659754fdf3f186c529afbe65 # v3.14.1
         with:
