@@ -13,9 +13,7 @@
     {
       "includes": ["**/*.{ts,tsx}"],
       "javascript": {
-        "javascript": {
-          "globals": "browser"          // leverages built-in DOM globals
-        },
+        "globals": ["browser"]
       },
       "linter": {
         "rules": {
