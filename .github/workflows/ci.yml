@@ -65,12 +65,13 @@ jobs:
           path: dist
 
       - name: Install exact production deps (incl. wrangler) # refs: https://qiita.com/dev-cho/items/0e824cc1bb69b13913a7
-        run: npm ci # Use the same version of wrangler as in package-lock.json
+        run: npm ci --omit=dev
 
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@da0e0dfe58b7a431659754fdf3f186c529afbe65 # v3.14.1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: "4.25.0" # We don't want to use wrangler 3.90.0. See https://qiita.com/dev-cho/items/0e824cc1bb69b13913a7
 
 
