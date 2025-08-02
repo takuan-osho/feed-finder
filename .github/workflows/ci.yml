@@ -65,7 +65,7 @@ jobs:
           path: dist
 
       - name: Install exact production deps (incl. wrangler) # refs: https://qiita.com/dev-cho/items/0e824cc1bb69b13913a7
-        run: npm ci --omit=dev
+        run: npm ci # Use the same version of wrangler as in package-lock.json
 
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@da0e0dfe58b7a431659754fdf3f186c529afbe65 # v3.14.1
