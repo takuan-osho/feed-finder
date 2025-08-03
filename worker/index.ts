@@ -26,7 +26,7 @@ function addSecurityHeaders(response: Response, request?: Request): Response {
       "http://localhost:5173", // Vite dev server
       "http://localhost:3000", // Common dev port
       "https://feed-finder.shimizu-taku.workers.dev", // Production domain
-      "feedfinder.programarch.com", // Another production domain
+      "https://feedfinder.programarch.com", // Another production domain
       "feedfinder.takuan-osho.com", // Another production domain
       "feedfinder.takuan-osho.net", // Another production domain
     ];
