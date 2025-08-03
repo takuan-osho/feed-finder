@@ -1,4 +1,16 @@
 /**
+ * Allowed origins for CORS requests
+ */
+const ALLOWED_ORIGINS = [
+  "http://localhost:5173", // Vite dev server
+  "http://localhost:3000", // Common dev port
+  "https://feed-finder.shimizu-taku.workers.dev", // Production domain
+  "https://feedfinder.programarch.com", // Another production domain
+  "https://feedfinder.takuan-osho.com", // Another production domain
+  "https://feedfinder.takuan-osho.net", // Another production domain
+];
+
+/**
  * Adds security headers and CORS headers to the response
  */
 function addSecurityHeaders(response: Response, request?: Request): Response {
@@ -22,17 +34,9 @@ function addSecurityHeaders(response: Response, request?: Request): Response {
   // Add CORS headers with proper origin validation
   if (request) {
     const origin = request.headers.get("Origin");
-    const allowedOrigins = [
-      "http://localhost:5173", // Vite dev server
-      "http://localhost:3000", // Common dev port
-      "https://feed-finder.shimizu-taku.workers.dev", // Production domain
-      "https://feedfinder.programarch.com", // Another production domain
-      "https://feedfinder.takuan-osho.com", // Another production domain
-      "https://feedfinder.takuan-osho.net", // Another production domain
-    ];
 
     // Only set CORS headers for allowed origins
-    if (origin && allowedOrigins.includes(origin)) {
+    if (origin && ALLOWED_ORIGINS.includes(origin)) {
       headers.set("Access-Control-Allow-Origin", origin);
     }
 
@@ -54,13 +58,8 @@ function addSecurityHeaders(response: Response, request?: Request): Response {
  */
 function handleCorsPreflightRequest(request: Request): Response {
   const origin = request.headers.get("Origin");
-  const allowedOrigins = [
-    "http://localhost:5173",
-    "http://localhost:3000",
-    "https://feed-finder.shimizu-taku.workers.dev",
-  ];
 
-  if (!origin || !allowedOrigins.includes(origin)) {
+  if (!origin || !ALLOWED_ORIGINS.includes(origin)) {
     return new Response(null, { status: 403 });
   }
 
