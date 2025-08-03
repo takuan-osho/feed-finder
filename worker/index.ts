@@ -14,7 +14,18 @@ export default {
 
 async function handleFeedSearch(request: Request) {
   try {
-    const body = (await request.json()) as { url?: string };
+    let body: { url?: string };
+    try {
+      body = await request.json();
+    } catch {
+      return Response.json(
+        {
+          success: false,
+          error: "無効なリクエストボディです",
+        },
+        { status: 400 },
+      );
+    }
     const { url: targetUrl } = body;
 
     if (!targetUrl || typeof targetUrl !== "string") {
@@ -82,7 +93,7 @@ async function discoverFeeds(targetUrl: string): Promise<FeedResult[]> {
     const html = await response.text();
 
     // 1. Look for RSS autodiscovery links in HTML
-    const metaFeeds = await findMetaFeeds(html, targetUrl);
+    const metaFeeds = findMetaFeeds(html, targetUrl);
     metaFeeds.forEach((feed) => {
       if (!foundUrls.has(feed.url)) {
         foundUrls.add(feed.url);
