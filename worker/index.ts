@@ -1,7 +1,7 @@
 /**
- * Adds security headers to the response
+ * Adds security headers and CORS headers to the response
  */
-function addSecurityHeaders(response: Response): Response {
+function addSecurityHeaders(response: Response, request?: Request): Response {
   const headers = new Headers(response.headers);
 
   // Prevent MIME type sniffing
@@ -19,6 +19,29 @@ function addSecurityHeaders(response: Response): Response {
     "default-src 'none'; script-src 'none'; object-src 'none'",
   );
 
+  // Add CORS headers with proper origin validation
+  if (request) {
+    const origin = request.headers.get("Origin");
+    const allowedOrigins = [
+      "http://localhost:5173", // Vite dev server
+      "http://localhost:3000", // Common dev port
+      "https://feed-finder.shimizu-taku.workers.dev", // Production domain
+      "feedfinder.programarch.com", // Another production domain
+      "feedfinder.takuan-osho.com", // Another production domain
+      "feedfinder.takuan-osho.net", // Another production domain
+    ];
+
+    // Only set CORS headers for allowed origins
+    if (origin && allowedOrigins.includes(origin)) {
+      headers.set("Access-Control-Allow-Origin", origin);
+    }
+
+    // Set other CORS headers
+    headers.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+    headers.set("Access-Control-Allow-Headers", "Content-Type");
+    headers.set("Access-Control-Max-Age", "86400"); // 24 hours
+  }
+
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
@@ -26,20 +49,50 @@ function addSecurityHeaders(response: Response): Response {
   });
 }
 
+/**
+ * Handles preflight CORS requests
+ */
+function handleCorsPreflightRequest(request: Request): Response {
+  const origin = request.headers.get("Origin");
+  const allowedOrigins = [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "https://feed-finder.shimizu-taku.workers.dev",
+  ];
+
+  if (!origin || !allowedOrigins.includes(origin)) {
+    return new Response(null, { status: 403 });
+  }
+
+  const headers = new Headers({
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Max-Age": "86400",
+  });
+
+  return new Response(null, { status: 204, headers });
+}
+
 export default {
   async fetch(request) {
     const url = new URL(request.url);
 
+    // Handle CORS preflight requests
+    if (request.method === "OPTIONS") {
+      return handleCorsPreflightRequest(request);
+    }
+
     if (url.pathname.startsWith("/api/")) {
       if (url.pathname === "/api/search-feeds" && request.method === "POST") {
         const response = await handleFeedSearch(request);
-        return addSecurityHeaders(response);
+        return addSecurityHeaders(response, request);
       }
       const notFoundResponse = new Response("Not Found", { status: 404 });
-      return addSecurityHeaders(notFoundResponse);
+      return addSecurityHeaders(notFoundResponse, request);
     }
     const notFoundResponse = new Response(null, { status: 404 });
-    return addSecurityHeaders(notFoundResponse);
+    return addSecurityHeaders(notFoundResponse, request);
   },
 } satisfies ExportedHandler<Env>;
 
