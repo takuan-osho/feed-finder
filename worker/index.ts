@@ -1,3 +1,27 @@
+import { err, ok, Result, ResultAsync } from "neverthrow";
+
+/**
+ * Error types for type-safe error handling
+ */
+type ValidationError =
+  | { type: "INVALID_REQUEST_BODY"; message: string }
+  | { type: "MISSING_URL"; message: string }
+  | { type: "INVALID_URL_FORMAT"; message: string }
+  | { type: "URL_NOT_PERMITTED"; message: string };
+
+type FeedDiscoveryError =
+  | { type: "FETCH_FAILED"; message: string; status?: number }
+  | { type: "NETWORK_ERROR"; message: string }
+  | { type: "TIMEOUT_ERROR"; message: string }
+  | { type: "PARSING_ERROR"; message: string };
+
+type AppError = ValidationError | FeedDiscoveryError;
+
+/**
+ * Default title for feeds when no title is found in meta tags
+ */
+const DEFAULT_FEED_TITLE = "RSS/Atom feed";
+
 /**
  * Allowed origins for CORS requests
  */
@@ -74,7 +98,7 @@ function handleCorsPreflightRequest(request: Request): Response {
 }
 
 export default {
-  async fetch(request) {
+  async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
 
     // Handle CORS preflight requests
@@ -93,19 +117,28 @@ export default {
     const notFoundResponse = new Response(null, { status: 404 });
     return addSecurityHeaders(notFoundResponse, request);
   },
-} satisfies ExportedHandler<Env>;
+};
 
 /**
- * Validates URLs to prevent SSRF attacks
+ * Validates URLs to prevent SSRF attacks using Result type
  * Blocks access to private IP ranges, localhost, and metadata services
  */
-function isValidTargetUrl(url: string): { valid: boolean; error?: string } {
-  try {
-    const parsedUrl = new URL(url);
+const safeCreateUrl = Result.fromThrowable(
+  (url: string) => new URL(url),
+  (): ValidationError => ({
+    type: "INVALID_URL_FORMAT" as const,
+    message: "Invalid URL format",
+  }),
+);
 
+export function validateTargetUrl(url: string): Result<URL, ValidationError> {
+  return safeCreateUrl(url).andThen((parsedUrl) => {
     // Only allow HTTP/HTTPS protocols
     if (!["http:", "https:"].includes(parsedUrl.protocol)) {
-      return { valid: false, error: "Only HTTP/HTTPS protocols are supported" };
+      return err({
+        type: "URL_NOT_PERMITTED" as const,
+        message: "Only HTTP/HTTPS protocols are supported",
+      });
     }
 
     const hostname = parsedUrl.hostname.toLowerCase();
@@ -115,10 +148,14 @@ function isValidTargetUrl(url: string): { valid: boolean; error?: string } {
       hostname === "localhost" ||
       hostname.startsWith("127.") ||
       hostname === "::1" ||
+      hostname === "[::1]" ||
       hostname === "0:0:0:0:0:0:0:1" ||
       hostname === "0000:0000:0000:0000:0000:0000:0000:0001"
     ) {
-      return { valid: false, error: "Access to localhost is not permitted" };
+      return err({
+        type: "URL_NOT_PERMITTED" as const,
+        message: "Access to localhost is not permitted",
+      });
     }
 
     // Block private IP address ranges
@@ -132,144 +169,245 @@ function isValidTargetUrl(url: string): { valid: boolean; error?: string } {
     ];
 
     if (privateRanges.some((range) => range.test(hostname))) {
-      return {
-        valid: false,
-        error: "Access to private IP addresses is not permitted",
-      };
+      return err({
+        type: "URL_NOT_PERMITTED" as const,
+        message: "Access to private IP addresses is not permitted",
+      });
     }
 
     // Restrict port numbers (block uncommon ports)
     const port = parsedUrl.port;
     if (port && !["80", "443", "8080", "8443"].includes(port)) {
-      return { valid: false, error: "Access to this port is not permitted" };
+      return err({
+        type: "URL_NOT_PERMITTED" as const,
+        message: "Access to this port is not permitted",
+      });
     }
 
-    return { valid: true };
-  } catch {
-    return { valid: false, error: "Invalid URL format" };
-  }
+    return ok(parsedUrl);
+  });
 }
 
-async function handleFeedSearch(request: Request) {
-  try {
-    let body: { url?: string };
-    try {
-      body = await request.json();
-    } catch {
-      return Response.json(
-        {
-          success: false,
-          error: "Invalid request body",
-        },
-        { status: 400 },
-      );
-    }
-    const { url: targetUrl } = body;
-
-    if (!targetUrl || typeof targetUrl !== "string") {
-      return Response.json(
-        {
-          success: false,
-          error: "URL is required",
-        },
-        { status: 400 },
-      );
-    }
-
-    // URL validation and normalization
-    let normalizedUrl: URL;
-    try {
-      normalizedUrl = new URL(
-        targetUrl.startsWith("http") ? targetUrl : `https://${targetUrl}`,
-      );
-    } catch {
-      return Response.json(
-        {
-          success: false,
-          error: "Invalid URL format",
-        },
-        { status: 400 },
-      );
-    }
-
-    // SSRF protection: Check URL safety
-    const validation = isValidTargetUrl(normalizedUrl.href);
-    if (!validation.valid) {
-      return Response.json(
-        {
-          success: false,
-          error: validation.error || "URL is not permitted",
-        },
-        { status: 400 },
-      );
-    }
-
-    const feeds = await discoverFeeds(normalizedUrl.href);
-
-    return Response.json({
-      success: true,
-      searchedUrl: normalizedUrl.href,
-      totalFound: feeds.length,
-      feeds,
+/**
+ * Parses and validates request body
+ */
+export function parseRequestBody(
+  body: unknown,
+): Result<string, ValidationError> {
+  if (!body || typeof body !== "object") {
+    return err({
+      type: "INVALID_REQUEST_BODY" as const,
+      message: "Invalid request body",
     });
-  } catch (error) {
-    console.error("Feed search error:", error);
-    return Response.json(
-      {
-        success: false,
-        error: "フィード検索中にエラーが発生しました",
-      },
-      { status: 500 },
-    );
   }
+
+  const { url: targetUrl } = body as { url?: unknown };
+  if (!targetUrl || typeof targetUrl !== "string") {
+    return err({
+      type: "MISSING_URL" as const,
+      message: "URL is required",
+    });
+  }
+
+  return ok(targetUrl);
 }
 
-async function discoverFeeds(targetUrl: string): Promise<FeedResult[]> {
-  const feeds: FeedResult[] = [];
-  const foundUrls = new Set<string>();
+/**
+ * Normalizes URL by adding https if no protocol is specified
+ */
+export function normalizeUrl(url: string): Result<string, ValidationError> {
+  const normalizedUrl = url.startsWith("http") ? url : `https://${url}`;
 
-  try {
-    // Additional safety check before fetching
-    const validation = isValidTargetUrl(targetUrl);
-    if (!validation.valid) {
-      throw new Error(`URL validation failed: ${validation.error}`);
+  // Validate that the normalized URL is properly formed
+  return safeCreateUrl(normalizedUrl)
+    .map(() => normalizedUrl)
+    .mapErr(
+      (): ValidationError => ({
+        type: "INVALID_URL_FORMAT" as const,
+        message: "Invalid URL format",
+      }),
+    );
+}
+
+/**
+ * Secure error response helper that prevents information leakage
+ */
+function createErrorResponse(error: AppError): Response {
+  // Log detailed error information for debugging (server-side only)
+  const errorId = Math.random().toString(36).slice(2, 11);
+  console.error(
+    `[${errorId}] Error type: ${error.type}, Details: ${error.message}`,
+  );
+
+  // Return generic user-friendly message to prevent information disclosure
+  const userMessage = (() => {
+    switch (error.type) {
+      case "INVALID_REQUEST_BODY":
+      case "MISSING_URL":
+      case "INVALID_URL_FORMAT":
+      case "URL_NOT_PERMITTED":
+        return "Invalid request. Please check your input and try again.";
+      case "FETCH_FAILED":
+      case "NETWORK_ERROR":
+      case "TIMEOUT_ERROR":
+        return "Unable to access the requested URL. Please try again later.";
+      case "PARSING_ERROR":
+        return "Unable to analyze the website content. Please try a different URL.";
+      default:
+        return "An unexpected error occurred. Please try again later.";
     }
+  })();
 
-    // Fetch the main page
-    const response = await fetch(targetUrl, {
+  const statusCode = (() => {
+    switch (error.type) {
+      case "INVALID_REQUEST_BODY":
+      case "MISSING_URL":
+      case "INVALID_URL_FORMAT":
+      case "URL_NOT_PERMITTED":
+        return 400;
+      case "TIMEOUT_ERROR":
+        return 408;
+      case "FETCH_FAILED":
+        return error.message.includes("404") ? 404 : 502;
+      default:
+        return 500;
+    }
+  })();
+
+  return Response.json(
+    {
+      success: false,
+      error: userMessage,
+      errorId, // Include error ID for support purposes
+    },
+    { status: statusCode },
+  );
+}
+
+async function handleFeedSearch(request: Request): Promise<Response> {
+  const result = await ResultAsync.fromPromise(
+    request.json(),
+    () =>
+      ({
+        type: "INVALID_REQUEST_BODY" as const,
+        message: "Invalid JSON in request body",
+      }) as ValidationError,
+  )
+    .andThen(parseRequestBody)
+    .andThen(normalizeUrl)
+    .andThen(validateTargetUrl)
+    .andThen((validatedUrl) =>
+      discoverFeeds(validatedUrl.href).map((feeds) => ({
+        success: true,
+        searchedUrl: validatedUrl.href,
+        totalFound: feeds.length,
+        feeds,
+      })),
+    );
+
+  return result.match(
+    (successData) => Response.json(successData),
+    (error) => createErrorResponse(error),
+  );
+}
+
+/**
+ * Safe fetch wrapper with timeout and error handling
+ */
+function safeFetch(
+  url: string,
+  options: RequestInit = {},
+): ResultAsync<Response, FeedDiscoveryError> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+  return ResultAsync.fromPromise(
+    fetch(url, {
+      ...options,
+      signal: controller.signal,
       headers: {
         "User-Agent": "FeedFinder/1.0",
+        ...options.headers,
       },
-    });
-
+    }),
+    (error): FeedDiscoveryError => {
+      clearTimeout(timeoutId);
+      if (error instanceof Error) {
+        if (error.name === "AbortError") {
+          return {
+            type: "TIMEOUT_ERROR" as const,
+            message: `Request timeout for ${url}`,
+          };
+        }
+        return {
+          type: "NETWORK_ERROR" as const,
+          message: `Network error: ${error.message}`,
+        };
+      }
+      return {
+        type: "NETWORK_ERROR" as const,
+        message: "Unknown network error",
+      };
+    },
+  ).andThen((response) => {
+    clearTimeout(timeoutId);
     if (!response.ok) {
-      throw new Error(`Failed to fetch: ${response.status}`);
+      return err({
+        type: "FETCH_FAILED" as const,
+        message: `HTTP ${response.status}`,
+        status: response.status,
+      });
     }
+    return ok(response);
+  });
+}
 
-    const html = await response.text();
+function discoverFeeds(
+  targetUrl: string,
+): ResultAsync<FeedResult[], FeedDiscoveryError> {
+  return validateTargetUrl(targetUrl)
+    .mapErr(
+      (validationError): FeedDiscoveryError => ({
+        type: "FETCH_FAILED",
+        message: validationError.message,
+      }),
+    )
+    .asyncAndThen((validatedUrl) =>
+      safeFetch(validatedUrl.href)
+        .andThen((response) =>
+          ResultAsync.fromPromise(
+            response.text(),
+            (): FeedDiscoveryError => ({
+              type: "PARSING_ERROR",
+              message: "Failed to parse response body",
+            }),
+          ),
+        )
+        .andThen((html) => {
+          const feeds: FeedResult[] = [];
+          const foundUrls = new Set<string>();
 
-    // 1. Look for RSS autodiscovery links in HTML
-    const metaFeeds = findMetaFeeds(html, targetUrl);
-    metaFeeds.forEach((feed) => {
-      if (!foundUrls.has(feed.url)) {
-        foundUrls.add(feed.url);
-        feeds.push(feed);
-      }
-    });
+          // 1. Look for RSS autodiscovery links in HTML
+          const metaFeeds = findMetaFeeds(html, validatedUrl.href);
+          metaFeeds.forEach((feed) => {
+            if (!foundUrls.has(feed.url)) {
+              foundUrls.add(feed.url);
+              feeds.push(feed);
+            }
+          });
 
-    // 2. Try common feed paths
-    const commonFeeds = await tryCommonPaths(targetUrl);
-    commonFeeds.forEach((feed) => {
-      if (!foundUrls.has(feed.url)) {
-        foundUrls.add(feed.url);
-        feeds.push(feed);
-      }
-    });
-  } catch (error) {
-    console.error("Discovery error:", error);
-  }
-
-  return feeds;
+          // 2. Try common feed paths
+          return tryCommonPaths(validatedUrl.href).map((commonFeeds) => {
+            commonFeeds.forEach((feed) => {
+              if (!foundUrls.has(feed.url)) {
+                foundUrls.add(feed.url);
+                feeds.push(feed);
+              }
+            });
+            return feeds;
+          });
+        }),
+    );
 }
 
 export function findMetaFeeds(html: string, baseUrl: string): FeedResult[] {
@@ -283,8 +421,14 @@ export function findMetaFeeds(html: string, baseUrl: string): FeedResult[] {
   while (match !== null) {
     const href = match[1] || match[2];
     if (href) {
-      try {
-        const feedUrl = new URL(href, baseUrl).href;
+      // Safe URL creation with Result type
+      const urlResult = Result.fromThrowable(
+        () => new URL(href, baseUrl).href,
+        () => null, // Return null for invalid URLs to skip them
+      )();
+
+      if (urlResult.isOk()) {
+        const feedUrl = urlResult.value;
         const titleMatch = match[0].match(/title=["']([^"']+)["']/i);
         const typeMatch = match[0].match(
           /type=["'](application\/(?:rss\+xml|atom\+xml)|text\/xml)["']/i,
@@ -292,12 +436,10 @@ export function findMetaFeeds(html: string, baseUrl: string): FeedResult[] {
 
         feeds.push({
           url: feedUrl,
-          title: titleMatch ? titleMatch[1] : "RSS/Atom フィード",
+          title: titleMatch ? titleMatch[1] : DEFAULT_FEED_TITLE,
           type: typeMatch && typeMatch[1].includes("atom") ? "Atom" : "RSS",
           discoveryMethod: "meta-tag",
         });
-      } catch {
-        // Invalid URL, skip
       }
     }
     match = linkRegex.exec(html);
@@ -306,7 +448,9 @@ export function findMetaFeeds(html: string, baseUrl: string): FeedResult[] {
   return feeds;
 }
 
-async function tryCommonPaths(baseUrl: string): Promise<FeedResult[]> {
+function tryCommonPaths(
+  baseUrl: string,
+): ResultAsync<FeedResult[], FeedDiscoveryError> {
   const commonPaths = [
     "/feed",
     "/feeds",
@@ -317,46 +461,54 @@ async function tryCommonPaths(baseUrl: string): Promise<FeedResult[]> {
     "/index.xml",
   ];
 
-  const feeds: FeedResult[] = [];
+  const feedPromises = commonPaths.map((path) => {
+    // Safe URL creation with Result type
+    const urlResult = Result.fromThrowable(
+      () => new URL(path, baseUrl).href,
+      () => null,
+    )();
 
-  for (const path of commonPaths) {
-    try {
-      const feedUrl = new URL(path, baseUrl).href;
-
-      // Validate each constructed URL to prevent SSRF
-      const validation = isValidTargetUrl(feedUrl);
-      if (!validation.valid) {
-        continue; // Skip this URL if validation fails
-      }
-
-      const response = await fetch(feedUrl, {
-        method: "HEAD",
-        headers: {
-          "User-Agent": "FeedFinder/1.0",
-        },
-      });
-
-      if (response.ok) {
-        const contentType = response.headers.get("content-type") || "";
-        if (
-          contentType.includes("xml") ||
-          contentType.includes("rss") ||
-          contentType.includes("atom")
-        ) {
-          feeds.push({
-            url: feedUrl,
-            title: `${path} フィード`,
-            type: contentType.includes("atom") ? "Atom" : "RSS",
-            discoveryMethod: "common-path",
-          });
-        }
-      }
-    } catch {
-      // Failed to fetch, continue to next path
+    if (urlResult.isErr()) {
+      return ResultAsync.fromSafePromise(Promise.resolve(null));
     }
-  }
 
-  return feeds;
+    const feedUrl = urlResult.value;
+
+    // Validate each constructed URL to prevent SSRF
+    return validateTargetUrl(feedUrl)
+      .mapErr(
+        (validationError): FeedDiscoveryError => ({
+          type: "FETCH_FAILED",
+          message: validationError.message,
+        }),
+      )
+      .asyncAndThen(
+        (validatedUrl) =>
+          safeFetch(validatedUrl.href, { method: "HEAD" })
+            .map((response) => {
+              const contentType = response.headers.get("content-type") || "";
+              if (
+                contentType.includes("xml") ||
+                contentType.includes("rss") ||
+                contentType.includes("atom")
+              ) {
+                return {
+                  url: validatedUrl.href,
+                  title: `${path} feed`,
+                  type: contentType.includes("atom") ? "Atom" : "RSS",
+                  discoveryMethod: "common-path",
+                } as FeedResult;
+              }
+              return null;
+            })
+            .orElse(() => ok(null)), // Convert errors to null (failed attempts are ok)
+      )
+      .orElse(() => ok(null)); // Convert validation errors to null
+  });
+
+  return ResultAsync.combine(feedPromises).map((results) =>
+    results.filter((feed): feed is FeedResult => feed !== null),
+  );
 }
 
 interface FeedResult {
