@@ -318,17 +318,22 @@ function safeFetch(
   url: string,
   options: RequestInit = {},
 ): ResultAsync<Response, FeedDiscoveryError> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
+
   return ResultAsync.fromPromise(
     fetch(url, {
       ...options,
+      signal: controller.signal,
       headers: {
         "User-Agent": "FeedFinder/1.0",
         ...options.headers,
       },
     }),
     (error): FeedDiscoveryError => {
+      clearTimeout(timeoutId);
       if (error instanceof Error) {
-        if (error.name === "TimeoutError") {
+        if (error.name === "AbortError") {
           return {
             type: "TIMEOUT_ERROR" as const,
             message: `Request timeout for ${url}`,
@@ -345,6 +350,7 @@ function safeFetch(
       };
     },
   ).andThen((response) => {
+    clearTimeout(timeoutId);
     if (!response.ok) {
       return err({
         type: "FETCH_FAILED" as const,
