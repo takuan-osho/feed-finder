@@ -116,7 +116,7 @@ async function discoverFeeds(targetUrl: string): Promise<FeedResult[]> {
   return feeds;
 }
 
-function findMetaFeeds(html: string, baseUrl: string): FeedResult[] {
+export function findMetaFeeds(html: string, baseUrl: string): FeedResult[] {
   const feeds: FeedResult[] = [];
 
   // Look for RSS autodiscovery links
