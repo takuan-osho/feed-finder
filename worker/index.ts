@@ -28,7 +28,7 @@ function addSecurityHeaders(response: Response, request?: Request): Response {
       "https://feed-finder.shimizu-taku.workers.dev", // Production domain
       "https://feedfinder.programarch.com", // Another production domain
       "https://feedfinder.takuan-osho.com", // Another production domain
-      "feedfinder.takuan-osho.net", // Another production domain
+      "https://feedfinder.takuan-osho.net", // Another production domain
     ];
 
     // Only set CORS headers for allowed origins
