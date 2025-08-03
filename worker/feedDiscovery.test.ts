@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { findMetaFeeds } from "./index.ts";
+import { findMetaFeeds } from "./index.js";
 
 describe("Feed Discovery", () => {
   describe("findMetaFeeds", () => {
@@ -92,7 +92,7 @@ describe("Feed Discovery", () => {
       const feeds = findMetaFeeds(html, baseUrl);
 
       expect(feeds).toHaveLength(1);
-      expect(feeds[0].title).toBe("RSS/Atom フィード");
+      expect(feeds[0].title).toBe("RSS/Atom feed");
     });
 
     it("should handle href and type attributes in different orders", () => {
