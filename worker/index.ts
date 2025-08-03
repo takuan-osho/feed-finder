@@ -18,6 +18,11 @@ type FeedDiscoveryError =
 type AppError = ValidationError | FeedDiscoveryError;
 
 /**
+ * Default title for feeds when no title is found in meta tags
+ */
+const DEFAULT_FEED_TITLE = "RSS/Atom feed";
+
+/**
  * Allowed origins for CORS requests
  */
 const ALLOWED_ORIGINS = [
@@ -420,7 +425,7 @@ export function findMetaFeeds(html: string, baseUrl: string): FeedResult[] {
 
         feeds.push({
           url: feedUrl,
-          title: titleMatch ? titleMatch[1] : "RSS/Atom feed",
+          title: titleMatch ? titleMatch[1] : DEFAULT_FEED_TITLE,
           type: typeMatch && typeMatch[1].includes("atom") ? "Atom" : "RSS",
           discoveryMethod: "meta-tag",
         });
