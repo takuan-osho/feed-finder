@@ -10,9 +10,6 @@ function addSecurityHeaders(response: Response): Response {
   // Prevent embedding in frames
   headers.set("X-Frame-Options", "DENY");
 
-  // Enable XSS protection
-  headers.set("X-XSS-Protection", "1; mode=block");
-
   // Control referrer information
   headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
 
@@ -62,7 +59,13 @@ function isValidTargetUrl(url: string): { valid: boolean; error?: string } {
     const hostname = parsedUrl.hostname.toLowerCase();
 
     // Block localhost and loopback addresses
-    if (hostname === "localhost" || hostname.startsWith("127.")) {
+    if (
+      hostname === "localhost" ||
+      hostname.startsWith("127.") ||
+      hostname === "::1" ||
+      hostname === "0:0:0:0:0:0:0:1" ||
+      hostname === "0000:0000:0000:0000:0000:0000:0000:0001"
+    ) {
       return { valid: false, error: "Access to localhost is not permitted" };
     }
 
