@@ -14,33 +14,22 @@ function App() {
     setSearchResult(null);
 
     try {
-      // TODO: Implement actual feed search API call
-      // For now, simulate a search with mock data
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const response = await fetch("/api/search-feeds", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ url }),
+      });
 
-      // Mock successful result
-      const mockResult: SearchResult = {
-        success: true,
-        searchedUrl: url,
-        totalFound: 2,
-        feeds: [
-          {
-            url: `${url}/feed.xml`,
-            title: "サイトのメインフィード",
-            type: "RSS",
-            description: "最新記事やアップデートをお届けします",
-            discoveryMethod: "meta-tag",
-          },
-          {
-            url: `${url}/rss.xml`,
-            title: "RSS フィード",
-            type: "RSS",
-            discoveryMethod: "common-path",
-          },
-        ],
-      };
+      const data = await response.json();
 
-      setSearchResult(mockResult);
+      if (!response.ok) {
+        setError(data.error || "フィード検索中にエラーが発生しました");
+        return;
+      }
+
+      setSearchResult(data);
     } catch {
       setError(
         "フィード検索中にエラーが発生しました。しばらく後にもう一度お試しください。",
