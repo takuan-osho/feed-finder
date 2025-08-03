@@ -131,7 +131,7 @@ const safeCreateUrl = Result.fromThrowable(
   }),
 );
 
-function validateTargetUrl(url: string): Result<URL, ValidationError> {
+export function validateTargetUrl(url: string): Result<URL, ValidationError> {
   return safeCreateUrl(url).andThen((parsedUrl) => {
     // Only allow HTTP/HTTPS protocols
     if (!["http:", "https:"].includes(parsedUrl.protocol)) {
@@ -191,7 +191,9 @@ function validateTargetUrl(url: string): Result<URL, ValidationError> {
 /**
  * Parses and validates request body
  */
-function parseRequestBody(body: unknown): Result<string, ValidationError> {
+export function parseRequestBody(
+  body: unknown,
+): Result<string, ValidationError> {
   if (!body || typeof body !== "object") {
     return err({
       type: "INVALID_REQUEST_BODY" as const,
@@ -213,7 +215,7 @@ function parseRequestBody(body: unknown): Result<string, ValidationError> {
 /**
  * Normalizes URL by adding https if no protocol is specified
  */
-function normalizeUrl(url: string): Result<string, ValidationError> {
+export function normalizeUrl(url: string): Result<string, ValidationError> {
   const normalizedUrl = url.startsWith("http") ? url : `https://${url}`;
 
   // Validate that the normalized URL is properly formed
@@ -337,7 +339,10 @@ function safeFetch(
           message: `Network error: ${error.message}`,
         };
       }
-      return { type: "NETWORK_ERROR" as const, message: "Unknown network error" };
+      return {
+        type: "NETWORK_ERROR" as const,
+        message: "Unknown network error",
+      };
     },
   ).andThen((response) => {
     if (!response.ok) {
