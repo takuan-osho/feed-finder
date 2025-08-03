@@ -1,44 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-// Import and define the findMetaFeeds function for testing
-function findMetaFeeds(html: string, baseUrl: string) {
-  const feeds: Array<{
-    url: string;
-    title: string;
-    type: string;
-    discoveryMethod: string;
-  }> = [];
-
-  // Look for RSS autodiscovery links
-  const linkRegex =
-    /<link[^>]*(?:type=["'](?:application\/rss\+xml|application\/atom\+xml|text\/xml)["'][^>]*href=["']([^"']+)["']|href=["']([^"']+)["'][^>]*type=["'](?:application\/rss\+xml|application\/atom\+xml|text\/xml)["'])[^>]*>/gi;
-
-  let match = linkRegex.exec(html);
-  while (match !== null) {
-    const href = match[1] || match[2];
-    if (href) {
-      try {
-        const feedUrl = new URL(href, baseUrl).href;
-        const titleMatch = match[0].match(/title=["']([^"']+)["']/i);
-        const typeMatch = match[0].match(
-          /type=["'](application\/(?:rss\+xml|atom\+xml)|text\/xml)["']/i,
-        );
-
-        feeds.push({
-          url: feedUrl,
-          title: titleMatch ? titleMatch[1] : "RSS/Atom フィード",
-          type: typeMatch && typeMatch[1].includes("atom") ? "Atom" : "RSS",
-          discoveryMethod: "meta-tag",
-        });
-      } catch {
-        // Invalid URL, skip
-      }
-    }
-    match = linkRegex.exec(html);
-  }
-
-  return feeds;
-}
+import { findMetaFeeds } from "./index.ts";
 
 describe("Feed Discovery", () => {
   describe("findMetaFeeds", () => {
