@@ -26,7 +26,7 @@ function findMetaFeeds(html: string, baseUrl: string) {
 
         feeds.push({
           url: feedUrl,
-          title: titleMatch ? titleMatch[1] : "RSS/Atom フィード",
+          title: titleMatch ? titleMatch[1] : "RSS/Atom Feed",
           type: typeMatch && typeMatch[1].includes("atom") ? "Atom" : "RSS",
           discoveryMethod: "meta-tag",
         });
