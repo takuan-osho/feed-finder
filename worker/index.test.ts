@@ -449,13 +449,13 @@ describe("URL Validation Security Tests", () => {
       expect(feeds[1].type).toBe("RSS");
     });
 
-    it("should detect feeds with uppercase link tags in fallback parsing", () => {
-      // Mock the parse function to throw an error and force fallback
-      const mockParse = vi.fn().mockImplementation(() => {
-        throw new Error("Parse failed");
-      });
-      vi.doMock("node-html-parser", () => ({
-        parse: mockParse,
+    it("should detect feeds with uppercase link tags in fallback parsing", async () => {
+      // Mock node-html-parser to force fallback parsing
+      await vi.resetModules();
+      vi.mock("node-html-parser", () => ({
+        parse: vi.fn(() => {
+          throw new Error("Parse failed");
+        }),
       }));
 
       const htmlWithUppercaseTags = `<html><head>
@@ -464,12 +464,14 @@ describe("URL Validation Security Tests", () => {
       </head></html>`;
       const baseUrl = "https://example.com";
 
-      const feeds = findMetaFeeds(htmlWithUppercaseTags, baseUrl);
+      // Dynamically import after module cache is cleared to apply mock
+      const { findMetaFeeds: findMetaFeedsWithMock } = await import("./index");
+      const feeds = findMetaFeedsWithMock(htmlWithUppercaseTags, baseUrl);
       expect(feeds).toHaveLength(2);
       expect(feeds[0].type).toBe("RSS");
       expect(feeds[1].type).toBe("Atom");
 
-      vi.doUnmock("node-html-parser");
+      vi.unmock("node-html-parser");
     });
   });
 });
