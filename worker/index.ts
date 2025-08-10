@@ -1,4 +1,5 @@
 import { err, ok, Result, ResultAsync } from "neverthrow";
+import { parse } from "node-html-parser";
 
 /**
  * Error types for type-safe error handling
@@ -410,43 +411,230 @@ function discoverFeeds(
     );
 }
 
+/**
+ * Extract feed links from HTML using secure string-based parsing
+ * Completely avoids regex to prevent ReDoS vulnerabilities
+ */
+/**
+ * Extract feed type title from MIME type
+ */
+function extractFeedTypeTitle(type: string): "RSS" | "Atom" {
+  if (type.includes("rss")) return "RSS";
+  if (type.includes("atom")) return "Atom";
+  return "RSS"; // default fallback
+}
+
+/**
+ * Fallback string parsing for HTML when node-html-parser fails
+ */
+function findMetaFeedsWithStringParsing(
+  html: string,
+  baseUrl: string,
+): FeedResult[] {
+  const feeds: FeedResult[] = [];
+  const feedTypes = ["application/rss+xml", "application/atom+xml", "text/xml"];
+
+  // Split HTML by <link to find potential feed links
+  const linkSections = html.split("<link");
+
+  for (let i = 1; i < linkSections.length; i++) {
+    const feed = parseLinkSection(linkSections[i], feedTypes, baseUrl);
+    if (feed) {
+      feeds.push(feed);
+    }
+  }
+  return feeds;
+}
+
 export function findMetaFeeds(html: string, baseUrl: string): FeedResult[] {
   const feeds: FeedResult[] = [];
+  const feedTypes = ["application/rss+xml", "application/atom+xml", "text/xml"];
 
-  // Look for RSS autodiscovery links
-  const linkRegex =
-    /<link[^>]*(?:type=["'](?:application\/rss\+xml|application\/atom\+xml|text\/xml)["'][^>]*href=["']([^"']+)["']|href=["']([^"']+)["'][^>]*type=["'](?:application\/rss\+xml|application\/atom\+xml|text\/xml)["'])[^>]*>/gi;
+  try {
+    // Parse HTML using node-html-parser for maintainability and security
+    const doc = parse(html);
 
-  let match = linkRegex.exec(html);
-  while (match !== null) {
-    const href = match[1] || match[2];
-    if (href) {
-      // Safe URL creation with Result type
-      const urlResult = Result.fromThrowable(
-        () => new URL(href, baseUrl).href,
-        () => null, // Return null for invalid URLs to skip them
-      )();
+    // Find all link elements with CSS selector
+    const linkElements = doc.querySelectorAll("link");
 
-      if (urlResult.isOk()) {
-        const feedUrl = urlResult.value;
-        const titleMatch = match[0].match(/title=["']([^"']+)["']/i);
-        const typeMatch = match[0].match(
-          /type=["'](application\/(?:rss\+xml|atom\+xml)|text\/xml)["']/i,
-        );
+    for (const link of linkElements) {
+      const rel = link.getAttribute("rel");
+      const type = link.getAttribute("type");
+      const href = link.getAttribute("href");
+      const title = link.getAttribute("title");
 
-        feeds.push({
-          url: feedUrl,
-          title: titleMatch ? titleMatch[1] : DEFAULT_FEED_TITLE,
-          type: typeMatch && typeMatch[1].includes("atom") ? "Atom" : "RSS",
-          discoveryMethod: "meta-tag",
-        });
+      // Check if this is a feed link
+      if (
+        rel?.split(/\s+/).includes("alternate") &&
+        type &&
+        href &&
+        feedTypes.some((t) => type.includes(t))
+      ) {
+        try {
+          const feedUrl = new URL(href, baseUrl).toString();
+          feeds.push({
+            title: title || DEFAULT_FEED_TITLE,
+            url: feedUrl,
+            type: extractFeedTypeTitle(type),
+            discoveryMethod: "meta-tag" as const,
+          });
+        } catch {
+          // Skip invalid URLs
+          continue;
+        }
       }
     }
-    match = linkRegex.exec(html);
+  } catch {
+    // Fallback to string parsing if HTML parsing fails
+    return findMetaFeedsWithStringParsing(html, baseUrl);
   }
 
   return feeds;
 }
+
+/**
+ * Parse a single link section and extract feed information if valid
+ */
+function parseLinkSection(
+  section: string,
+  feedTypes: string[],
+  baseUrl: string,
+): FeedResult | null {
+  const endIndex = section.indexOf(">");
+
+  // Security: Limit maximum tag length to prevent DoS attacks
+  if (endIndex === -1 || endIndex > MAX_LINK_TAG_LENGTH) {
+    return null;
+  }
+
+  const linkTag = "<link" + section.substring(0, endIndex + 1);
+
+  // Early exit if not an alternate feed link
+  if (!isAlternateFeedLink(linkTag)) {
+    return null;
+  }
+
+  const feedInfo = extractFeedInfo(linkTag, feedTypes);
+  if (!feedInfo.type || !feedInfo.href) {
+    return null;
+  }
+
+  // Safe URL creation with Result type
+  const urlResult = Result.fromThrowable(
+    () => new URL(feedInfo.href!, baseUrl).href, // Non-null assertion is safe here due to null check above
+    () => null, // Return null for invalid URLs to skip them
+  )();
+
+  if (!urlResult.isOk()) {
+    return null;
+  }
+
+  return {
+    url: urlResult.value,
+    title: feedInfo.title || DEFAULT_FEED_TITLE,
+    type: feedInfo.type.includes("atom") ? "Atom" : "RSS",
+    discoveryMethod: "meta-tag",
+  };
+}
+
+/**
+ * Check if link tag is an alternate feed link
+ */
+function isAlternateFeedLink(linkTag: string): boolean {
+  const lowerTag = linkTag.toLowerCase();
+  // Extract rel attribute value and check if it contains "alternate"
+  const relMatch = lowerTag.match(/rel=["']([^"']+)["']/);
+  if (!relMatch) return false;
+
+  const relValues = relMatch[1].split(/\s+/);
+  return relValues.includes("alternate");
+}
+
+/**
+ * Extract feed information from link tag using safe string operations
+ */
+function extractFeedInfo(
+  linkTag: string,
+  feedTypes: string[],
+): {
+  type: string | null;
+  href: string | null;
+  title: string | null;
+} {
+  const lowerTag = linkTag.toLowerCase();
+
+  // Safe type detection with charset support
+  let feedType: string | null = null;
+  for (const type of feedTypes) {
+    // Check for the type with potential charset parameters
+    if (
+      lowerTag.includes(`type="${type}`) ||
+      lowerTag.includes(`type='${type}`)
+    ) {
+      feedType = type;
+      break;
+    }
+  }
+
+  // Safe attribute extraction
+  const href = extractAttributeValue(linkTag, "href");
+  const title = extractAttributeValue(linkTag, "title");
+
+  return { type: feedType, href, title };
+}
+
+/**
+ * Extract attribute value using safe string operations (no regex)
+ */
+export function extractAttributeValue(
+  tag: string,
+  attributeName: string,
+): string | null {
+  const lowerTag = tag.toLowerCase();
+  const attrNameLower = attributeName.toLowerCase();
+  const attrIndex = lowerTag.indexOf(attrNameLower);
+
+  if (attrIndex === -1) return null;
+
+  // Start searching after the attribute name
+  let searchIndex = attrIndex + attrNameLower.length;
+
+  // Skip whitespace characters (spaces and tabs) after attribute name
+  while (
+    searchIndex < tag.length &&
+    (tag[searchIndex] === " " || tag[searchIndex] === "\t")
+  ) {
+    searchIndex++;
+  }
+
+  // Check if we found the equal sign
+  if (searchIndex >= tag.length || tag[searchIndex] !== "=") {
+    return null;
+  }
+
+  // Skip whitespace after equal sign
+  searchIndex++; // Skip the '=' character
+  while (
+    searchIndex < tag.length &&
+    (tag[searchIndex] === " " || tag[searchIndex] === "\t")
+  ) {
+    searchIndex++;
+  }
+
+  // Check for quote character
+  const quote = tag[searchIndex];
+  if (quote !== '"' && quote !== "'") return null;
+
+  const valueContentStart = searchIndex + 1;
+  const valueEnd = tag.indexOf(quote, valueContentStart);
+
+  if (valueEnd === -1) return null;
+
+  return tag.substring(valueContentStart, valueEnd);
+}
+
+// Security constants
+const MAX_LINK_TAG_LENGTH = 1000;
 
 function tryCommonPaths(
   baseUrl: string,

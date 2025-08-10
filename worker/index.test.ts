@@ -5,7 +5,12 @@ const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
 
 // Import the actual implementation functions
-import { normalizeUrl, parseRequestBody, validateTargetUrl } from "./index";
+import {
+  extractAttributeValue,
+  normalizeUrl,
+  parseRequestBody,
+  validateTargetUrl,
+} from "./index";
 
 describe("URL Validation Security Tests", () => {
   beforeEach(() => {
@@ -261,6 +266,99 @@ describe("URL Validation Security Tests", () => {
       if (result.isErr()) {
         expect(result.error.type).toBe("INVALID_REQUEST_BODY");
       }
+    });
+  });
+
+  describe("extractAttributeValue", () => {
+    it("should extract attribute values with normal spacing", () => {
+      const tag =
+        '<link rel="alternate" type="application/rss+xml" href="https://example.com/feed">';
+
+      expect(extractAttributeValue(tag, "rel")).toBe("alternate");
+      expect(extractAttributeValue(tag, "type")).toBe("application/rss+xml");
+      expect(extractAttributeValue(tag, "href")).toBe(
+        "https://example.com/feed",
+      );
+    });
+
+    it("should handle whitespace around equal signs", () => {
+      const tag =
+        '<link rel = "alternate" type= "application/rss+xml" href ="https://example.com/feed">';
+
+      expect(extractAttributeValue(tag, "rel")).toBe("alternate");
+      expect(extractAttributeValue(tag, "type")).toBe("application/rss+xml");
+      expect(extractAttributeValue(tag, "href")).toBe(
+        "https://example.com/feed",
+      );
+    });
+
+    it("should handle tabs around equal signs", () => {
+      const tag =
+        '<link rel\t=\t"alternate" type=\t"application/rss+xml" href\t="https://example.com/feed">';
+
+      expect(extractAttributeValue(tag, "rel")).toBe("alternate");
+      expect(extractAttributeValue(tag, "type")).toBe("application/rss+xml");
+      expect(extractAttributeValue(tag, "href")).toBe(
+        "https://example.com/feed",
+      );
+    });
+
+    it("should handle mixed spaces and tabs", () => {
+      const tag =
+        '<link rel \t= \t"alternate" type \t=\t "application/rss+xml">';
+
+      expect(extractAttributeValue(tag, "rel")).toBe("alternate");
+      expect(extractAttributeValue(tag, "type")).toBe("application/rss+xml");
+    });
+
+    it("should handle single quotes", () => {
+      const tag =
+        "<link rel = 'alternate' type= 'application/rss+xml' href ='https://example.com/feed'>";
+
+      expect(extractAttributeValue(tag, "rel")).toBe("alternate");
+      expect(extractAttributeValue(tag, "type")).toBe("application/rss+xml");
+      expect(extractAttributeValue(tag, "href")).toBe(
+        "https://example.com/feed",
+      );
+    });
+
+    it("should handle case insensitive attribute names", () => {
+      const tag =
+        '<link REL="alternate" TYPE="application/rss+xml" HREF="https://example.com/feed">';
+
+      expect(extractAttributeValue(tag, "rel")).toBe("alternate");
+      expect(extractAttributeValue(tag, "type")).toBe("application/rss+xml");
+      expect(extractAttributeValue(tag, "href")).toBe(
+        "https://example.com/feed",
+      );
+    });
+
+    it("should return null for non-existent attributes", () => {
+      const tag = '<link rel="alternate" type="application/rss+xml">';
+
+      expect(extractAttributeValue(tag, "href")).toBe(null);
+      expect(extractAttributeValue(tag, "title")).toBe(null);
+      expect(extractAttributeValue(tag, "nonexistent")).toBe(null);
+    });
+
+    it("should return null for malformed attributes without quotes", () => {
+      const tag = "<link rel=alternate type=application/rss+xml>";
+
+      expect(extractAttributeValue(tag, "rel")).toBe(null);
+      expect(extractAttributeValue(tag, "type")).toBe(null);
+    });
+
+    it("should return null when equal sign is missing", () => {
+      const tag = '<link rel "alternate" type="application/rss+xml">';
+
+      expect(extractAttributeValue(tag, "rel")).toBe(null);
+    });
+
+    it("should handle empty attribute values", () => {
+      const tag = '<link rel="" type="application/rss+xml">';
+
+      expect(extractAttributeValue(tag, "rel")).toBe("");
+      expect(extractAttributeValue(tag, "type")).toBe("application/rss+xml");
     });
   });
 });
