@@ -464,7 +464,12 @@ export function findMetaFeeds(html: string, baseUrl: string): FeedResult[] {
       const title = link.getAttribute("title");
 
       // Check if this is a feed link
-      if (rel === "alternate" && type && href && feedTypes.includes(type)) {
+      if (
+        rel?.split(/\s+/).includes("alternate") &&
+        type &&
+        href &&
+        feedTypes.some((t) => type.includes(t))
+      ) {
         try {
           const feedUrl = new URL(href, baseUrl).toString();
           feeds.push({
@@ -537,9 +542,12 @@ function parseLinkSection(
  */
 function isAlternateFeedLink(linkTag: string): boolean {
   const lowerTag = linkTag.toLowerCase();
-  return (
-    lowerTag.includes('rel="alternate"') || lowerTag.includes("rel='alternate'")
-  );
+  // Extract rel attribute value and check if it contains "alternate"
+  const relMatch = lowerTag.match(/rel=["']([^"']+)["']/);
+  if (!relMatch) return false;
+
+  const relValues = relMatch[1].split(/\s+/);
+  return relValues.includes("alternate");
 }
 
 /**
@@ -555,12 +563,13 @@ function extractFeedInfo(
 } {
   const lowerTag = linkTag.toLowerCase();
 
-  // Safe type detection
+  // Safe type detection with charset support
   let feedType: string | null = null;
   for (const type of feedTypes) {
+    // Check for the type with potential charset parameters
     if (
-      lowerTag.includes(`type="${type}"`) ||
-      lowerTag.includes(`type='${type}'`)
+      lowerTag.includes(`type="${type}`) ||
+      lowerTag.includes(`type='${type}`)
     ) {
       feedType = type;
       break;
@@ -577,19 +586,46 @@ function extractFeedInfo(
 /**
  * Extract attribute value using safe string operations (no regex)
  */
-function extractAttributeValue(
+export function extractAttributeValue(
   tag: string,
   attributeName: string,
 ): string | null {
-  const attrIndex = tag.toLowerCase().indexOf(`${attributeName}=`);
+  const lowerTag = tag.toLowerCase();
+  const attrNameLower = attributeName.toLowerCase();
+  const attrIndex = lowerTag.indexOf(attrNameLower);
+
   if (attrIndex === -1) return null;
 
-  const valueStart = attrIndex + attributeName.length + 1;
-  const quote = tag[valueStart];
+  // Start searching after the attribute name
+  let searchIndex = attrIndex + attrNameLower.length;
 
+  // Skip whitespace characters (spaces and tabs) after attribute name
+  while (
+    searchIndex < tag.length &&
+    (tag[searchIndex] === " " || tag[searchIndex] === "\t")
+  ) {
+    searchIndex++;
+  }
+
+  // Check if we found the equal sign
+  if (searchIndex >= tag.length || tag[searchIndex] !== "=") {
+    return null;
+  }
+
+  // Skip whitespace after equal sign
+  searchIndex++; // Skip the '=' character
+  while (
+    searchIndex < tag.length &&
+    (tag[searchIndex] === " " || tag[searchIndex] === "\t")
+  ) {
+    searchIndex++;
+  }
+
+  // Check for quote character
+  const quote = tag[searchIndex];
   if (quote !== '"' && quote !== "'") return null;
 
-  const valueContentStart = valueStart + 1;
+  const valueContentStart = searchIndex + 1;
   const valueEnd = tag.indexOf(quote, valueContentStart);
 
   if (valueEnd === -1) return null;
