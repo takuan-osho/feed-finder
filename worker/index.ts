@@ -445,20 +445,27 @@ function findMetaFeedsWithStringParsing(
   baseUrl: string,
 ): FeedResult[] {
   const feeds: FeedResult[] = [];
+  const foundUrls = new Set<string>();
 
-  // Split HTML by <link to find potential feed links
-  const linkSections = html.split("<link");
-
-  for (let i = 1; i < linkSections.length; i++) {
-    const feed = parseLinkSection(
-      linkSections[i],
-      SUPPORTED_FEED_TYPES,
-      baseUrl,
-    );
-    if (feed) {
-      feeds.push(feed);
+  // Helper function to process link sections
+  const processLinkSections = (linkSections: string[]) => {
+    for (let i = 1; i < linkSections.length; i++) {
+      const feed = parseLinkSection(
+        linkSections[i],
+        SUPPORTED_FEED_TYPES,
+        baseUrl,
+      );
+      if (feed && !foundUrls.has(feed.url)) {
+        foundUrls.add(feed.url);
+        feeds.push(feed);
+      }
     }
-  }
+  };
+
+  // Split HTML by <link tags (case insensitive) to find potential feed links
+  const linkSections = html.split(/<link/gi);
+  processLinkSections(linkSections);
+
   return feeds;
 }
 

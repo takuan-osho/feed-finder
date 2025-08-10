@@ -448,5 +448,30 @@ describe("URL Validation Security Tests", () => {
       expect(feeds[0].type).toBe("RSS");
       expect(feeds[1].type).toBe("RSS");
     });
+
+    it("should detect feeds with uppercase link tags in fallback parsing", async () => {
+      // Mock node-html-parser to force fallback parsing
+      await vi.resetModules();
+      vi.mock("node-html-parser", () => ({
+        parse: vi.fn(() => {
+          throw new Error("Parse failed");
+        }),
+      }));
+
+      const htmlWithUppercaseTags = `<html><head>
+      <LINK REL="alternate" TYPE="application/rss+xml" HREF="/feed.xml" TITLE="RSS Feed">
+      <LINK REL="alternate" TYPE="application/atom+xml" HREF="/atom.xml" TITLE="Atom Feed">
+      </head></html>`;
+      const baseUrl = "https://example.com";
+
+      // Dynamically import after module cache is cleared to apply mock
+      const { findMetaFeeds: findMetaFeedsWithMock } = await import("./index");
+      const feeds = findMetaFeedsWithMock(htmlWithUppercaseTags, baseUrl);
+      expect(feeds).toHaveLength(2);
+      expect(feeds[0].type).toBe("RSS");
+      expect(feeds[1].type).toBe("Atom");
+
+      vi.unmock("node-html-parser");
+    });
   });
 });
