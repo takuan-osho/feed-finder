@@ -7,6 +7,7 @@ vi.stubGlobal("fetch", mockFetch);
 // Import the actual implementation functions
 import {
   extractAttributeValue,
+  findMetaFeeds,
   normalizeUrl,
   parseRequestBody,
   validateTargetUrl,
@@ -359,6 +360,59 @@ describe("URL Validation Security Tests", () => {
 
       expect(extractAttributeValue(tag, "rel")).toBe("");
       expect(extractAttributeValue(tag, "type")).toBe("application/rss+xml");
+    });
+  });
+
+  describe("findMetaFeeds - MIME Type Case Sensitivity", () => {
+    it("should detect feeds with lowercase MIME types", () => {
+      const html = `
+        <html>
+          <head>
+            <link rel="alternate" type="application/rss+xml" href="/feed.xml" title="RSS Feed">
+            <link rel="alternate" type="application/atom+xml" href="/atom.xml" title="Atom Feed">
+          </head>
+        </html>
+      `;
+      const baseUrl = "https://example.com";
+
+      const feeds = findMetaFeeds(html, baseUrl);
+      expect(feeds).toHaveLength(2);
+      expect(feeds[0].type).toBe("RSS");
+      expect(feeds[1].type).toBe("Atom");
+    });
+
+    it("should detect feeds with uppercase MIME types", () => {
+      const html = `
+        <html>
+          <head>
+            <link rel="alternate" type="APPLICATION/RSS+XML" href="/feed.xml" title="RSS Feed">
+            <link rel="alternate" type="APPLICATION/ATOM+XML" href="/atom.xml" title="Atom Feed">
+          </head>
+        </html>
+      `;
+      const baseUrl = "https://example.com";
+
+      const feeds = findMetaFeeds(html, baseUrl);
+      expect(feeds).toHaveLength(2);
+      expect(feeds[0].type).toBe("RSS");
+      expect(feeds[1].type).toBe("Atom");
+    });
+
+    it("should detect feeds with mixed case MIME types", () => {
+      const html = `
+        <html>
+          <head>
+            <link rel="alternate" type="Application/Rss+Xml" href="/feed.xml" title="RSS Feed">
+            <link rel="alternate" type="Application/Atom+Xml" href="/atom.xml" title="Atom Feed">
+          </head>
+        </html>
+      `;
+      const baseUrl = "https://example.com";
+
+      const feeds = findMetaFeeds(html, baseUrl);
+      expect(feeds).toHaveLength(2);
+      expect(feeds[0].type).toBe("RSS");
+      expect(feeds[1].type).toBe("Atom");
     });
   });
 });
