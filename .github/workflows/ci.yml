@@ -56,12 +56,6 @@ jobs:
     - name: Build project
       run: npm run build
 
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-      with:
-        name: build-artifacts
-        path: dist
-        retention-days: 1
 
   deploy:
     runs-on: ubuntu-latest
@@ -77,20 +71,13 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          name: build-artifacts
-          path: dist
-
-      - name: Install exact production deps (incl. wrangler) # refs: https://qiita.com/dev-cho/items/0e824cc1bb69b13913a7
-        run: npm ci --omit=dev
+      - name: Install dependencies
+        run: npm ci
 
       - name: Deploy to Cloudflare Workers
-        uses: cloudflare/wrangler-action@da0e0dfe58b7a431659754fdf3f186c529afbe65 # v3.14.1
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          wranglerVersion: "4.25.0" # We don't want to use wrangler 3.90.0. See https://qiita.com/dev-cho/items/0e824cc1bb69b13913a7
+        run: npm run deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
 
