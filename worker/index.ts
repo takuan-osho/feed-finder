@@ -24,6 +24,18 @@ type AppError = ValidationError | FeedDiscoveryError;
 const DEFAULT_FEED_TITLE = "RSS/Atom feed";
 
 /**
+ * Supported feed MIME types for detection
+ * Note: Generic XML types (text/xml, application/xml) fall back to RSS.
+ */
+const SUPPORTED_FEED_TYPES = [
+  "application/rss+xml",
+  "application/atom+xml",
+  "application/rdf+xml", // RSS 1.0 (RDF)
+  "text/xml",
+  "application/xml",
+];
+
+/**
  * Allowed origins for CORS requests
  */
 const ALLOWED_ORIGINS = [
@@ -433,13 +445,16 @@ function findMetaFeedsWithStringParsing(
   baseUrl: string,
 ): FeedResult[] {
   const feeds: FeedResult[] = [];
-  const feedTypes = ["application/rss+xml", "application/atom+xml", "text/xml"];
 
   // Split HTML by <link to find potential feed links
   const linkSections = html.split("<link");
 
   for (let i = 1; i < linkSections.length; i++) {
-    const feed = parseLinkSection(linkSections[i], feedTypes, baseUrl);
+    const feed = parseLinkSection(
+      linkSections[i],
+      SUPPORTED_FEED_TYPES,
+      baseUrl,
+    );
     if (feed) {
       feeds.push(feed);
     }
@@ -449,7 +464,6 @@ function findMetaFeedsWithStringParsing(
 
 export function findMetaFeeds(html: string, baseUrl: string): FeedResult[] {
   const feeds: FeedResult[] = [];
-  const feedTypes = ["application/rss+xml", "application/atom+xml", "text/xml"];
 
   try {
     // Parse HTML using node-html-parser for maintainability and security
@@ -469,7 +483,7 @@ export function findMetaFeeds(html: string, baseUrl: string): FeedResult[] {
         rel?.split(/\s+/).some((t) => t.toLowerCase() === "alternate") &&
         type &&
         href &&
-        feedTypes.some((t) => type.toLowerCase().includes(t))
+        SUPPORTED_FEED_TYPES.includes(type.toLowerCase().split(";")[0].trim())
       ) {
         try {
           const feedUrl = new URL(href, baseUrl).toString();

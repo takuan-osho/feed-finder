@@ -414,5 +414,39 @@ describe("URL Validation Security Tests", () => {
       expect(feeds[0].type).toBe("RSS");
       expect(feeds[1].type).toBe("Atom");
     });
+
+    it("should detect feeds with application/xml MIME type", () => {
+      const html = `
+        <html>
+          <head>
+            <link rel="alternate" type="application/xml" href="/feed.xml" title="XML Feed">
+            <link rel="alternate" type="APPLICATION/XML" href="/feed2.xml" title="XML Feed 2">
+          </head>
+        </html>
+      `;
+      const baseUrl = "https://example.com";
+
+      const feeds = findMetaFeeds(html, baseUrl);
+      expect(feeds).toHaveLength(2);
+      expect(feeds[0].type).toBe("RSS"); // Default for generic XML
+      expect(feeds[1].type).toBe("RSS"); // Default for generic XML
+    });
+
+    it("should detect feeds with application/xml and charset parameter", () => {
+      const html = `
+        <html>
+          <head>
+            <link rel="alternate" type="application/xml; charset=UTF-8" href="/feed.xml" title="XML Feed">
+            <link rel="alternate" type="text/xml; charset=utf-8" href="/feed2.xml" title="XML Feed 2">
+          </head>
+        </html>
+      `;
+      const baseUrl = "https://example.com";
+
+      const feeds = findMetaFeeds(html, baseUrl);
+      expect(feeds).toHaveLength(2);
+      expect(feeds[0].type).toBe("RSS");
+      expect(feeds[1].type).toBe("RSS");
+    });
   });
 });
