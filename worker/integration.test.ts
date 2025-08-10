@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { findMetaFeeds } from "./index";
 
 // Mock console.error to avoid noise in tests
 vi.spyOn(console, "error").mockImplementation(() => {
@@ -264,19 +265,50 @@ describe("Security Integration Tests", () => {
   });
 
   describe("Regex Security", () => {
-    it("should handle regex patterns safely", () => {
-      // Test that our regex patterns don't cause ReDoS
-      const linkRegex =
-        /<link[^>]*(?:type=["'](?:application\/rss\+xml|application\/atom\+xml|text\/xml)["'][^>]*href=["']([^"']+)["']|href=["']([^"']+)["'][^>]*type=["'](?:application\/rss\+xml|application\/atom\+xml|text\/xml)["'])[^>]*>/gi;
+    it("should resist ReDoS attacks in findMetaFeeds function", () => {
+      // Test ReDoS vulnerability in current regex pattern
+      // The current regex /<link[^>]*(?:...)[^>]*>/gi has [^>]* quantifiers that can cause exponential backtracking
 
+      // Create pathological ReDoS attack pattern - many characters before closing >
+      const maliciousHtml =
+        "<link " +
+        "a=b ".repeat(3000) + // Many non-closing characters
+        // No closing '>' - this will cause catastrophic backtracking in vulnerable regex
+        'rel="alternate" type="application/rss+xml" href="/feed.xml"';
+
+      const startTime = performance.now();
+
+      // This test demonstrates the ReDoS vulnerability by expecting it to be SLOW
+      // A secure implementation would be fast even with this input
+      const feeds = findMetaFeeds(maliciousHtml, "https://example.com");
+
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+
+      // For now, document that the current implementation is vulnerable
+      // A secure implementation should complete in < 10ms
+      console.log(`findMetaFeeds execution time: ${executionTime}ms`);
+
+      // Test expectation: secure implementation should be fast and safe
+      expect(feeds).toBeDefined();
+      expect(Array.isArray(feeds)).toBe(true);
+
+      // TODO: This test will fail with vulnerable implementation on pathological input
+      // The secure implementation should pass this test
+      expect(executionTime).toBeLessThan(50); // Liberal timeout to show current vulnerability
+    });
+
+    it("should handle regex patterns safely", () => {
+      // Test normal operation with safe patterns
       const testHtml =
         '<link rel="alternate" type="application/rss+xml" href="/feed.xml" title="RSS">';
-      const matches = linkRegex.exec(testHtml);
 
-      expect(matches).not.toBeNull();
-      if (matches) {
-        expect(matches[1] || matches[2]).toBeTruthy();
-      }
+      const feeds = findMetaFeeds(testHtml, "https://example.com");
+
+      expect(feeds).toBeDefined();
+      expect(Array.isArray(feeds)).toBe(true);
+      expect(feeds.length).toBeGreaterThan(0);
+      expect(feeds[0].url).toBe("https://example.com/feed.xml");
     });
 
     it("should validate IP address patterns", () => {
@@ -298,6 +330,55 @@ describe("Security Integration Tests", () => {
       expect(privateRanges[1].test("172.15.0.1")).toBe(false);
       expect(privateRanges[2].test("193.168.1.1")).toBe(false);
       expect(privateRanges[3].test("170.254.169.254")).toBe(false);
+    });
+  });
+
+  describe("HTML Parser Implementation", () => {
+    it("should use proper HTML parser for maintainability and performance", () => {
+      const htmlWithFeeds = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <link rel="alternate" type="application/rss+xml" title="RSS Feed" href="/feed.xml">
+          <link rel="alternate" type="application/atom+xml" title="Atom Feed" href="/atom.xml">
+          <link rel="stylesheet" href="/styles.css">
+        </head>
+        <body></body>
+        </html>
+      `;
+
+      const feeds = findMetaFeeds(htmlWithFeeds, "https://example.com");
+
+      // Expect proper parsing with maintainable code structure
+      expect(feeds).toHaveLength(2);
+      expect(feeds[0]).toEqual({
+        title: "RSS Feed",
+        url: "https://example.com/feed.xml",
+        type: "RSS",
+        discoveryMethod: "meta-tag",
+      });
+      expect(feeds[1]).toEqual({
+        title: "Atom Feed",
+        url: "https://example.com/atom.xml",
+        type: "Atom",
+        discoveryMethod: "meta-tag",
+      });
+    });
+
+    it("should handle malformed HTML gracefully with proper parser", () => {
+      const malformedHtml = `
+        <link rel="alternate" type="application/rss+xml" href="/feed.xml" title="RSS
+        <link rel="alternate" type="application/atom+xml" href="/atom.xml"
+        <unclosed-tag>
+      `;
+
+      const feeds = findMetaFeeds(malformedHtml, "https://example.com");
+
+      // Parser should handle malformed HTML gracefully
+      expect(feeds.length).toBeGreaterThanOrEqual(1);
+      expect(
+        feeds.some((feed) => feed.url === "https://example.com/feed.xml"),
+      ).toBe(true);
     });
   });
 });
