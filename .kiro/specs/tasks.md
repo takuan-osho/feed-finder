@@ -18,10 +18,13 @@
 
 - [x] 1. プロジェクト基盤セットアップ
 
-  - React + Vite + TypeScript 環境の構築
+  - React 19 + Vite + TypeScript 環境の構築
   - shadcn/ui + TailwindCSS v4 の導入
   - TailwindCSS v4 記法の採用（v3 以前の記法は使用禁止）
   - Cloudflare Workers 環境の更新
+  - node-html-parser の導入（HTML パーシング用）
+  - neverthrow の導入（エラーハンドリング用）
+  - Node.js 20.19.4+ 対応
   - 基本的なビルド・デプロイパイプラインの確立
   - _要件: 要件 5（パフォーマンスとセキュリティ）_
 
@@ -213,7 +216,8 @@
 
     - TypeScript 型チェックの追加（tsc --noEmit）
     - 依存関係脆弱性チェックの追加（security-audit: npm audit --audit-level moderate）
-    - pre-commit と pre-push の分離による高速化
+    - pre-commit と pre-push の分離による高速化（pre-push: 0.41 秒に最適化）
+    - src フォルダのみに対象を絞り込み、開発者体験を向上
     - _要件: 要件 7（CI/CD 自動化）_
 
   - [x] 11.2 GitHub Actions ワークフローの設定
