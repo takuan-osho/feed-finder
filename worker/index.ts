@@ -483,7 +483,7 @@ export function findMetaFeeds(html: string, baseUrl: string): FeedResult[] {
         rel?.split(/\s+/).some((t) => t.toLowerCase() === "alternate") &&
         type &&
         href &&
-        SUPPORTED_FEED_TYPES.some((t) => type.toLowerCase().includes(t))
+        SUPPORTED_FEED_TYPES.includes(type.toLowerCase().split(";")[0].trim())
       ) {
         try {
           const feedUrl = new URL(href, baseUrl).toString();
