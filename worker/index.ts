@@ -419,8 +419,9 @@ function discoverFeeds(
  * Extract feed type title from MIME type
  */
 function extractFeedTypeTitle(type: string): "RSS" | "Atom" {
-  if (type.includes("rss")) return "RSS";
-  if (type.includes("atom")) return "Atom";
+  const lowerType = type.toLowerCase();
+  if (lowerType.includes("rss")) return "RSS";
+  if (lowerType.includes("atom")) return "Atom";
   return "RSS"; // default fallback
 }
 
@@ -465,10 +466,10 @@ export function findMetaFeeds(html: string, baseUrl: string): FeedResult[] {
 
       // Check if this is a feed link
       if (
-        rel?.split(/\s+/).includes("alternate") &&
+        rel?.split(/\s+/).some((t) => t.toLowerCase() === "alternate") &&
         type &&
         href &&
-        feedTypes.some((t) => type.includes(t))
+        feedTypes.some((t) => type.toLowerCase().includes(t))
       ) {
         try {
           const feedUrl = new URL(href, baseUrl).toString();
