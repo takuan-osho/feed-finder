@@ -462,9 +462,9 @@ function findMetaFeedsWithStringParsing(
     }
   };
 
-  // Split HTML by both <link and <LINK to find potential feed links (case insensitive)
-  processLinkSections(html.split("<link"));
-  processLinkSections(html.split("<LINK"));
+  // Split HTML by <link tags (case insensitive) to find potential feed links
+  const linkSections = html.split(/<link/gi);
+  processLinkSections(linkSections);
 
   return feeds;
 }
