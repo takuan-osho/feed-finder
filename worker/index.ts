@@ -25,10 +25,12 @@ const DEFAULT_FEED_TITLE = "RSS/Atom feed";
 
 /**
  * Supported feed MIME types for detection
+ * Note: Generic XML types (text/xml, application/xml) fall back to RSS.
  */
 const SUPPORTED_FEED_TYPES = [
   "application/rss+xml",
   "application/atom+xml",
+  "application/rdf+xml", // RSS 1.0 (RDF)
   "text/xml",
   "application/xml",
 ];
