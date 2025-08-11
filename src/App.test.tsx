@@ -58,9 +58,18 @@ describe("Bundle Optimization Tests", () => {
       expect(preloadLinks.length).toBeGreaterThan(0);
 
       // Should have DNS preconnect for performance
-      const hasPreconnect = Array.from(preconnectLinks).some((link) =>
-        link.getAttribute("href")?.includes("fonts.googleapis.com"),
-      );
+      const hasPreconnect = Array.from(preconnectLinks).some((link) => {
+        const href = link.getAttribute("href");
+        if (!href) return false;
+
+        try {
+          const url = new URL(href, window.location.origin);
+          return url.hostname === "fonts.googleapis.com";
+        } catch {
+          // Invalid URL or relative URL that can't be parsed
+          return false;
+        }
+      });
       expect(hasPreconnect).toBe(true);
     });
 
