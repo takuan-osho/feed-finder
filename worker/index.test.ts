@@ -451,7 +451,7 @@ describe("URL Validation Security Tests", () => {
 
     it("should detect feeds with uppercase link tags in fallback parsing", async () => {
       // Mock node-html-parser to force fallback parsing
-      vi.resetModules();
+      await vi.resetModules();
       vi.mock("node-html-parser", () => ({
         parse: vi.fn(() => {
           throw new Error("Parse failed");
