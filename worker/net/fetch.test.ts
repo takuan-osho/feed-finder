@@ -70,7 +70,7 @@ describe("net/fetch", () => {
         if (typeof callback === "function") {
           callback();
         }
-        return 1 as any;
+        return 1 as unknown as NodeJS.Timeout;
       });
 
       // Mock fetch to return a promise that gets aborted

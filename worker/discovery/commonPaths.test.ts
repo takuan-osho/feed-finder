@@ -259,17 +259,21 @@ describe("discovery/commonPaths", () => {
     });
 
     it("should create appropriate feed titles based on paths", async () => {
-      const paths = ["/feed", "/rss.xml", "/atom.xml"];
+      // Test with all common paths from the implementation
+      const commonPaths = [
+        "/feed",
+        "/feeds",
+        "/rss",
+        "/rss.xml",
+        "/feed.xml",
+        "/atom.xml",
+        "/index.xml",
+      ];
 
-      paths.forEach((path) => {
+      commonPaths.forEach((path) => {
         const validUrl = new URL(`https://example.com${path}`);
         mockValidateTargetUrl.mockReturnValueOnce(ok(validUrl));
       });
-
-      // Add invalid validations for other paths
-      mockValidateTargetUrl.mockReturnValue(
-        err({ type: "INVALID_URL_FORMAT", message: "Invalid" }),
-      );
 
       const mockResponse = new Response(null, {
         status: 200,
@@ -285,10 +289,11 @@ describe("discovery/commonPaths", () => {
 
       expect(result.isOk()).toBe(true);
       if (result.isOk()) {
-        expect(result.value).toHaveLength(paths.length);
+        expect(result.value).toHaveLength(commonPaths.length);
         // Results might be in different order due to Promise.all
         const titles = result.value.map((feed) => feed.title).sort();
-        expect(titles).toEqual(["/atom.xml feed", "/feed feed", "/rss.xml feed"].sort());
+        const expectedTitles = commonPaths.map((path) => `${path} feed`).sort();
+        expect(titles).toEqual(expectedTitles);
       }
     });
   });

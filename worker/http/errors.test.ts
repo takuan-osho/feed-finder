@@ -1,12 +1,22 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { AppError } from "../types";
 import { createErrorResponse } from "./errors";
+
+// Type for error response JSON
+interface ErrorResponseData {
+  success: false;
+  error: string;
+  errorId: string;
+}
 
 describe("http/errors", () => {
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
   let mathRandomSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {
+      // Mock implementation - intentionally empty for testing
+    });
     mathRandomSpy = vi.spyOn(Math, "random").mockReturnValue(0.123456789);
   });
 
@@ -26,7 +36,7 @@ describe("http/errors", () => {
 
       expect(response.status).toBe(400);
 
-      const responseData = (await response.json()) as any;
+      const responseData = (await response.json()) as ErrorResponseData;
       expect(responseData.success).toBe(false);
       expect(responseData.error).toBe(
         "Invalid request. Please check your input and try again.",
@@ -45,7 +55,7 @@ describe("http/errors", () => {
 
       expect(response.status).toBe(400);
 
-      const responseData = (await response.json()) as any;
+      const responseData = (await response.json()) as ErrorResponseData;
       expect(responseData.error).toBe(
         "Invalid request. Please check your input and try again.",
       );
@@ -84,7 +94,7 @@ describe("http/errors", () => {
 
       expect(response.status).toBe(502);
 
-      const responseData = (await response.json()) as any;
+      const responseData = (await response.json()) as ErrorResponseData;
       expect(responseData.error).toBe(
         "Unable to access the requested URL. Please try again later.",
       );
@@ -112,7 +122,7 @@ describe("http/errors", () => {
 
       expect(response.status).toBe(500);
 
-      const responseData = (await response.json()) as any;
+      const responseData = (await response.json()) as ErrorResponseData;
       expect(responseData.error).toBe(
         "Unable to access the requested URL. Please try again later.",
       );
@@ -128,7 +138,7 @@ describe("http/errors", () => {
 
       expect(response.status).toBe(408);
 
-      const responseData = (await response.json()) as any;
+      const responseData = (await response.json()) as ErrorResponseData;
       expect(responseData.error).toBe(
         "Unable to access the requested URL. Please try again later.",
       );
@@ -144,7 +154,7 @@ describe("http/errors", () => {
 
       expect(response.status).toBe(500);
 
-      const responseData = (await response.json()) as any;
+      const responseData = (await response.json()) as ErrorResponseData;
       expect(responseData.error).toBe(
         "Unable to analyze the website content. Please try a different URL.",
       );
@@ -152,7 +162,7 @@ describe("http/errors", () => {
 
     it("should handle unknown error types", async () => {
       const error = {
-        type: "UNKNOWN_ERROR" as any,
+        type: "UNKNOWN_ERROR" as AppError["type"],
         message: "Something went wrong",
       };
 
@@ -160,7 +170,7 @@ describe("http/errors", () => {
 
       expect(response.status).toBe(500);
 
-      const responseData = (await response.json()) as any;
+      const responseData = (await response.json()) as ErrorResponseData;
       expect(responseData.error).toBe(
         "An unexpected error occurred. Please try again later.",
       );
@@ -194,7 +204,7 @@ describe("http/errors", () => {
 
       // Extract error IDs from responses
       const getErrorId = async (response: Response) => {
-        const data = await response.clone().json();
+        const data = (await response.clone().json()) as { errorId: string };
         return data.errorId;
       };
 
@@ -218,7 +228,7 @@ describe("http/errors", () => {
         "application/json",
       );
 
-      const responseData = (await response.json()) as any;
+      const responseData = (await response.json()) as ErrorResponseData;
       expect(responseData).toHaveProperty("success", false);
       expect(responseData).toHaveProperty("error");
       expect(responseData).toHaveProperty("errorId");

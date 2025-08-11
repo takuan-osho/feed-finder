@@ -5,7 +5,7 @@ const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
 
 import { extractAttributeValue, findMetaFeeds } from "./discovery/html";
-import { parseRequestBody, normalizeUrl } from "./validation/request";
+import { normalizeUrl, parseRequestBody } from "./validation/request";
 // Import the actual implementation functions from their modular locations
 import { validateTargetUrl } from "./validation/url";
 
