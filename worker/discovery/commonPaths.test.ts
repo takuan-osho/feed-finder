@@ -288,7 +288,7 @@ describe("discovery/commonPaths", () => {
         expect(result.value).toHaveLength(paths.length);
         // Results might be in different order due to Promise.all
         const titles = result.value.map((feed) => feed.title).sort();
-        expect(titles).toEqual(["/feed feed", "/feeds feed", "/rss feed"]);
+        expect(titles).toEqual(["/atom.xml feed", "/feed feed", "/rss.xml feed"].sort());
       }
     });
   });
