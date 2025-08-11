@@ -568,7 +568,7 @@ describe("Performance Optimization Tests", () => {
           if (commonPathsRequestTime === null) {
             commonPathsRequestTime = currentTime;
           }
-          return Promise.resolve(mockFeedResponse);
+          return Promise.resolve(mockFeedResponse.clone());
         }
       });
 
