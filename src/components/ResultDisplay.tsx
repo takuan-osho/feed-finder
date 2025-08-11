@@ -82,7 +82,10 @@ export function ResultDisplay({ result, error }: ResultDisplayProps) {
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto space-y-4">
+    <div
+      className="w-full max-w-2xl mx-auto space-y-4"
+      data-testid="result-display"
+    >
       {/* Success Summary */}
       <Alert className="bg-green-950 border-green-800">
         <CheckCircle className="h-4 w-4 text-green-400" />

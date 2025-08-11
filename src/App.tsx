@@ -1,7 +1,13 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import type { SearchResult } from "@/components/ResultDisplay";
-import { ResultDisplay } from "@/components/ResultDisplay";
 import { SearchForm } from "@/components/SearchForm";
+
+// Lazy load the ResultDisplay component to reduce initial bundle size
+const ResultDisplay = lazy(() =>
+  import("@/components/ResultDisplay").then((module) => ({
+    default: module.ResultDisplay,
+  })),
+);
 
 function App() {
   const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
@@ -94,7 +100,13 @@ function App() {
               error={error}
             />
 
-            <ResultDisplay result={searchResult} error={error} />
+            <Suspense
+              fallback={
+                <div className="text-center text-[#90aecb]">Loading...</div>
+              }
+            >
+              <ResultDisplay result={searchResult} error={error} />
+            </Suspense>
           </div>
         </div>
       </div>
