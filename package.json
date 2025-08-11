@@ -13,7 +13,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "preview": "npm run build && vite preview",
-    "deploy": "npm run build && wrangler deploy",
+    "deploy": "npm run build && wrangler deploy --message \"Deployed from GitHub Actions: ${GITHUB_WORKFLOW} (${GITHUB_RUN_NUMBER})\" --commit-hash \"${GITHUB_SHA}\" --commit-message \"${GITHUB_COMMIT_MESSAGE}\"",
     "cf-typegen": "wrangler types"
   },
   "dependencies": {
