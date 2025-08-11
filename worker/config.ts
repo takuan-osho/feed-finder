@@ -21,7 +21,6 @@ export const SUPPORTED_FEED_TYPES = [
 export const ALLOWED_ORIGINS = [
   "http://localhost:5173", // Vite dev server
   "http://localhost:3000", // Common dev port
-  "https://feed-finder.shimizu-taku.workers.dev", // Production domain
   "https://feedfinder.programarch.com", // Another production domain
   "https://feedfinder.takuan-osho.com", // Another production domain
   "https://feedfinder.takuan-osho.net", // Another production domain
