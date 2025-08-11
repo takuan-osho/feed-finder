@@ -124,3 +124,6 @@ yarn-error.log*
 # This repository's specific ignore rules
 worker/dist/
 public/styles.build.css
+
+# lsmcp cache
+.lsmcp/cache

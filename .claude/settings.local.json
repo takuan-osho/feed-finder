@@ -83,6 +83,7 @@
     "cloudflare-docs",
     "cloudflare-workers-observability",
     "context7",
-    "serena"
-  ]
+    "lsmcp"
+  ],
+  "enableAllProjectMcpServers": true
 }

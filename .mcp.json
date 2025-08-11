@@ -14,21 +14,10 @@
       "args": ["-y", "@upstash/context7-mcp"],
       "env": {}
     },
-    "serena": {
+    "lsmcp": {
       "type": "stdio",
-      "command": "uvx",
-      "args": [
-        "--from",
-        "git+https://github.com/oraios/serena",
-        "serena",
-        "start-mcp-server",
-        "--context",
-        "ide-assistant",
-        "--project",
-        "/Users/taku/ghq/github.com/takuan-osho/feed-finder",
-        "--enable-web-dashboard",
-        "false"
-      ],
+      "command": "npx",
+      "args": ["-y", "@mizchi/lsmcp", "-p", "tsgo"],
       "env": {}
     }
   }
