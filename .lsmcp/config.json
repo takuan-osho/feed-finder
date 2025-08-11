@@ -1,0 +1,8 @@
+{
+  "$schema": "../node_modules/@mizchi/lsmcp/lsmcp.schema.json",
+  "preset": "tsgo",
+  "settings": {
+    "autoIndex": true,
+    "indexConcurrency": 10
+  }
+}

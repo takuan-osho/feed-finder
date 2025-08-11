@@ -23,7 +23,9 @@
       "Bash(npm test)",
       "Bash(npm test:*)",
       "Bash(npx @biomejs/biome check:*)",
+      "Bash(npx @biomejs/biome format:*)",
       "Bash(npx tsc:*)",
+      "Bash(npx vitest run:*)",
       "Bash(npx wrangler deployments list:*)",
       "Bash(npx wrangler tail:*)",
       "Bash(npx wrangler triggers:*)",
@@ -33,9 +35,23 @@
       "Bash(time npx @biomejs/biome check --no-errors-on-unmatched --files-ignore-unknown=true --colors=off src/**/*.{ts,tsx})",
       "Bash(wrangler tail:*)",
       "Bash(wrangler whoami:*)",
+      "WebFetch(domain:feed-finder.shimizu-taku.workers.dev)",
+      "WebFetch(domain:feedfinder.takuan-osho.com)",
+      "WebFetch(domain:github.com)",
       "mcp__context7__get-library-docs",
       "mcp__context7__resolve-library-id",
       "mcp__ide__getDiagnostics",
+      "mcp__lsmcp__find_file",
+      "mcp__lsmcp__find_references",
+      "mcp__lsmcp__get_definitions",
+      "mcp__lsmcp__get_diagnostics",
+      "mcp__lsmcp__get_document_symbols",
+      "mcp__lsmcp__get_hover",
+      "mcp__lsmcp__get_project_overview",
+      "mcp__lsmcp__insert_after_symbol",
+      "mcp__lsmcp__list_dir",
+      "mcp__lsmcp__replace_regex",
+      "mcp__lsmcp__search_symbol_from_index",
       "mcp__serena__check_onboarding_performed",
       "mcp__serena__find_file",
       "mcp__serena__find_symbol",
@@ -49,10 +65,7 @@
       "mcp__serena__replace_symbol_body",
       "mcp__serena__search_for_pattern",
       "mcp__serena__think_about_collected_information",
-      "mcp__serena__write_memory",
-      "WebFetch(domain:feed-finder.shimizu-taku.workers.dev)",
-      "WebFetch(domain:feedfinder.takuan-osho.com)",
-      "WebFetch(domain:github.com)"
+      "mcp__serena__write_memory"
     ],
     "deny": [
       "Bash(curl:*)",
@@ -79,11 +92,11 @@
       "Write(**/secrets/**)"
     ]
   },
+  "enableAllProjectMcpServers": false,
   "enabledMcpjsonServers": [
     "cloudflare-docs",
     "cloudflare-workers-observability",
     "context7",
     "lsmcp"
-  ],
-  "enableAllProjectMcpServers": true
+  ]
 }

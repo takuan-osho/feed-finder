@@ -475,3 +475,137 @@ describe("URL Validation Security Tests", () => {
     });
   });
 });
+
+// Performance Optimization Tests (t-wada式TDD)
+describe("Performance Optimization Tests", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe("Parallel Processing Tests", () => {
+    it("should execute common paths discovery in parallel (faster than sequential)", async () => {
+      // Red Phase: This test should FAIL initially to demonstrate parallel processing works
+      const baseUrl = "https://example.com";
+      const mockResponse = new Response("", {
+        status: 200,
+        headers: { "content-type": "application/rss+xml" },
+      });
+
+      let requestCount = 0;
+      const requestTimes: number[] = [];
+
+      mockFetch.mockImplementation(() => {
+        requestCount++;
+        const startTime = performance.now();
+        requestTimes.push(startTime);
+        return Promise.resolve(mockResponse);
+      });
+
+      const startTime = performance.now();
+
+      // Import function to test parallel execution
+      const { default: worker } = await import("./index");
+
+      // Create a mock request
+      const request = new Request("https://test.com/api/search-feeds", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: baseUrl }),
+      });
+
+      await worker.fetch(request);
+
+      const endTime = performance.now();
+      const totalTime = endTime - startTime;
+
+      // Test should verify parallel execution characteristics:
+      // 1. Multiple requests were made (common paths)
+      // 2. They executed in parallel (similar timing)
+      expect(requestCount).toBeGreaterThan(1);
+
+      // Parallel requests should have similar start times (within 10ms)
+      if (requestTimes.length > 1) {
+        const timeDifferences = requestTimes
+          .slice(1)
+          .map((time, i) => Math.abs(time - requestTimes[i]));
+        const maxTimeDifference = Math.max(...timeDifferences);
+        expect(maxTimeDifference).toBeLessThan(10); // Should be nearly simultaneous
+      }
+
+      // Total time should be reasonable for parallel execution
+      expect(totalTime).toBeLessThan(1000); // Should complete within 1 second
+    });
+
+    it("should combine HTML fetch and common paths in parallel", async () => {
+      // Red Phase: Test that both HTML parsing and common paths run concurrently
+      const baseUrl = "https://example.com";
+      const htmlContent = `<html><head>
+        <link rel="alternate" type="application/rss+xml" href="/feed.xml" title="RSS Feed">
+      </head></html>`;
+
+      const mockHtmlResponse = new Response(htmlContent, {
+        status: 200,
+        headers: { "content-type": "text/html" },
+      });
+
+      const mockFeedResponse = new Response("", {
+        status: 200,
+        headers: { "content-type": "application/rss+xml" },
+      });
+
+      let htmlRequestTime: number | null = null;
+      let commonPathsRequestTime: number | null = null;
+
+      mockFetch.mockImplementation((_url: string, options?: RequestInit) => {
+        const currentTime = performance.now();
+
+        if (!options || options.method !== "HEAD") {
+          // This is the HTML fetch request
+          htmlRequestTime = currentTime;
+          return Promise.resolve(mockHtmlResponse);
+        } else {
+          // This is a common path HEAD request
+          if (commonPathsRequestTime === null) {
+            commonPathsRequestTime = currentTime;
+          }
+          return Promise.resolve(mockFeedResponse.clone());
+        }
+      });
+
+      const { default: worker } = await import("./index");
+      const request = new Request("https://test.com/api/search-feeds", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: baseUrl }),
+      });
+
+      await worker.fetch(request);
+
+      // Verify both types of requests occurred
+      expect(htmlRequestTime).not.toBeNull();
+      expect(commonPathsRequestTime).not.toBeNull();
+
+      // They should execute in parallel (within 50ms of each other)
+      if (htmlRequestTime && commonPathsRequestTime) {
+        const timeDifference = Math.abs(
+          htmlRequestTime - commonPathsRequestTime,
+        );
+        expect(timeDifference).toBeLessThan(50);
+      }
+    });
+  });
+
+  describe("Bundle Optimization Verification", () => {
+    it("should have modular exports for code splitting", async () => {
+      // Red Phase: Verify that key functions are exported for optimal bundling
+      const moduleExports = await import("./index");
+
+      // These functions should be exported for optimal bundling
+      expect(typeof moduleExports.validateTargetUrl).toBe("function");
+      expect(typeof moduleExports.normalizeUrl).toBe("function");
+      expect(typeof moduleExports.parseRequestBody).toBe("function");
+      expect(typeof moduleExports.findMetaFeeds).toBe("function");
+      expect(typeof moduleExports.extractAttributeValue).toBe("function");
+    });
+  });
+});
