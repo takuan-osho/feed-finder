@@ -4,14 +4,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
 
-// Import the actual implementation functions
-import {
-  extractAttributeValue,
-  findMetaFeeds,
-  normalizeUrl,
-  parseRequestBody,
-  validateTargetUrl,
-} from "./index";
+import { extractAttributeValue, findMetaFeeds } from "./discovery/html";
+import { parseRequestBody, normalizeUrl } from "./validation/request";
+// Import the actual implementation functions from their modular locations
+import { validateTargetUrl } from "./validation/url";
 
 describe("URL Validation Security Tests", () => {
   beforeEach(() => {
@@ -465,7 +461,9 @@ describe("URL Validation Security Tests", () => {
       const baseUrl = "https://example.com";
 
       // Dynamically import after module cache is cleared to apply mock
-      const { findMetaFeeds: findMetaFeedsWithMock } = await import("./index");
+      const { findMetaFeeds: findMetaFeedsWithMock } = await import(
+        "./discovery/html"
+      );
       const feeds = findMetaFeedsWithMock(htmlWithUppercaseTags, baseUrl);
       expect(feeds).toHaveLength(2);
       expect(feeds[0].type).toBe("RSS");
@@ -597,15 +595,17 @@ describe("Performance Optimization Tests", () => {
 
   describe("Bundle Optimization Verification", () => {
     it("should have modular exports for code splitting", async () => {
-      // Red Phase: Verify that key functions are exported for optimal bundling
-      const moduleExports = await import("./index");
+      // Red Phase: Verify that key functions are exported for optimal bundling from their respective modules
+      const urlValidation = await import("./validation/url");
+      const requestValidation = await import("./validation/request");
+      const htmlDiscovery = await import("./discovery/html");
 
       // These functions should be exported for optimal bundling
-      expect(typeof moduleExports.validateTargetUrl).toBe("function");
-      expect(typeof moduleExports.normalizeUrl).toBe("function");
-      expect(typeof moduleExports.parseRequestBody).toBe("function");
-      expect(typeof moduleExports.findMetaFeeds).toBe("function");
-      expect(typeof moduleExports.extractAttributeValue).toBe("function");
+      expect(typeof urlValidation.validateTargetUrl).toBe("function");
+      expect(typeof requestValidation.normalizeUrl).toBe("function");
+      expect(typeof requestValidation.parseRequestBody).toBe("function");
+      expect(typeof htmlDiscovery.findMetaFeeds).toBe("function");
+      expect(typeof htmlDiscovery.extractAttributeValue).toBe("function");
     });
   });
 });
