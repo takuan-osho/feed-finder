@@ -92,7 +92,7 @@
       "Write(**/secrets/**)"
     ]
   },
-  "enableAllProjectMcpServers": true,
+  "enableAllProjectMcpServers": false,
   "enabledMcpjsonServers": [
     "cloudflare-docs",
     "cloudflare-workers-observability",
