@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { findMetaFeeds } from "./index.js";
+import { findMetaFeeds } from "./discovery/html";
 
 describe("Feed Discovery", () => {
   describe("findMetaFeeds", () => {

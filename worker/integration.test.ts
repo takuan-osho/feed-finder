@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { findMetaFeeds } from "./index";
+import { findMetaFeeds } from "./discovery/html";
 
 // Mock console.error to avoid noise in tests
 vi.spyOn(console, "error").mockImplementation(() => {
