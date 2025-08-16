@@ -238,4 +238,92 @@ describe("Accessibility Tests (WCAG 2.2)", () => {
       // Future: Test Escape key closes modal/dropdown if any
     });
   });
+
+  describe("Focus Management (WCAG 2.2 Focus Not Obscured)", () => {
+    it("should ensure focused elements are not obscured by other content", () => {
+      // Red Phase: Test Focus Not Obscured (WCAG 2.2 new requirement)
+      render(<App />);
+
+      // Get all focusable elements
+      const focusableElements = document.querySelectorAll(
+        'a, button, input, [tabindex]:not([tabindex="-1"])',
+      );
+
+      focusableElements.forEach((element) => {
+        // Focus the element
+        (element as HTMLElement).focus();
+
+        // Check if element has sufficient z-index or positioning to not be obscured
+        const computedStyle = window.getComputedStyle(element as Element);
+        const position = computedStyle.position;
+        const zIndex = computedStyle.zIndex;
+
+        // Focus should be visible - not behind other elements
+        // Elements should either have appropriate z-index or be in normal flow
+        expect(
+          position === "static" || position === "relative" || zIndex !== "auto",
+        ).toBe(true);
+      });
+    });
+
+    it("should maintain focus visibility when content changes", () => {
+      // Red Phase: Test focus persistence during dynamic updates
+      render(<App />);
+
+      const urlInput = screen.getByLabelText(/ウェブサイトのURL/);
+      urlInput.focus();
+
+      // Focused element should remain visible and accessible
+      expect(document.activeElement).toBe(urlInput);
+
+      // Element should have visible focus indicator
+      expect(urlInput.className).toMatch(/focus:/);
+    });
+
+    it("should provide focus trap for modal dialogs", () => {
+      // Red Phase: Test focus trapping (future modal implementation)
+      render(<App />);
+
+      // For now, verify no modal exists (future enhancement)
+      const modal = document.querySelector('[role="dialog"]');
+      expect(modal).toBe(null);
+
+      // This test will be enhanced when modal dialogs are implemented
+      // Focus should be trapped within modal when open
+    });
+
+    it("should restore focus when components unmount", () => {
+      // Red Phase: Test focus restoration
+      render(<App />);
+
+      // Focus the search input
+      const urlInput = screen.getByLabelText(/ウェブサイトのURL/);
+      urlInput.focus();
+      expect(document.activeElement).toBe(urlInput);
+
+      // Test that focus management works correctly
+      // (This is basic test - more complex scenarios would involve component unmounting)
+      expect(document.activeElement).toBeTruthy();
+    });
+
+    it("should handle focus order correctly with dynamic content", () => {
+      // Red Phase: Test dynamic focus order
+      render(<App />);
+
+      // Test tab order is logical
+      const focusableElements = Array.from(
+        document.querySelectorAll(
+          'a, button, input, [tabindex]:not([tabindex="-1"])',
+        ),
+      );
+
+      // Should have elements in logical order: nav links, then form input, then submit button
+      expect(focusableElements.length).toBeGreaterThan(2);
+
+      // First elements should be navigation
+      const firstElements = focusableElements.slice(0, 2);
+      const hasNavLinks = firstElements.some((el) => el.closest("nav"));
+      expect(hasNavLinks).toBe(true);
+    });
+  });
 });

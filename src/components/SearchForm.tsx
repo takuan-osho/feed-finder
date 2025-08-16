@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,6 +19,16 @@ export function SearchForm({
 }: SearchFormProps) {
   const [url, setUrl] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
+
+  // Focus management for error handling (WCAG 2.2 Focus Not Obscured)
+  useEffect(() => {
+    if (validationError && errorRef.current) {
+      // Focus the error message for screen readers
+      errorRef.current.focus();
+    }
+  }, [validationError]);
 
   const validateUrl = (input: string): boolean => {
     if (!input.trim()) {
@@ -78,6 +88,7 @@ export function SearchForm({
               ウェブサイトのURL
             </label>
             <Input
+              ref={inputRef}
               id="url-input"
               type="url"
               placeholder="example.com または https://example.com"
@@ -107,6 +118,8 @@ export function SearchForm({
               variant="destructive"
               className="bg-red-950 border-red-800"
               role="alert"
+              ref={errorRef}
+              tabIndex={-1}
             >
               <AlertDescription id="url-error" className="text-red-200">
                 {validationError}
