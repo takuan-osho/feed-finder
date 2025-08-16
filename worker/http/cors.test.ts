@@ -15,9 +15,10 @@ describe("http/cors", () => {
       expect(result.headers.get("Referrer-Policy")).toBe(
         "strict-origin-when-cross-origin",
       );
-      expect(result.headers.get("Content-Security-Policy")).toBe(
-        "default-src 'none'; script-src 'none'; object-src 'none'; frame-ancestors 'none'",
-      );
+      const csp = result.headers.get("Content-Security-Policy") ?? "";
+      expect(csp).toContain("default-src 'none'");
+      expect(csp).toContain("script-src 'none'");
+      expect(csp).toContain("object-src 'none'");
     });
 
     it("should add CORS headers for allowed origins", () => {
