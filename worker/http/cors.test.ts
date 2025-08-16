@@ -11,13 +11,15 @@ describe("http/cors", () => {
 
       expect(result.status).toBe(200);
       expect(result.headers.get("X-Content-Type-Options")).toBe("nosniff");
-      expect(result.headers.get("X-Frame-Options")).toBe("DENY");
+      expect(result.headers.get("X-Frame-Options")).toBeNull();
       expect(result.headers.get("Referrer-Policy")).toBe(
         "strict-origin-when-cross-origin",
       );
-      expect(result.headers.get("Content-Security-Policy")).toBe(
-        "default-src 'none'; script-src 'none'; object-src 'none'",
-      );
+      const csp = result.headers.get("Content-Security-Policy") ?? "";
+      expect(csp).toContain("default-src 'none'");
+      expect(csp).toContain("script-src 'none'");
+      expect(csp).toContain("object-src 'none'");
+      expect(csp).toContain("frame-ancestors 'none'");
     });
 
     it("should add CORS headers for allowed origins", () => {
@@ -33,13 +35,10 @@ describe("http/cors", () => {
       expect(result.headers.get("Access-Control-Allow-Origin")).toBe(
         "http://localhost:5173",
       );
-      expect(result.headers.get("Access-Control-Allow-Methods")).toBe(
-        "POST, OPTIONS",
-      );
-      expect(result.headers.get("Access-Control-Allow-Headers")).toBe(
-        "Content-Type",
-      );
-      expect(result.headers.get("Access-Control-Max-Age")).toBe("86400");
+      // Preflight-only headers should NOT be set on regular responses
+      expect(result.headers.get("Access-Control-Allow-Methods")).toBeNull();
+      expect(result.headers.get("Access-Control-Allow-Headers")).toBeNull();
+      expect(result.headers.get("Access-Control-Max-Age")).toBeNull();
     });
 
     it("should not add CORS headers for disallowed origins", () => {
@@ -53,13 +52,10 @@ describe("http/cors", () => {
       const result = addSecurityHeaders(originalResponse, request);
 
       expect(result.headers.get("Access-Control-Allow-Origin")).toBeNull();
-      expect(result.headers.get("Access-Control-Allow-Methods")).toBe(
-        "POST, OPTIONS",
-      );
-      expect(result.headers.get("Access-Control-Allow-Headers")).toBe(
-        "Content-Type",
-      );
-      expect(result.headers.get("Access-Control-Max-Age")).toBe("86400");
+      // Preflight-only headers should NOT be set on regular responses
+      expect(result.headers.get("Access-Control-Allow-Methods")).toBeNull();
+      expect(result.headers.get("Access-Control-Allow-Headers")).toBeNull();
+      expect(result.headers.get("Access-Control-Max-Age")).toBeNull();
     });
 
     it("should handle requests without origin header", () => {
@@ -69,9 +65,8 @@ describe("http/cors", () => {
       const result = addSecurityHeaders(originalResponse, request);
 
       expect(result.headers.get("Access-Control-Allow-Origin")).toBeNull();
-      expect(result.headers.get("Access-Control-Allow-Methods")).toBe(
-        "POST, OPTIONS",
-      );
+      // Preflight-only headers should NOT be set on regular responses
+      expect(result.headers.get("Access-Control-Allow-Methods")).toBeNull();
     });
 
     it("should work without request parameter", () => {

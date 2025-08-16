@@ -12,16 +12,13 @@ export function addSecurityHeaders(
   // Prevent MIME type sniffing
   headers.set("X-Content-Type-Options", "nosniff");
 
-  // Prevent embedding in frames
-  headers.set("X-Frame-Options", "DENY");
-
   // Control referrer information
   headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
 
-  // Basic Content Security Policy
+  // Comprehensive Content Security Policy with frame protection
   headers.set(
     "Content-Security-Policy",
-    "default-src 'none'; script-src 'none'; object-src 'none'",
+    "default-src 'none'; script-src 'none'; object-src 'none'; frame-ancestors 'none'",
   );
 
   // Add CORS headers with proper origin validation
@@ -32,11 +29,6 @@ export function addSecurityHeaders(
     if (origin && ALLOWED_ORIGINS.includes(origin)) {
       headers.set("Access-Control-Allow-Origin", origin);
     }
-
-    // Set other CORS headers
-    headers.set("Access-Control-Allow-Methods", "POST, OPTIONS");
-    headers.set("Access-Control-Allow-Headers", "Content-Type");
-    headers.set("Access-Control-Max-Age", "86400"); // 24 hours
   }
 
   return new Response(response.body, {
