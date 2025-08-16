@@ -1,5 +1,6 @@
 "use client";
 
+import { err, ok, Result } from "neverthrow";
 import { useEffect, useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -30,22 +31,32 @@ export function SearchForm({
     }
   }, [validationError]);
 
-  const validateUrl = (input: string): boolean => {
+  const validateUrlSafe = (input: string): Result<string, string> => {
     if (!input.trim()) {
-      setValidationError("URLを入力してください");
-      return false;
+      return err("URLを入力してください");
     }
 
-    // Basic URL validation - allow with or without protocol
-    const urlPattern =
-      /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})(\/[a-zA-Z0-9_.-]*)*\/?$/i;
-    const hasProtocol = /^https?:\/\//i.test(input);
-    const testUrl = hasProtocol ? input : `https://${input}`;
+    // Basic URL validation using URL API - allow with or without protocol
+    const trimmed = input.trim();
+    const hasProtocol = /^https?:\/\//i.test(trimmed);
+    const testUrl = hasProtocol ? trimmed : `https://${trimmed}`;
 
-    if (!urlPattern.test(testUrl)) {
-      setValidationError(
+    try {
+      // Throws on invalid URLs
+      new URL(testUrl);
+      return ok(testUrl);
+    } catch {
+      return err(
         "有効なURLを入力してください（例: example.com または https://example.com）",
       );
+    }
+  };
+
+  const validateUrl = (input: string): boolean => {
+    const result = validateUrlSafe(input);
+
+    if (result.isErr()) {
+      setValidationError(result.error);
       return false;
     }
 
@@ -56,7 +67,9 @@ export function SearchForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateUrl(url)) {
+    const isValid = validateUrl(url);
+
+    if (!isValid) {
       return;
     }
 
