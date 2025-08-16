@@ -21,7 +21,7 @@ describe("Bundle Optimization Tests", () => {
         ".text-center.text-\\[\\#90aecb\\]",
       );
       // In test environment, Suspense fallback might be visible
-      expect(suspenseFallback).not.toBe(undefined);
+      expect(suspenseFallback).not.toBeNull();
     });
 
     it("should have critical CSS inlined for fast first paint", () => {
