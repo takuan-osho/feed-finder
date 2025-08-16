@@ -19,6 +19,7 @@ describe("http/cors", () => {
       expect(csp).toContain("default-src 'none'");
       expect(csp).toContain("script-src 'none'");
       expect(csp).toContain("object-src 'none'");
+      expect(csp).toContain("frame-ancestors 'none'");
     });
 
     it("should add CORS headers for allowed origins", () => {
