@@ -11,12 +11,12 @@ describe("http/cors", () => {
 
       expect(result.status).toBe(200);
       expect(result.headers.get("X-Content-Type-Options")).toBe("nosniff");
-      expect(result.headers.get("X-Frame-Options")).toBe("DENY");
+      expect(result.headers.get("X-Frame-Options")).toBeNull();
       expect(result.headers.get("Referrer-Policy")).toBe(
         "strict-origin-when-cross-origin",
       );
       expect(result.headers.get("Content-Security-Policy")).toBe(
-        "default-src 'none'; script-src 'none'; object-src 'none'",
+        "default-src 'none'; script-src 'none'; object-src 'none'; frame-ancestors 'none'",
       );
     });
 

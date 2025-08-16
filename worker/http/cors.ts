@@ -12,16 +12,13 @@ export function addSecurityHeaders(
   // Prevent MIME type sniffing
   headers.set("X-Content-Type-Options", "nosniff");
 
-  // Prevent embedding in frames
-  headers.set("X-Frame-Options", "DENY");
-
   // Control referrer information
   headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
 
-  // Basic Content Security Policy
+  // Comprehensive Content Security Policy with frame protection
   headers.set(
     "Content-Security-Policy",
-    "default-src 'none'; script-src 'none'; object-src 'none'",
+    "default-src 'none'; script-src 'none'; object-src 'none'; frame-ancestors 'none'",
   );
 
   // Add CORS headers with proper origin validation
