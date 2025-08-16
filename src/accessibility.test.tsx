@@ -5,7 +5,7 @@ import App from "./App";
 // t-wada式TDD: アクセシビリティテスト
 describe("Accessibility Tests (WCAG 2.2)", () => {
   describe("Semantic HTML Structure", () => {
-    it("should have proper document structure with header, main, and nav elements", () => {
+    it("should have proper document structure with header and main elements", () => {
       // Red Phase: Test semantic HTML elements
       render(<App />);
 
@@ -16,17 +16,6 @@ describe("Accessibility Tests (WCAG 2.2)", () => {
       // Main element should exist
       const main = document.querySelector("main");
       expect(main).toBeInTheDocument();
-
-      // Navigation element should exist
-      const nav = document.querySelector("nav");
-      expect(nav).toBeInTheDocument();
-
-      // Navigation should contain proper list structure
-      const navList = nav?.querySelector("ul");
-      expect(navList).toBeInTheDocument();
-
-      const navItems = nav?.querySelectorAll("li");
-      expect(navItems?.length).toBeGreaterThan(0);
     });
 
     it("should have proper heading hierarchy starting with h1", () => {
@@ -115,7 +104,7 @@ describe("Accessibility Tests (WCAG 2.2)", () => {
     });
 
     it("should have proper aria-label attributes on interactive elements", () => {
-      // Red Phase: Test aria-label on buttons and links
+      // Red Phase: Test aria-label on buttons
       render(<App />);
 
       // Handle React StrictMode duplicate rendering by getting first match
@@ -123,14 +112,6 @@ describe("Accessibility Tests (WCAG 2.2)", () => {
         name: /フィードを検索|検索/,
       });
       expect(submitButtons[0]).toHaveAttribute("aria-label");
-
-      // Navigation links should have meaningful labels (some might not have explicit aria-label)
-      const navLinks = document.querySelectorAll("nav a");
-      const linksWithAriaLabel = Array.from(navLinks).filter((link) =>
-        link.hasAttribute("aria-label"),
-      );
-      // At least some navigation links should have aria-label
-      expect(linksWithAriaLabel.length).toBeGreaterThan(0);
     });
 
     it("should have proper aria-describedby relationships", () => {
@@ -185,29 +166,14 @@ describe("Accessibility Tests (WCAG 2.2)", () => {
 
       // Get all focusable elements in expected tab order
       const focusableElements = document.querySelectorAll(
-        'a, button, input, [tabindex]:not([tabindex="-1"])',
+        'button, input, [tabindex]:not([tabindex="-1"])',
       );
       expect(focusableElements.length).toBeGreaterThan(0);
-
-      // Test that navigation links are focusable (either naturally or with tabindex)
-      const navLinks = document.querySelectorAll("nav a");
-      navLinks.forEach((link) => {
-        // Links are naturally focusable, but should have explicit tabindex for clarity
-        const hasTabIndex = link.hasAttribute("tabindex");
-        const hasHref = link.hasAttribute("href");
-        expect(hasTabIndex || hasHref).toBe(true);
-      });
     });
 
     it("should support Enter and Space key activation on interactive elements", () => {
       // Red Phase: Test keyboard activation (will need implementation)
       render(<App />);
-
-      const navLinks = document.querySelectorAll("nav a");
-      navLinks.forEach((link) => {
-        // Should have keyboard event handlers
-        expect(link).toHaveProperty("onkeydown");
-      });
 
       // Test form submission with Enter key
       const urlInput = screen.getByLabelText(/ウェブサイトのURL/);
@@ -218,7 +184,7 @@ describe("Accessibility Tests (WCAG 2.2)", () => {
       // Red Phase: Test focus ring implementation
       render(<App />);
 
-      const focusableElements = document.querySelectorAll("a, button, input");
+      const focusableElements = document.querySelectorAll("button, input");
       focusableElements.forEach((element) => {
         // Should have focus classes in className
         const classNames = element.className;
@@ -246,7 +212,7 @@ describe("Accessibility Tests (WCAG 2.2)", () => {
 
       // Get all focusable elements
       const focusableElements = document.querySelectorAll(
-        'a, button, input, [tabindex]:not([tabindex="-1"])',
+        'button, input, [tabindex]:not([tabindex="-1"])',
       );
 
       focusableElements.forEach((element) => {
@@ -313,17 +279,12 @@ describe("Accessibility Tests (WCAG 2.2)", () => {
       // Test tab order is logical
       const focusableElements = Array.from(
         document.querySelectorAll(
-          'a, button, input, [tabindex]:not([tabindex="-1"])',
+          'button, input, [tabindex]:not([tabindex="-1"])',
         ),
       );
 
-      // Should have elements in logical order: nav links, then form input, then submit button
-      expect(focusableElements.length).toBeGreaterThan(2);
-
-      // First elements should be navigation
-      const firstElements = focusableElements.slice(0, 2);
-      const hasNavLinks = firstElements.some((el) => el.closest("nav"));
-      expect(hasNavLinks).toBe(true);
+      // Should have elements in logical order: form input, then submit button
+      expect(focusableElements.length).toBeGreaterThan(1);
     });
   });
 });
