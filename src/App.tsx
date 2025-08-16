@@ -108,7 +108,13 @@ function App() {
 
             <Suspense
               fallback={
-                <div className="text-center text-[#90aecb]">Loading...</div>
+                <div
+                  className="text-center text-[#90aecb]"
+                  role="status"
+                  aria-live="polite"
+                >
+                  Loading...
+                </div>
               }
             >
               <ResultDisplay result={searchResult} error={error} />

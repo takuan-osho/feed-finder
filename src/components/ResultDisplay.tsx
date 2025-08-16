@@ -4,7 +4,6 @@ import { CheckCircle, Copy, ExternalLink, Info, XCircle } from "lucide-react";
 import { useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export interface FeedResult {
   url: string;
@@ -49,8 +48,10 @@ export function ResultDisplay({ result, error }: ResultDisplayProps) {
       <Alert
         variant="destructive"
         className="bg-red-950 border-red-800 max-w-2xl mx-auto"
+        role="alert"
+        aria-live="assertive"
       >
-        <XCircle className="h-4 w-4" />
+        <XCircle className="h-4 w-4" aria-hidden="true" />
         <AlertDescription className="text-red-200">
           <strong>エラーが発生しました:</strong> {error}
         </AlertDescription>
@@ -64,8 +65,12 @@ export function ResultDisplay({ result, error }: ResultDisplayProps) {
 
   if (!result.success || result.feeds.length === 0) {
     return (
-      <Alert className="bg-[#182734] border-[#314d68] max-w-2xl mx-auto">
-        <Info className="h-4 w-4 text-[#90aecb]" />
+      <Alert
+        className="bg-[#182734] border-[#314d68] max-w-2xl mx-auto"
+        role="status"
+        aria-live="polite"
+      >
+        <Info className="h-4 w-4 text-[#90aecb]" aria-hidden="true" />
         <AlertDescription className="text-[#90aecb]">
           <strong>フィードが見つかりませんでした</strong>
           <br />
@@ -88,8 +93,12 @@ export function ResultDisplay({ result, error }: ResultDisplayProps) {
       aria-label="検索結果"
     >
       <header>
-        <Alert className="bg-green-950 border-green-800" role="status">
-          <CheckCircle className="h-4 w-4 text-green-400" />
+        <Alert
+          className="bg-green-950 border-green-800"
+          role="status"
+          aria-live="polite"
+        >
+          <CheckCircle className="h-4 w-4 text-green-400" aria-hidden="true" />
           <AlertDescription className="text-green-200">
             <strong>{result.totalFound}個のフィードが見つかりました</strong>
             <br />
@@ -129,11 +138,17 @@ function FeedCard({ feed, onCopyUrl, onOpenFeed, copiedUrl }: FeedCardProps) {
       : "一般的なパスから発見";
 
   return (
-    <article className="bg-[#182734] border border-[#314d68] hover:border-[#0b80ee]/50 transition-colors duration-200 rounded-lg">
+    <article
+      className="bg-[#182734] border border-[#314d68] hover:border-[#0b80ee]/50 transition-colors duration-200 rounded-lg"
+      aria-labelledby={`feed-title-${feed.url.replace(/[^a-zA-Z0-9]/g, "-")}`}
+    >
       <header className="p-6 pb-3">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
-            <h3 className="text-white text-lg leading-tight truncate">
+            <h3
+              id={`feed-title-${feed.url.replace(/[^a-zA-Z0-9]/g, "-")}`}
+              className="text-white text-lg leading-tight truncate"
+            >
               {feed.title || feed.url}
             </h3>
             <div className="flex items-center gap-2 mt-1">
@@ -143,10 +158,14 @@ function FeedCard({ feed, onCopyUrl, onOpenFeed, copiedUrl }: FeedCardProps) {
                     ? "bg-orange-900 text-orange-200"
                     : "bg-blue-900 text-blue-200"
                 }`}
+                aria-label={`フィードタイプ: ${feed.type}`}
               >
                 {feed.type}
               </span>
-              <span className="text-xs text-[#90aecb]">
+              <span
+                className="text-xs text-[#90aecb]"
+                aria-label={`発見方法: ${discoveryMethodText}`}
+              >
                 {discoveryMethodText}
               </span>
             </div>

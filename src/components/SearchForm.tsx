@@ -124,6 +124,12 @@ export function SearchForm({
             type="submit"
             disabled={isLoading || !url.trim()}
             className="w-full bg-[#0b80ee] hover:bg-[#0b80ee]/80 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-describedby="url-help"
+            aria-label={
+              isLoading
+                ? "フィード検索を実行中です"
+                : "入力されたURLでフィードを検索"
+            }
           >
             {isLoading ? "検索中..." : "フィードを検索"}
           </Button>
