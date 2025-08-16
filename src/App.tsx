@@ -66,40 +66,6 @@ function App() {
               FeedFinder
             </h2>
           </div>
-          <nav className="flex flex-1 justify-end gap-8">
-            <ul className="flex items-center gap-9">
-              <li>
-                <a
-                  className="text-white text-sm font-medium leading-normal focus:outline-none focus:ring-2 focus:ring-[#0b80ee] focus:ring-offset-2 focus:ring-offset-[#101a23] rounded px-2 py-1"
-                  href="#"
-                  aria-label="ホームページに移動"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      e.currentTarget.click();
-                    }
-                  }}
-                >
-                  Home
-                </a>
-              </li>
-              <li>
-                <a
-                  className="text-white text-sm font-medium leading-normal focus:outline-none focus:ring-2 focus:ring-[#0b80ee] focus:ring-offset-2 focus:ring-offset-[#101a23] rounded px-2 py-1"
-                  href="#"
-                  aria-label="このサイトについて"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      e.currentTarget.click();
-                    }
-                  }}
-                >
-                  About
-                </a>
-              </li>
-            </ul>
-          </nav>
         </header>
         <main className="px-10 lg:px-40 flex flex-1 justify-center py-8">
           <div className="layout-content-container flex flex-col max-w-[960px] flex-1 space-y-8">
