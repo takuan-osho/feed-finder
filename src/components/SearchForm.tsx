@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,6 +19,16 @@ export function SearchForm({
 }: SearchFormProps) {
   const [url, setUrl] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
+
+  // Focus management for error handling (WCAG 2.2 Focus Not Obscured)
+  useEffect(() => {
+    if (validationError && errorRef.current) {
+      // Focus the error message for screen readers
+      errorRef.current.focus();
+    }
+  }, [validationError]);
 
   const validateUrl = (input: string): boolean => {
     if (!input.trim()) {
@@ -69,7 +79,8 @@ export function SearchForm({
     <Card className="w-full max-w-2xl mx-auto bg-[#182734] border-[#314d68]">
       <CardContent className="p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
+          <fieldset className="space-y-2">
+            <legend className="sr-only">フィード検索フォーム</legend>
             <label
               htmlFor="url-input"
               className="block text-sm font-medium text-white"
@@ -77,26 +88,39 @@ export function SearchForm({
               ウェブサイトのURL
             </label>
             <Input
+              ref={inputRef}
               id="url-input"
               type="url"
               placeholder="example.com または https://example.com"
               value={url}
               onChange={handleUrlChange}
               disabled={isLoading}
-              className="w-full bg-[#182734] border-[#314d68] text-white placeholder:text-[#90aecb] focus:border-[#0b80ee] focus:ring-1 focus:ring-[#0b80ee]"
+              className="w-full bg-[#182734] border-[#314d68] text-white placeholder:text-[#90aecb] focus:border-[#0b80ee] focus:ring-1 focus:ring-[#0b80ee] focus:outline-none"
               aria-describedby={
                 validationError
                   ? "url-error"
                   : error
                     ? "submit-error"
-                    : undefined
+                    : "url-help"
               }
               aria-invalid={validationError ? "true" : "false"}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleSubmit(e as unknown as React.FormEvent);
+                }
+              }}
             />
-          </div>
+          </fieldset>
 
           {validationError && (
-            <Alert variant="destructive" className="bg-red-950 border-red-800">
+            <Alert
+              variant="destructive"
+              className="bg-red-950 border-red-800"
+              role="alert"
+              ref={errorRef}
+              tabIndex={-1}
+            >
               <AlertDescription id="url-error" className="text-red-200">
                 {validationError}
               </AlertDescription>
@@ -104,7 +128,11 @@ export function SearchForm({
           )}
 
           {error && (
-            <Alert variant="destructive" className="bg-red-950 border-red-800">
+            <Alert
+              variant="destructive"
+              className="bg-red-950 border-red-800"
+              role="alert"
+            >
               <AlertDescription id="submit-error" className="text-red-200">
                 {error}
               </AlertDescription>
@@ -114,17 +142,33 @@ export function SearchForm({
           <Button
             type="submit"
             disabled={isLoading || !url.trim()}
-            className="w-full bg-[#0b80ee] hover:bg-[#0b80ee]/80 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-[#0b80ee] hover:bg-[#0b80ee]/80 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[#0b80ee] focus:ring-offset-2 focus:ring-offset-[#182734]"
+            aria-describedby="url-help"
+            aria-label={
+              isLoading
+                ? "フィード検索を実行中です"
+                : "入力されたURLでフィードを検索"
+            }
+            onKeyDown={(e) => {
+              if (
+                (e.key === "Enter" || e.key === " ") &&
+                !isLoading &&
+                url.trim()
+              ) {
+                e.preventDefault();
+                handleSubmit(e as unknown as React.FormEvent);
+              }
+            }}
           >
             {isLoading ? "検索中..." : "フィードを検索"}
           </Button>
         </form>
 
-        <div className="mt-4 text-sm text-[#90aecb]">
-          <p>
+        <aside className="mt-4 text-sm text-[#90aecb]">
+          <p id="url-help">
             このツールは、指定されたウェブサイトのRSS/Atomフィードを自動検索します。
           </p>
-        </div>
+        </aside>
       </CardContent>
     </Card>
   );
