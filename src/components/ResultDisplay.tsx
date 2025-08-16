@@ -194,8 +194,14 @@ function FeedCard({ feed, onCopyUrl, onOpenFeed, copiedUrl }: FeedCardProps) {
               onClick={() => onOpenFeed(feed.url)}
               variant="outline"
               size="sm"
-              className="flex-1 bg-[#182734] border-[#314d68] text-white hover:bg-[#314d68] hover:text-white"
+              className="flex-1 bg-[#182734] border-[#314d68] text-white hover:bg-[#314d68] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#0b80ee] focus:ring-offset-2 focus:ring-offset-[#182734]"
               aria-label={`${feed.title || feed.url}のフィードを新しいタブで開く`}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onOpenFeed(feed.url);
+                }
+              }}
             >
               <ExternalLink className="h-4 w-4 mr-2" />
               フィードを開く
@@ -205,12 +211,18 @@ function FeedCard({ feed, onCopyUrl, onOpenFeed, copiedUrl }: FeedCardProps) {
               onClick={() => onCopyUrl(feed.url)}
               variant="outline"
               size="sm"
-              className={`flex-1 transition-colors duration-200 ${
+              className={`flex-1 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#0b80ee] focus:ring-offset-2 focus:ring-offset-[#182734] ${
                 isUrlCopied
                   ? "bg-green-900 border-green-700 text-green-200 hover:bg-green-800"
                   : "bg-[#182734] border-[#314d68] text-white hover:bg-[#314d68] hover:text-white"
               }`}
               aria-label={`${feed.title || feed.url}のURLをクリップボードにコピー`}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onCopyUrl(feed.url);
+                }
+              }}
             >
               {isUrlCopied ? (
                 <>

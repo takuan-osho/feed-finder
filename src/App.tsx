@@ -70,16 +70,30 @@ function App() {
             <ul className="flex items-center gap-9">
               <li>
                 <a
-                  className="text-white text-sm font-medium leading-normal"
+                  className="text-white text-sm font-medium leading-normal focus:outline-none focus:ring-2 focus:ring-[#0b80ee] focus:ring-offset-2 focus:ring-offset-[#101a23] rounded px-2 py-1"
                   href="#"
+                  aria-label="ホームページに移動"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      e.currentTarget.click();
+                    }
+                  }}
                 >
                   Home
                 </a>
               </li>
               <li>
                 <a
-                  className="text-white text-sm font-medium leading-normal"
+                  className="text-white text-sm font-medium leading-normal focus:outline-none focus:ring-2 focus:ring-[#0b80ee] focus:ring-offset-2 focus:ring-offset-[#101a23] rounded px-2 py-1"
                   href="#"
+                  aria-label="このサイトについて"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      e.currentTarget.click();
+                    }
+                  }}
                 >
                   About
                 </a>

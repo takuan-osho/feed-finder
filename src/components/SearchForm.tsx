@@ -84,7 +84,7 @@ export function SearchForm({
               value={url}
               onChange={handleUrlChange}
               disabled={isLoading}
-              className="w-full bg-[#182734] border-[#314d68] text-white placeholder:text-[#90aecb] focus:border-[#0b80ee] focus:ring-1 focus:ring-[#0b80ee]"
+              className="w-full bg-[#182734] border-[#314d68] text-white placeholder:text-[#90aecb] focus:border-[#0b80ee] focus:ring-1 focus:ring-[#0b80ee] focus:outline-none"
               aria-describedby={
                 validationError
                   ? "url-error"
@@ -93,6 +93,12 @@ export function SearchForm({
                     : "url-help"
               }
               aria-invalid={validationError ? "true" : "false"}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleSubmit(e as unknown as React.FormEvent);
+                }
+              }}
             />
           </fieldset>
 
@@ -123,13 +129,23 @@ export function SearchForm({
           <Button
             type="submit"
             disabled={isLoading || !url.trim()}
-            className="w-full bg-[#0b80ee] hover:bg-[#0b80ee]/80 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-[#0b80ee] hover:bg-[#0b80ee]/80 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[#0b80ee] focus:ring-offset-2 focus:ring-offset-[#182734]"
             aria-describedby="url-help"
             aria-label={
               isLoading
                 ? "フィード検索を実行中です"
                 : "入力されたURLでフィードを検索"
             }
+            onKeyDown={(e) => {
+              if (
+                (e.key === "Enter" || e.key === " ") &&
+                !isLoading &&
+                url.trim()
+              ) {
+                e.preventDefault();
+                handleSubmit(e as unknown as React.FormEvent);
+              }
+            }}
           >
             {isLoading ? "検索中..." : "フィードを検索"}
           </Button>
