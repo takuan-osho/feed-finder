@@ -29,11 +29,6 @@ export function addSecurityHeaders(
     if (origin && ALLOWED_ORIGINS.includes(origin)) {
       headers.set("Access-Control-Allow-Origin", origin);
     }
-
-    // Set other CORS headers
-    headers.set("Access-Control-Allow-Methods", "POST, OPTIONS");
-    headers.set("Access-Control-Allow-Headers", "Content-Type");
-    headers.set("Access-Control-Max-Age", "86400"); // 24 hours
   }
 
   return new Response(response.body, {
