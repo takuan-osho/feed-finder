@@ -82,33 +82,35 @@ export function ResultDisplay({ result, error }: ResultDisplayProps) {
   }
 
   return (
-    <div
+    <section
       className="w-full max-w-2xl mx-auto space-y-4"
       data-testid="result-display"
+      aria-label="検索結果"
     >
-      {/* Success Summary */}
-      <Alert className="bg-green-950 border-green-800">
-        <CheckCircle className="h-4 w-4 text-green-400" />
-        <AlertDescription className="text-green-200">
-          <strong>{result.totalFound}個のフィードが見つかりました</strong>
-          <br />
-          検索対象: {result.searchedUrl}
-        </AlertDescription>
-      </Alert>
+      <header>
+        <Alert className="bg-green-950 border-green-800" role="status">
+          <CheckCircle className="h-4 w-4 text-green-400" />
+          <AlertDescription className="text-green-200">
+            <strong>{result.totalFound}個のフィードが見つかりました</strong>
+            <br />
+            検索対象: {result.searchedUrl}
+          </AlertDescription>
+        </Alert>
+      </header>
 
-      {/* Feed Cards */}
-      <div className="space-y-3">
+      <ul className="space-y-3" role="list">
         {result.feeds.map((feed, index) => (
-          <FeedCard
-            key={`${feed.url}-${index}`}
-            feed={feed}
-            onCopyUrl={handleCopyUrl}
-            onOpenFeed={handleOpenFeed}
-            copiedUrl={copiedUrl}
-          />
+          <li key={`${feed.url}-${index}`} role="listitem">
+            <FeedCard
+              feed={feed}
+              onCopyUrl={handleCopyUrl}
+              onOpenFeed={handleOpenFeed}
+              copiedUrl={copiedUrl}
+            />
+          </li>
         ))}
-      </div>
-    </div>
+      </ul>
+    </section>
   );
 }
 
@@ -127,13 +129,13 @@ function FeedCard({ feed, onCopyUrl, onOpenFeed, copiedUrl }: FeedCardProps) {
       : "一般的なパスから発見";
 
   return (
-    <Card className="bg-[#182734] border-[#314d68] hover:border-[#0b80ee]/50 transition-colors duration-200">
-      <CardHeader className="pb-3">
+    <article className="bg-[#182734] border border-[#314d68] hover:border-[#0b80ee]/50 transition-colors duration-200 rounded-lg">
+      <header className="p-6 pb-3">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
-            <CardTitle className="text-white text-lg leading-tight truncate">
+            <h3 className="text-white text-lg leading-tight truncate">
               {feed.title || feed.url}
-            </CardTitle>
+            </h3>
             <div className="flex items-center gap-2 mt-1">
               <span
                 className={`px-2 py-1 text-xs font-medium rounded ${
@@ -150,9 +152,9 @@ function FeedCard({ feed, onCopyUrl, onOpenFeed, copiedUrl }: FeedCardProps) {
             </div>
           </div>
         </div>
-      </CardHeader>
+      </header>
 
-      <CardContent className="pt-0">
+      <div className="px-6 pb-6">
         {feed.description && (
           <p className="text-sm text-[#90aecb] mb-3 line-clamp-2">
             {feed.description}
@@ -164,12 +166,17 @@ function FeedCard({ feed, onCopyUrl, onOpenFeed, copiedUrl }: FeedCardProps) {
             <code className="text-xs text-[#90aecb] break-all">{feed.url}</code>
           </div>
 
-          <div className="flex gap-2">
+          <div
+            className="flex gap-2"
+            role="group"
+            aria-label="フィードアクション"
+          >
             <Button
               onClick={() => onOpenFeed(feed.url)}
               variant="outline"
               size="sm"
               className="flex-1 bg-[#182734] border-[#314d68] text-white hover:bg-[#314d68] hover:text-white"
+              aria-label={`${feed.title || feed.url}のフィードを新しいタブで開く`}
             >
               <ExternalLink className="h-4 w-4 mr-2" />
               フィードを開く
@@ -184,6 +191,7 @@ function FeedCard({ feed, onCopyUrl, onOpenFeed, copiedUrl }: FeedCardProps) {
                   ? "bg-green-900 border-green-700 text-green-200 hover:bg-green-800"
                   : "bg-[#182734] border-[#314d68] text-white hover:bg-[#314d68] hover:text-white"
               }`}
+              aria-label={`${feed.title || feed.url}のURLをクリップボードにコピー`}
             >
               {isUrlCopied ? (
                 <>
@@ -199,7 +207,7 @@ function FeedCard({ feed, onCopyUrl, onOpenFeed, copiedUrl }: FeedCardProps) {
             </Button>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </article>
   );
 }

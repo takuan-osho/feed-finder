@@ -69,7 +69,8 @@ export function SearchForm({
     <Card className="w-full max-w-2xl mx-auto bg-[#182734] border-[#314d68]">
       <CardContent className="p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
+          <fieldset className="space-y-2">
+            <legend className="sr-only">フィード検索フォーム</legend>
             <label
               htmlFor="url-input"
               className="block text-sm font-medium text-white"
@@ -89,14 +90,18 @@ export function SearchForm({
                   ? "url-error"
                   : error
                     ? "submit-error"
-                    : undefined
+                    : "url-help"
               }
               aria-invalid={validationError ? "true" : "false"}
             />
-          </div>
+          </fieldset>
 
           {validationError && (
-            <Alert variant="destructive" className="bg-red-950 border-red-800">
+            <Alert
+              variant="destructive"
+              className="bg-red-950 border-red-800"
+              role="alert"
+            >
               <AlertDescription id="url-error" className="text-red-200">
                 {validationError}
               </AlertDescription>
@@ -104,7 +109,11 @@ export function SearchForm({
           )}
 
           {error && (
-            <Alert variant="destructive" className="bg-red-950 border-red-800">
+            <Alert
+              variant="destructive"
+              className="bg-red-950 border-red-800"
+              role="alert"
+            >
               <AlertDescription id="submit-error" className="text-red-200">
                 {error}
               </AlertDescription>
@@ -120,11 +129,11 @@ export function SearchForm({
           </Button>
         </form>
 
-        <div className="mt-4 text-sm text-[#90aecb]">
-          <p>
+        <aside className="mt-4 text-sm text-[#90aecb]">
+          <p id="url-help">
             このツールは、指定されたウェブサイトのRSS/Atomフィードを自動検索します。
           </p>
-        </div>
+        </aside>
       </CardContent>
     </Card>
   );

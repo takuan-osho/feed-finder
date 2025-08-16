@@ -66,39 +66,45 @@ function App() {
               FeedFinder
             </h2>
           </div>
-          <div className="flex flex-1 justify-end gap-8">
-            <div className="flex items-center gap-9">
-              <a
-                className="text-white text-sm font-medium leading-normal"
-                href="#"
-              >
-                Home
-              </a>
-              <a
-                className="text-white text-sm font-medium leading-normal"
-                href="#"
-              >
-                About
-              </a>
-            </div>
-          </div>
+          <nav className="flex flex-1 justify-end gap-8">
+            <ul className="flex items-center gap-9">
+              <li>
+                <a
+                  className="text-white text-sm font-medium leading-normal"
+                  href="#"
+                >
+                  Home
+                </a>
+              </li>
+              <li>
+                <a
+                  className="text-white text-sm font-medium leading-normal"
+                  href="#"
+                >
+                  About
+                </a>
+              </li>
+            </ul>
+          </nav>
         </header>
-        <div className="px-10 lg:px-40 flex flex-1 justify-center py-8">
+        <main className="px-10 lg:px-40 flex flex-1 justify-center py-8">
           <div className="layout-content-container flex flex-col max-w-[960px] flex-1 space-y-8">
-            <div className="text-center">
+            <section className="text-center">
               <h1 className="text-white tracking-light text-[28px] font-bold leading-tight">
                 RSS・Atomフィード検索
               </h1>
               <p className="text-[#90aecb] mt-2 text-base">
                 ウェブサイトのURLを入力して、RSSやAtomフィードを自動検索します
               </p>
-            </div>
+            </section>
 
-            <SearchForm
-              onSubmit={handleSearch}
-              isLoading={isLoading}
-              error={error}
-            />
+            <section>
+              <SearchForm
+                onSubmit={handleSearch}
+                isLoading={isLoading}
+                error={error}
+              />
+            </section>
 
             <Suspense
               fallback={
@@ -108,7 +114,7 @@ function App() {
               <ResultDisplay result={searchResult} error={error} />
             </Suspense>
           </div>
-        </div>
+        </main>
       </div>
     </div>
   );
