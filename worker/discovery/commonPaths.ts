@@ -9,7 +9,8 @@ import { validateTargetUrl } from "../validation/url";
 export function tryCommonPaths(
   baseUrl: string,
 ): ResultAsync<FeedResult[], FeedDiscoveryError> {
-  const commonPaths = [
+  // Root level paths (absolute from domain root)
+  const rootPaths = [
     "/feed",
     "/feeds",
     "/rss",
@@ -18,6 +19,19 @@ export function tryCommonPaths(
     "/atom.xml",
     "/index.xml",
   ];
+
+  // Relative paths from current URL path (Issue #35)
+  const relativePaths = [
+    "feed/",
+    "feeds/",
+    "rss/",
+    "feed.xml",
+    "rss.xml",
+    "atom.xml",
+    "index.xml",
+  ];
+
+  const commonPaths = [...rootPaths, ...relativePaths];
 
   // Create all feed URLs first and filter valid ones
   const validFeedUrls = commonPaths

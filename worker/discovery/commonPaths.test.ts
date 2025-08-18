@@ -296,5 +296,49 @@ describe("discovery/commonPaths", () => {
         expect(titles).toEqual(expectedTitles);
       }
     });
+
+    // Issue #35: Should discover relative feeds from subpaths like /ja/blog/
+    it("should discover relative feeds from subpaths (Issue #35)", async () => {
+      const blogUrl = "https://backlog.com/ja/blog/";
+
+      // Mock validation for both base URL and the expected feed URL
+      mockValidateTargetUrl
+        .mockImplementation((url: string) => {
+          if (url === blogUrl || url === "https://backlog.com/ja/blog/feed/") {
+            return ok(new URL(url));
+          }
+          return err({ type: "INVALID_URL_FORMAT", message: "Invalid" });
+        });
+
+      // Mock response for the expected relative feed path
+      const feedUrl = "https://backlog.com/ja/blog/feed/";
+      const mockFeedResponse = new Response(null, {
+        status: 200,
+        headers: {
+          "content-type": "application/rss+xml",
+        },
+      });
+
+      // Set up safeFetch mock to succeed for the feed path
+      mockSafeFetch.mockImplementation((url: string) => {
+        if (url === feedUrl) {
+          return ResultAsync.fromSafePromise(Promise.resolve(mockFeedResponse));
+        }
+        // All other paths should fail
+        const error = { type: "FETCH_FAILED", message: "Not found" } as const;
+        return ResultAsync.fromPromise(Promise.reject(error), () => error);
+      });
+
+      const result = await tryCommonPaths(blogUrl);
+
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
+        const feeds = result.value;
+        expect(feeds).toHaveLength(1);
+        expect(feeds[0].url).toBe(feedUrl);
+        expect(feeds[0].type).toBe("RSS");
+        expect(feeds[0].title).toBe("feed/ feed");
+      }
+    });
   });
 });
