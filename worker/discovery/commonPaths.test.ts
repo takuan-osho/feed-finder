@@ -302,13 +302,12 @@ describe("discovery/commonPaths", () => {
       const blogUrl = "https://backlog.com/ja/blog/";
 
       // Mock validation for both base URL and the expected feed URL
-      mockValidateTargetUrl
-        .mockImplementation((url: string) => {
-          if (url === blogUrl || url === "https://backlog.com/ja/blog/feed/") {
-            return ok(new URL(url));
-          }
-          return err({ type: "INVALID_URL_FORMAT", message: "Invalid" });
-        });
+      mockValidateTargetUrl.mockImplementation((url: string) => {
+        if (url === blogUrl || url === "https://backlog.com/ja/blog/feed/") {
+          return ok(new URL(url));
+        }
+        return err({ type: "INVALID_URL_FORMAT", message: "Invalid" });
+      });
 
       // Mock response for the expected relative feed path
       const feedUrl = "https://backlog.com/ja/blog/feed/";
