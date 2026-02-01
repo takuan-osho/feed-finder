@@ -1,3 +1,6 @@
+// Re-export shared types
+export type { FeedResult, SearchResult } from "../shared/types";
+
 /**
  * Error types for type-safe error handling
  */
@@ -14,14 +17,3 @@ export type FeedDiscoveryError =
   | { type: "PARSING_ERROR"; message: string };
 
 export type AppError = ValidationError | FeedDiscoveryError;
-
-/**
- * Feed result interface
- */
-export interface FeedResult {
-  url: string;
-  title: string;
-  type: "RSS" | "Atom";
-  description?: string;
-  discoveryMethod: "meta-tag" | "common-path";
-}
