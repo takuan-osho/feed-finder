@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState } from "react";
-import type { SearchResult } from "@/components/ResultDisplay";
 import { SearchForm } from "@/components/SearchForm";
+import { parseApiError, parseSearchResult } from "@/lib/schemas";
+import type { SearchResult } from "../shared/types";
 
 // Lazy load the ResultDisplay component to reduce initial bundle size
 const ResultDisplay = lazy(() =>
@@ -28,14 +29,15 @@ function App() {
         body: JSON.stringify({ url }),
       });
 
-      const data = await response.json();
+      const data: unknown = await response.json();
 
       if (!response.ok) {
-        setError(data.error || "フィード検索中にエラーが発生しました");
+        setError(parseApiError(data));
         return;
       }
 
-      setSearchResult(data);
+      const validatedResult = parseSearchResult(data);
+      setSearchResult(validatedResult);
     } catch {
       setError(
         "フィード検索中にエラーが発生しました。しばらく後にもう一度お試しください。",
