@@ -250,8 +250,13 @@ describe("ResultDisplay", () => {
     };
 
     beforeEach(() => {
+      vi.useFakeTimers();
       Object.assign(navigator, { clipboard: mockClipboard });
       mockClipboard.writeText.mockClear();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
     });
 
     const successResult: SearchResult = {
@@ -282,7 +287,6 @@ describe("ResultDisplay", () => {
     });
 
     it("should show copied state after successful copy", async () => {
-      vi.useFakeTimers();
       render(<ResultDisplay result={successResult} />);
 
       const copyButton = screen.getByLabelText(
@@ -301,8 +305,6 @@ describe("ResultDisplay", () => {
       await vi.waitFor(() => {
         expect(screen.getByText("URLをコピー")).toBeInTheDocument();
       });
-
-      vi.useRealTimers();
     });
 
     it("should handle keyboard activation for copy button", () => {
