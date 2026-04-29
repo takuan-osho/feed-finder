@@ -1,0 +1,13 @@
+version: 2
+
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/" # Location of package manifests
+    schedule:
+      interval: "weekly"
+      day: "saturday"
+      time: "07:00"
+      timezone: "Asia/Tokyo"
+      groups:
+        all-actions:
+          patterns: [ "*" ]
