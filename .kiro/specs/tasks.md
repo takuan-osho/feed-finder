@@ -1,274 +1,274 @@
-# Feed Finder 改良版 - 実装タスクリスト
+# Feed Finder - Implementation Task List
 
-## 実装計画概要
+## Plan Overview
 
-この実装計画は、要件仕様書と設計仕様書に基づいて、Feed Finder 改良版を段階的に実装するためのタスクリストです。各タスクは独立して実行可能で、**t-wada 式 TDD（Red-Green-Refactor サイクル）を厳格に適用**し、段階的に機能を構築していきます。
+This implementation plan breaks Feed Finder down into tasks based on the requirements and design specs. Each task can be executed independently, **applying t-wada style TDD (Red-Green-Refactor) strictly** as we incrementally build the system.
 
-## TDD 実装原則
+## TDD Implementation Principles
 
-### 必須遵守事項
+### Mandatory Practices
 
-1. **Red フェーズ**: 必ず失敗するテストを最初に作成
-2. **Green フェーズ**: テストを通すための最小限の実装のみ
-3. **Refactor フェーズ**: テストを変更せずに実装コードを改善
-4. **小さなステップ**: 一度に一つの機能のみ実装
-5. **継続的実行**: 各ステップでテストを実行して確認
+1. **Red phase**: always write a failing test first.
+2. **Green phase**: implement only the minimum needed to make tests pass.
+3. **Refactor phase**: improve the implementation without changing the tests.
+4. **Small steps**: implement one thing at a time.
+5. **Continuous execution**: run tests after each step.
 
-## タスクリスト
+## Task List
 
-- [x] 1. プロジェクト基盤セットアップ
+- [x] 1. Project foundation
 
-  - React 19 + Vite + TypeScript 環境の構築
-  - shadcn/ui + TailwindCSS v4 の導入
-  - TailwindCSS v4 記法の採用（v3 以前の記法は使用禁止）
-  - Cloudflare Workers 環境の更新
-  - node-html-parser の導入（HTML パーシング用）
-  - neverthrow の導入（エラーハンドリング用）
-  - Node.js 20.19.4+ 対応
-  - 基本的なビルド・デプロイパイプラインの確立
-  - _要件: 要件 5（パフォーマンスとセキュリティ）_
+  - Set up React 19 + Vite + TypeScript.
+  - Introduce shadcn/ui + TailwindCSS v4.
+  - Adopt TailwindCSS v4 syntax (pre-v4 syntax forbidden).
+  - Update the Cloudflare Workers environment.
+  - Introduce `node-html-parser` (for HTML parsing).
+  - Introduce neverthrow (for error handling).
+  - Support Node.js 20.19.4+.
+  - Establish a basic build / deploy pipeline.
+  - _Requirements: 5 (performance and security)._
 
-- [x] 2. 型定義とコア関数の実装
+- [x] 2. Type definitions and core functions
 
-  - [x] 2.1 基本型定義の作成
+  - [x] 2.1 Define base types
 
-    - FeedResult、SearchResult、FeedSearchError 型の定義
-    - 国際化関連の型定義（Language、Messages）
-    - React コンポーネントの Props 型定義
-    - _要件: 要件 1（フィード検索機能）、要件 6（国際化対応）_
+    - Define `FeedResult`, `SearchResult`, and `FeedSearchError` types.
+    - Define i18n-related types (`Language`, `Messages`).
+    - Define Props types for React components.
+    - _Requirements: 1 (feed discovery), 6 (i18n)._
 
-  - [x] 2.2 URL 正規化関数の TDD 実装
+  - [x] 2.2 TDD implementation of URL normalization
 
-    - **Red**: プロトコル未指定 URL のテスト作成（失敗確認）
-    - **Green**: 最小限の実装でテスト通過
-    - **Refactor**: コードの改善とエラーハンドリング追加
-    - **Red**: http→https 変換のテスト作成
-    - **Green**: 変換機能の最小実装
-    - **Refactor**: URL 検証機能の追加
-    - _要件: 要件 3（URL 正規化とエラーハンドリング）、要件 8（TDD）_
+    - **Red**: write a test for URLs without a protocol (must fail).
+    - **Green**: minimum implementation to make the test pass.
+    - **Refactor**: improve the code and add error handling.
+    - **Red**: write a test for `http` → `https` upgrade.
+    - **Green**: minimum implementation of the conversion.
+    - **Refactor**: add URL validation.
+    - _Requirements: 3 (URL normalization and error handling), 8 (TDD)._
 
-  - [x] 2.3 HTML エスケープ関数の TDD 実装
-    - **Red**: 基本的な HTML エスケープのテスト作成
-    - **Green**: 最小限のエスケープ機能実装
-    - **Refactor**: 全ての危険文字への対応
-    - **Red**: XSS 攻撃パターンのテスト追加
-    - **Green**: セキュリティ強化の実装
-    - _要件: 要件 5（パフォーマンスとセキュリティ）、要件 8（TDD）_
+  - [x] 2.3 TDD implementation of HTML escaping
+    - **Red**: write a test for basic HTML escaping.
+    - **Green**: minimum escaping implementation.
+    - **Refactor**: cover every dangerous character.
+    - **Red**: add tests for XSS attack patterns.
+    - **Green**: tighten security accordingly.
+    - _Requirements: 5 (performance and security), 8 (TDD)._
 
-- [x] 3. フィード検索エンジンの実装
+- [x] 3. Feed discovery engine
 
-  - [x] 3.1 HTML メタタグ解析機能
+  - [x] 3.1 HTML meta-tag parsing
 
-    - extractFeedLinksFromHtml 関数の実装
-    - RSS Autodiscovery 標準準拠の実装
-    - 相対 URL→ 絶対 URL 変換機能
-    - フィード種別判定（RSS/Atom）
-    - _要件: 要件 2（多段階検索戦略）_
+    - Implement `extractFeedLinksFromHtml`.
+    - Conform to the RSS Autodiscovery standard.
+    - Convert relative URLs to absolute URLs.
+    - Detect feed types (RSS / Atom).
+    - _Requirements: 2 (multi-stage search strategy)._
 
-  - [x] 3.2 フィード存在確認機能
+  - [x] 3.2 Feed existence check
 
-    - checkFeedExists 関数の実装
-    - HEAD リクエストによる効率的確認
-    - ネットワークエラーハンドリング
-    - _要件: 要件 2（多段階検索戦略）、要件 5（パフォーマンスとセキュリティ）_
+    - Implement `checkFeedExists`.
+    - Use HEAD requests for efficiency.
+    - Handle network errors.
+    - _Requirements: 2 (multi-stage search), 5 (performance and security)._
 
-  - [x] 3.3 一般的パス検索機能
+  - [x] 3.3 Common-path discovery
 
-    - findCommonPathFeeds 関数の実装
-    - 一般的なフィードパスの定義
-    - 並列処理による効率化
-    - _要件: 要件 2（多段階検索戦略）_
+    - Implement `findCommonPathFeeds`.
+    - Define the common feed paths.
+    - Speed it up via parallel processing.
+    - _Requirements: 2 (multi-stage search)._
 
-  - [x] 3.4 メイン検索関数の実装
-    - searchFeeds 関数の実装
-    - 段階的検索戦略の実装
-    - ResultAsync 型による非同期エラーハンドリング
-    - 重複フィード除去機能
-    - _要件: 要件 1（フィード検索機能）、要件 2（多段階検索戦略）_
+  - [x] 3.4 Main search function
+    - Implement `searchFeeds`.
+    - Implement the staged search strategy.
+    - Use `ResultAsync` for async error handling.
+    - De-duplicate feeds.
+    - _Requirements: 1 (feed discovery), 2 (multi-stage search)._
 
-- [ ] 4. 国際化システムの実装
+- [ ] 4. Internationalization system
 
-  - [ ] 4.1 サーバーサイド国際化
+  - [ ] 4.1 Server-side i18n
 
-    - 言語検出機能（Accept-Language ヘッダー）
-    - サーバーサイドメッセージ管理
-    - 初期 HTML 生成時の言語設定
-    - _要件: 要件 6（国際化対応）_
+    - Detect language from the `Accept-Language` header.
+    - Manage server-side messages.
+    - Set the language during initial HTML render.
+    - _Requirements: 6 (i18n)._
 
-  - [ ] 4.2 クライアントサイド国際化
-    - React Context による言語状態管理
-    - ローカルストレージによる言語設定保存
-    - 動的言語切り替え機能
-    - 翻訳メッセージの管理システム
-    - _要件: 要件 6（国際化対応）_
+  - [ ] 4.2 Client-side i18n
+    - Manage language state via React Context.
+    - Persist preference in local storage.
+    - Switch language dynamically.
+    - Manage translation messages.
+    - _Requirements: 6 (i18n)._
 
-- [ ] 5. React コンポーネントの実装
+- [ ] 5. React components
 
-  - [x] 5.1 基本 UI コンポーネント
+  - [x] 5.1 Base UI components
 
-    - shadcn/ui コンポーネントのセットアップ
-    - Button、Input、Card、Alert コンポーネントの導入
-    - TailwindCSS v4 記法によるスタイリング（v3 以前の記法は使用しない）
-    - _要件: 要件 4（ユーザーインターフェース）_
+    - Set up shadcn/ui components.
+    - Add Button, Input, Card, and Alert components.
+    - Style with TailwindCSS v4 syntax (pre-v4 syntax not used).
+    - _Requirements: 4 (user interface)._
 
-  - [x] 5.2 検索フォームコンポーネント
+  - [x] 5.2 Search form component
 
-    - SearchForm コンポーネントの実装
-    - URL 入力バリデーション
-    - 送信処理とローディング状態
-    - アクセシビリティ対応（ARIA、キーボードナビゲーション）
-    - _要件: 要件 4（ユーザーインターフェース）、要件 8（アクセシビリティ）_
+    - Implement the `SearchForm` component.
+    - URL input validation.
+    - Submission handling and loading state.
+    - Accessibility (ARIA, keyboard navigation).
+    - _Requirements: 4 (user interface), 8 (accessibility)._
 
-  - [x] 5.3 結果表示コンポーネント
+  - [x] 5.3 Result display component
 
-    - ResultDisplay コンポーネントの実装
-    - FeedCard コンポーネントの実装
-    - エラー表示コンポーネント
-    - 成功・警告アラートの実装
-    - _要件: 要件 4（ユーザーインターフェース）_
+    - Implement the `ResultDisplay` component.
+    - Implement the `FeedCard` component.
+    - Implement the error display.
+    - Implement success and warning alerts.
+    - _Requirements: 4 (user interface)._
 
-  - [ ] 5.4 言語切り替えコンポーネント
-    - LanguageToggle コンポーネントの実装
-    - 言語状態の管理
-    - 視覚的フィードバック
-    - _要件: 要件 6（国際化対応）_
+  - [ ] 5.4 Language toggle component
+    - Implement the `LanguageToggle` component.
+    - Manage the language state.
+    - Provide visual feedback.
+    - _Requirements: 6 (i18n)._
 
-- [ ] 6. ローカルストレージ機能の実装
+- [ ] 6. Local storage features
 
-  - [ ] 6.1 検索履歴機能
+  - [ ] 6.1 Search history
 
-    - 検索履歴の保存・読み込み
-    - 履歴の表示と選択機能
-    - 履歴のクリア機能
-    - _要件: 要件 10（検索履歴とお気に入り）_
+    - Save / load search history.
+    - Display and selection of history.
+    - Clear history.
+    - _Requirements: 10 (search history and favorites)._
 
-  - [ ] 6.2 お気に入り機能
-    - フィード情報の保存・読み込み
-    - お気に入り一覧の表示
-    - お気に入りの削除機能
-    - _要件: 要件 10（検索履歴とお気に入り）_
+  - [ ] 6.2 Favorites
+    - Save / load feed information.
+    - Display the favorites list.
+    - Remove favorites.
+    - _Requirements: 10 (search history and favorites)._
 
-- [x] 7. API エンドポイントの実装
+- [x] 7. API endpoints
 
-  - [x] 7.1 検索 API エンドポイント
+  - [x] 7.1 Search API endpoint
 
-    - POST /api/search エンドポイントの実装
-    - JSON API レスポンスの実装
-    - エラーレスポンスの標準化
-    - _要件: 要件 1（フィード検索機能）_
+    - Implement `POST /api/search`.
+    - Implement the JSON API response.
+    - Standardize error responses.
+    - _Requirements: 1 (feed discovery)._
 
-  - [ ] 7.2 SSR ページエンドポイント
-    - GET / メインページの実装
-    - React SSR の実装
-    - 初期言語設定の処理
-    - _要件: 要件 4（ユーザーインターフェース）、要件 6（国際化対応）_
+  - [ ] 7.2 SSR page endpoint
+    - Implement the `GET /` main page.
+    - Implement React SSR.
+    - Handle initial language settings.
+    - _Requirements: 4 (user interface), 6 (i18n)._
 
-- [x] 8. アクセシビリティ対応の実装
+- [x] 8. Accessibility implementation
 
-  - [x] 8.1 WCAG 2.2 基本対応
+  - [x] 8.1 WCAG 2.2 basics
 
-    - セマンティック HTML の実装
-    - ARIA ラベルの適切な設定
-    - キーボードナビゲーションの実装
-    - フォーカス管理（Focus Not Obscured 対応）
-    - _要件: 要件 9（アクセシビリティ）_
+    - Implement semantic HTML.
+    - Apply ARIA labels appropriately.
+    - Implement keyboard navigation.
+    - Manage focus (Focus Not Obscured).
+    - _Requirements: 9 (accessibility)._
 
-  - [ ] 8.2 タッチアクセシビリティ対応
-    - タッチターゲットサイズの最適化（24×24px 以上）
-    - モバイルデバイスでの操作性向上
-    - TailwindCSS v4 記法によるレスポンシブデザインの実装
-    - _要件: 要件 9（アクセシビリティ）_
+  - [ ] 8.2 Touch accessibility
+    - Optimize touch target sizes (≥ 24×24px).
+    - Improve mobile usability.
+    - Implement responsive design with TailwindCSS v4 syntax.
+    - _Requirements: 9 (accessibility)._
 
-- [x] 9. パフォーマンス最適化
+- [x] 9. Performance optimization
 
-  - [x] 9.1 非同期処理の最適化
+  - [x] 9.1 Async optimization
 
-    - Promise.all()による並列処理の実装（`tryCommonPaths`関数で URL 検証を前処理し、並列 HTTP 要求実装）
-    - ResultAsync 合成の最適化（`discoverFeeds`で HTML 取得と共通パス探索の並列実行）
-    - 不要な HTTP リクエストの削減（HEAD 要求での効率的コンテンツタイプ確認、正規表現による厳密なフィード判定）
-    - _要件: 要件 5（パフォーマンスとセキュリティ）_
+    - Implement parallel processing with `Promise.all()` (in `tryCommonPaths`, pre-validate URLs and run parallel HTTP requests).
+    - Optimize `ResultAsync` composition (`discoverFeeds` runs HTML fetch and common-path discovery in parallel).
+    - Reduce unnecessary HTTP requests (HEAD probes for content-type, strict feed detection via regex).
+    - _Requirements: 5 (performance and security)._
 
-  - [x] 9.2 バンドル最適化
-    - 未使用コードの削除（Terser によるコンソールログ除去、デッドコード削除）
-    - コード分割の実装（React、UI、icons の手動チャンク分割、ResultDisplay の遅延読み込み）
-    - 静的リソースの最適化（modulepreload、DNS prefetch、クリティカル CSS）
-    - _要件: 要件 5（パフォーマンスとセキュリティ）_
+  - [x] 9.2 Bundle optimization
+    - Remove unused code (Terser strips console logs, eliminates dead code).
+    - Implement code splitting (manual chunking for React, UI, icons; lazy-load `ResultDisplay`).
+    - Optimize static resources (`modulepreload`, DNS prefetch, critical CSS).
+    - _Requirements: 5 (performance and security)._
 
-- [x] 10. テストの実装
+- [x] 10. Tests
 
-  - [x] 10.1 単体テストの実装
+  - [x] 10.1 Unit tests
 
-    - URL 正規化関数のテスト
-    - HTML エスケープ関数のテスト
-    - フィード検索関数のテスト
-    - 国際化関数のテスト
-    - _要件: 全要件の品質保証_
+    - URL normalization function.
+    - HTML escape function.
+    - Feed discovery functions.
+    - i18n functions.
+    - _Requirements: quality coverage of all requirements._
 
-  - [ ] 10.2 コンポーネントテストの実装
-    - React コンポーネントのテスト
-    - ユーザーインタラクションのテスト
-    - アクセシビリティテスト
-    - _要件: 要件 4（ユーザーインターフェース）、要件 9（アクセシビリティ）_
+  - [ ] 10.2 Component tests
+    - React component tests.
+    - User interaction tests.
+    - Accessibility tests.
+    - _Requirements: 4 (user interface), 9 (accessibility)._
 
-- [x] 11. CI/CD パイプラインの実装
+- [x] 11. CI/CD pipeline
 
-  - [x] 11.1 Git フック（lefthook）の設定強化
+  - [x] 11.1 Strengthen Git hooks (lefthook)
 
-    - TypeScript 型チェックの追加（tsc --noEmit）
-    - 依存関係脆弱性チェックの追加（security-audit: npm audit --audit-level moderate）
-    - pre-commit と pre-push の分離による高速化（pre-push: 0.41 秒に最適化）
-    - src フォルダのみに対象を絞り込み、開発者体験を向上
-    - _要件: 要件 7（CI/CD 自動化）_
+    - Add TypeScript type checks (`tsc --noEmit`).
+    - Add a dependency vulnerability check (`security-audit: npm audit --audit-level moderate`).
+    - Speed things up by splitting pre-commit and pre-push (pre-push optimized to 0.41 s).
+    - Scope to the `src` directory to improve developer experience.
+    - _Requirements: 7 (CI/CD automation)._
 
-  - [x] 11.2 GitHub Actions ワークフローの設定
+  - [x] 11.2 GitHub Actions workflows
 
-    - .github/workflows/ci.yml の作成
-    - Biome による lint・フォーマット・型チェックの自動実行
-    - プルリクエスト時の自動テスト実行
-    - セキュリティ監査の統合
-    - _要件: 要件 7（CI/CD 自動化）_
+    - Create `.github/workflows/ci.yml`.
+    - Run Biome lint / format / type check automatically.
+    - Run tests automatically on pull requests.
+    - Integrate the security audit.
+    - _Requirements: 7 (CI/CD automation)._
 
-  - [x] 11.3 デプロイメントワークフローの設定
+  - [x] 11.3 Deployment workflow
 
-    - 手動デプロイ手順の文書化
-    - **変更点**: 自動デプロイは無効化し、手動デプロイを推奨
-    - **理由**: セキュリティとコントロールのため
-    - _要件: 要件 7（CI/CD 自動化）_
+    - Document the manual deploy procedure.
+    - **Change**: automatic deploys are disabled; manual deploys are recommended.
+    - **Reason**: for security and control.
+    - _Requirements: 7 (CI/CD automation)._
 
-  - [x] 11.4 セキュリティスキャンの設定
-    - .github/workflows/security.yml の作成
-    - 依存関係の脆弱性スキャン（npm audit + dependency-review）
-    - CodeQL による静的解析
-    - 週次スケジュール実行の設定
-    - セキュリティ結果のアーティファクト保存
-    - _要件: 要件 7（CI/CD 自動化）_
+  - [x] 11.4 Security scanning
+    - Create `.github/workflows/security.yml`.
+    - Vulnerability scanning (`npm audit` + dependency review).
+    - Static analysis with CodeQL.
+    - Weekly schedule.
+    - Persist security results as artifacts.
+    - _Requirements: 7 (CI/CD automation)._
 
-- [ ] 12. 統合とデプロイ
+- [ ] 12. Integration and deployment
 
-  - [ ] 12.1 統合テスト
+  - [ ] 12.1 Integration tests
 
-    - エンドツーエンドテストの実装
-    - API 統合テスト
-    - ブラウザ互換性テスト
-    - _要件: 全要件の統合確認_
+    - End-to-end tests.
+    - API integration tests.
+    - Browser compatibility tests.
+    - _Requirements: integrate-test all requirements._
 
-  - [ ] 12.2 本番デプロイ
-    - Cloudflare Workers へのデプロイ
-    - カスタムドメインの設定
-    - 監視とログ設定
-    - _要件: 要件 5（パフォーマンスとセキュリティ）_
+  - [ ] 12.2 Production deploy
+    - Deploy to Cloudflare Workers.
+    - Configure custom domains.
+    - Set up monitoring and logging.
+    - _Requirements: 5 (performance and security)._
 
-## オプション機能（第二優先度）
+## Optional Features (Second Priority)
 
-- [ ] 13. バッチ検索機能の実装
+- [ ] 13. Batch search
 
-  - 複数 URL 入力インターフェース
-  - バッチ処理エンジン
-  - 結果エクスポート機能
-  - _要件: 要件 11（バッチ検索機能）_
+  - Multi-URL input UI.
+  - Batch processing engine.
+  - Result export.
+  - _Requirements: 11 (batch search)._
 
-- [ ] 14. フィード詳細情報機能
-  - フィード内容解析
-  - 最新記事表示
-  - 更新頻度推定
-  - _要件: 要件 12（フィード詳細情報）_
+- [ ] 14. Feed detail information
+  - Parse feed contents.
+  - Show the latest entries.
+  - Estimate update frequency.
+  - _Requirements: 12 (feed details)._

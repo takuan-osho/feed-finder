@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import App from "./App";
 
-// t-wada式TDD: アクセシビリティテスト
+// t-wada style TDD: accessibility tests
 describe("Accessibility Tests (WCAG 2.2)", () => {
   describe("Semantic HTML Structure", () => {
     it("should have proper document structure with header and main elements", () => {
@@ -34,7 +34,7 @@ describe("Accessibility Tests (WCAG 2.2)", () => {
 
       // H1 should contain expected content
       const h1 = h1Elements[0];
-      expect(h1).toHaveTextContent("RSS・Atomフィード検索");
+      expect(h1).toHaveTextContent("RSS / Atom Feed Discovery");
 
       // H2 should exist for site title
       const h2Elements = document.querySelectorAll("h2");
@@ -109,7 +109,7 @@ describe("Accessibility Tests (WCAG 2.2)", () => {
 
       // Handle React StrictMode duplicate rendering by getting first match
       const submitButtons = screen.getAllByRole("button", {
-        name: /フィードを検索|検索/,
+        name: /Search feeds|Searching/,
       });
       expect(submitButtons[0]).toHaveAttribute("aria-label");
     });
@@ -118,7 +118,7 @@ describe("Accessibility Tests (WCAG 2.2)", () => {
       // Red Phase: Test aria-describedby connections
       render(<App />);
 
-      const urlInput = screen.getByLabelText(/ウェブサイトのURL/);
+      const urlInput = screen.getByLabelText(/Website URL/);
       expect(urlInput).toHaveAttribute("aria-describedby");
 
       const describedById = urlInput.getAttribute("aria-describedby");
@@ -133,7 +133,7 @@ describe("Accessibility Tests (WCAG 2.2)", () => {
       // Red Phase: Test dynamic aria-invalid handling
       render(<App />);
 
-      const urlInput = screen.getByLabelText(/ウェブサイトのURL/);
+      const urlInput = screen.getByLabelText(/Website URL/);
 
       // Initially should be false or not set
       expect(urlInput).toHaveAttribute("aria-invalid", "false");
@@ -176,7 +176,7 @@ describe("Accessibility Tests (WCAG 2.2)", () => {
       render(<App />);
 
       // Test form submission with Enter key
-      const urlInput = screen.getByLabelText(/ウェブサイトのURL/);
+      const urlInput = screen.getByLabelText(/Website URL/);
       expect(urlInput).toHaveProperty("onkeydown");
     });
 
@@ -236,7 +236,7 @@ describe("Accessibility Tests (WCAG 2.2)", () => {
       // Red Phase: Test focus persistence during dynamic updates
       render(<App />);
 
-      const urlInput = screen.getByLabelText(/ウェブサイトのURL/);
+      const urlInput = screen.getByLabelText(/Website URL/);
       urlInput.focus();
 
       // Focused element should remain visible and accessible
@@ -263,7 +263,7 @@ describe("Accessibility Tests (WCAG 2.2)", () => {
       render(<App />);
 
       // Focus the search input
-      const urlInput = screen.getByLabelText(/ウェブサイトのURL/);
+      const urlInput = screen.getByLabelText(/Website URL/);
       urlInput.focus();
       expect(document.activeElement).toBe(urlInput);
 

@@ -474,7 +474,7 @@ describe("URL Validation Security Tests", () => {
   });
 });
 
-// Performance Optimization Tests (t-wada式TDD)
+// Performance Optimization Tests (t-wada style TDD)
 describe("Performance Optimization Tests", () => {
   beforeEach(() => {
     vi.clearAllMocks();

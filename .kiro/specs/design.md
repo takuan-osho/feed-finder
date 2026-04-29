@@ -1,444 +1,444 @@
-# Feed Finder 改良版 - 設計仕様書
+# Feed Finder - Design Specification
 
-## 概要
+## Overview
 
-本設計書では、Feed Finder 改良版のアーキテクチャ設計を Architecture Decision Record（ADR）形式で記録します。各設計判断の背景、選択肢、決定理由を明確に文書化し、将来の保守や拡張時の参考とします。
+This document records architectural decisions for Feed Finder in Architecture Decision Record (ADR) form. Each decision documents the context, options considered, and rationale, so future maintenance and extension work can refer back to it.
 
-## ADR-001: プラットフォーム選択
+## ADR-001: Platform Selection
 
-### ステータス
+### Status
 
-承認済み
+Approved
 
-### コンテキスト
+### Context
 
-Web アプリケーションのホスティングプラットフォームを選択する必要がある。要件として、高速なレスポンス、グローバル配信、コスト効率性が求められる。
+The web application needs a hosting platform that delivers fast responses, global distribution, and cost efficiency.
 
-### 検討した選択肢
+### Options Considered
 
-1. **Cloudflare Workers** - エッジコンピューティングプラットフォーム
-2. **Vercel** - フロントエンド特化のホスティング
-3. **AWS Lambda** - サーバーレス関数
-4. **従来の VPS** - 仮想プライベートサーバー
+1. **Cloudflare Workers** — edge computing platform.
+2. **Vercel** — frontend-focused hosting.
+3. **AWS Lambda** — serverless functions.
+4. **Traditional VPS** — virtual private server.
 
-### 決定
+### Decision
 
-Cloudflare Workers を選択
+Adopt Cloudflare Workers.
 
-### 理由
+### Rationale
 
-- **パフォーマンス**: エッジロケーションでの実行により低レイテンシ
-- **スケーラビリティ**: 自動スケーリングとグローバル配信
-- **コスト**: 無料枠が充実、従量課金制
-- **開発体験**: TypeScript 対応、シンプルなデプロイ
-- **既存実装**: 現在の実装がすでに Workers 環境で動作
+- **Performance**: low latency thanks to edge execution.
+- **Scalability**: automatic scaling and global distribution.
+- **Cost**: generous free tier with usage-based billing.
+- **Developer experience**: TypeScript support and a simple deploy story.
+- **Existing implementation**: the current codebase already targets Workers.
 
-### 影響
+### Consequences
 
-- Node.js 固有の API は使用不可
-- ランタイム制限（CPU 時間、メモリ）に注意が必要
-- Cloudflare エコシステムとの統合が容易
+- Node.js-specific APIs are unavailable.
+- Runtime limits (CPU time, memory) require attention.
+- Tight integration with the rest of the Cloudflare ecosystem.
 
-## ADR-002: Web フレームワーク選択
+## ADR-002: Web Framework Selection
 
-### ステータス
+### Status
 
-承認済み
+Approved
 
-### コンテキスト
+### Context
 
-Cloudflare Workers 環境で動作する Web フレームワークを選択する必要がある。軽量性、型安全性、開発効率性が重要。
+We need a web framework that runs in the Cloudflare Workers environment. Light weight, type safety, and developer productivity are key.
 
-### 検討した選択肢
+### Options Considered
 
-1. **Hono** - 軽量な Web フレームワーク
-2. **Itty Router** - 最小限のルーター
-3. **Worktop** - Workers 専用フレームワーク
-4. **生の Fetch API** - フレームワークなし
+1. **Hono** — lightweight web framework.
+2. **Itty Router** — minimal router.
+3. **Worktop** — Workers-specific framework.
+4. **Raw Fetch API** — no framework.
 
-### 決定
+### Decision
 
-Hono を選択
+Adopt Hono.
 
-### 理由
+### Rationale
 
-- **軽量性**: バンドルサイズが小さく、Workers 環境に最適
-- **型安全性**: TypeScript 完全対応
-- **機能性**: ミドルウェア、バリデーション、HTML レスポンス対応
-- **開発体験**: Express.js ライクな API
-- **コミュニティ**: 活発な開発とドキュメント
+- **Light weight**: small bundle size, ideal for Workers.
+- **Type safety**: full TypeScript support.
+- **Features**: middleware, validation, and HTML response support.
+- **Developer experience**: Express.js-like API.
+- **Community**: active development and documentation.
 
-### 影響
+### Consequences
 
-- Express.js の知識が活用可能
-- ミドルウェアによる機能拡張が容易
-- 型安全なルーティングが実現
+- Existing Express.js knowledge transfers well.
+- Easy to extend through middleware.
+- Routing remains type safe.
 
-## ADR-003: エラーハンドリング戦略
+## ADR-003: Error Handling Strategy
 
-### ステータス
+### Status
 
-承認済み
+Approved
 
-### コンテキスト
+### Context
 
-非同期処理とネットワーク通信を含むアプリケーションで、型安全で予測可能なエラーハンドリングが必要。
+Our app combines async work and network I/O, so we need predictable, type-safe error handling.
 
-### 検討した選択肢
+### Options Considered
 
-1. **neverthrow (Result 型)** - 関数型エラーハンドリング
-2. **try-catch** - 従来の例外処理
-3. **Promise.catch()** - Promise 基準のエラーハンドリング
-4. **カスタムエラークラス** - 独自のエラー階層
+1. **neverthrow (Result type)** — functional error handling.
+2. **try / catch** — traditional exceptions.
+3. **Promise.catch()** — Promise-based error handling.
+4. **Custom error classes** — bespoke error hierarchy.
 
-### 決定
+### Decision
 
-neverthrow の Result 型を選択
+Adopt neverthrow's Result type.
 
-### 理由
+### Rationale
 
-- **型安全性**: エラーが型レベルで表現される
-- **明示性**: 関数シグネチャでエラーの可能性が明確
-- **合成可能性**: andThen、orElse による関数合成
-- **予測可能性**: 例外による制御フローの中断がない
+- **Type safety**: errors are expressed at the type level.
+- **Explicitness**: function signatures make error possibilities obvious.
+- **Composability**: combinators like `andThen` / `orElse`.
+- **Predictability**: control flow is not interrupted by exceptions.
 
-### 影響
+### Consequences
 
-- 学習コストが発生（関数型プログラミングの概念）
-- すべての非同期処理で ResultAsync 型を使用
-- エラーハンドリングが明示的になり、見落としが減少
+- A learning curve (functional programming concepts).
+- Use `ResultAsync` for every async pipeline.
+- Error handling becomes explicit, reducing oversights.
 
-## ADR-004: フロントエンドアーキテクチャ選択
+## ADR-004: Frontend Architecture Selection
 
-### ステータス
+### Status
 
-承認済み
+Approved
 
-### コンテキスト
+### Context
 
-サーバーサイドレンダリング（SSR）環境で React ベースのコンポーネント開発を行い、保守性と開発効率を向上させる必要がある。
+We want React-based component development running in a server-side rendering (SSR) environment to improve maintainability and developer productivity.
 
-### 検討した選択肢
+### Options Considered
 
-1. **React + Vite** - モダンな React 開発環境
-2. **Vanilla JavaScript** - フレームワークなし
-3. **Preact** - 軽量な React 代替
-4. **Lit** - Web Components
+1. **React + Vite** — modern React stack.
+2. **Vanilla JavaScript** — no framework.
+3. **Preact** — lightweight React alternative.
+4. **Lit** — Web Components.
 
-### 決定
+### Decision
 
-React + Vite を選択
+Adopt React + Vite.
 
-### 理由
+### Rationale
 
-- **開発効率**: JSX/TSX によるコンポーネント開発
-- **型安全性**: TypeScript との完全統合
-- **エコシステム**: 豊富なライブラリとツール
-- **SSR 対応**: Hono JSX との互換性
-- **開発体験**: Hot Module Replacement、高速ビルド
+- **Productivity**: components authored in JSX/TSX.
+- **Type safety**: complete integration with TypeScript.
+- **Ecosystem**: rich library and tooling support.
+- **SSR support**: compatible with Hono JSX.
+- **Developer experience**: hot module replacement and fast builds.
 
-### 影響
+### Consequences
 
-- バンドルサイズの増加（ただし Cloudflare Workers の制限内）
-- React 開発者の知識が活用可能
-- コンポーネントベースの設計が可能
+- Larger bundle (still within Workers' limits).
+- React knowledge in the team transfers directly.
+- Component-based design is straightforward.
 
-## ADR-005: UI コンポーネントライブラリ選択
+## ADR-005: UI Component Library Selection
 
-### ステータス
+### Status
 
-承認済み
+Approved
 
-### コンテキスト
+### Context
 
-React 環境でアクセシブルで美しい UI コンポーネントを効率的に構築するためのライブラリが必要。WCAG 2.2 準拠とカスタマイズ性が重要。
+We need accessible, polished React UI components, with WCAG 2.2 compliance and customizability.
 
-### 検討した選択肢
+### Options Considered
 
-1. **shadcn/ui + TailwindCSS** - コピー&ペーストコンポーネント
-2. **TailwindCSS + DaisyUI** - ユーティリティファースト + プリセット
-3. **Chakra UI** - シンプルなコンポーネントライブラリ
-4. **Mantine** - フル機能の UI ライブラリ
+1. **shadcn/ui + TailwindCSS** — copy-paste components.
+2. **TailwindCSS + DaisyUI** — utility-first plus presets.
+3. **Chakra UI** — simple component library.
+4. **Mantine** — full-featured UI library.
 
-### 決定
+### Decision
 
-shadcn/ui + TailwindCSS v4 を選択
+Adopt shadcn/ui + TailwindCSS v4.
 
-### 理由
+### Rationale
 
-- **カスタマイズ性**: コンポーネントを直接編集可能
-- **アクセシビリティ**: Radix UI ベースで高いアクセシビリティ
-- **型安全性**: TypeScript 完全対応
-- **バンドルサイズ**: 必要なコンポーネントのみ追加
-- **保守性**: 外部依存を最小化、コードの完全制御
-- **デザインシステム**: 一貫したデザイントークン
-- **最新機能**: TailwindCSS v4 の新機能とパフォーマンス向上
+- **Customizability**: components are editable in place.
+- **Accessibility**: built on Radix UI for strong defaults.
+- **Type safety**: complete TypeScript support.
+- **Bundle size**: only the components we need ship.
+- **Maintainability**: minimal external dependencies; we own the code.
+- **Design system**: consistent design tokens.
+- **Modern features**: TailwindCSS v4 brings new capabilities and speed.
 
-### 影響
+### Consequences
 
-- 初期セットアップが必要
-- コンポーネントの手動管理
-- **TailwindCSS v4 の学習が必要**: v3 以前の書き方は使用せず、v4 の新しい記法を採用
-- 高度なカスタマイズが可能
-- **重要**: すべてのスタイリングは TailwindCSS v4 の記法で記述し、v3 以前の古い書き方は避ける
+- Initial setup is required.
+- Components are managed by hand.
+- **TailwindCSS v4 must be learned**: pre-v4 syntax is forbidden; we use only v4 syntax.
+- Deep customization is possible.
+- **Important**: all styles use TailwindCSS v4 syntax; pre-v4 syntax is avoided.
 
-## ADR-006: 国際化アーキテクチャ
+## ADR-006: Internationalization Architecture
 
-### ステータス
+### Status
 
-承認済み
+Approved
 
-### コンテキスト
+### Context
 
-日本語と英語の 2 言語対応が必要。サーバーサイドレンダリング環境での効率的な国際化実装が求められる。
+We need bilingual (Japanese / English) support, with internationalization that works in an SSR setup.
 
-### 検討した選択肢
+### Options Considered
 
-1. **クライアントサイド国際化** - JavaScript による動的切り替え
-2. **サーバーサイド国際化** - HTML レンダリング時に言語決定
-3. **ハイブリッド方式** - 初期表示はサーバー、切り替えはクライアント
-4. **静的ファイル生成** - 言語別の静的 HTML 生成
+1. **Client-side i18n** — switch dynamically in JavaScript.
+2. **Server-side i18n** — pick the language during HTML render.
+3. **Hybrid** — server-rendered initial paint, client-driven switching.
+4. **Static generation** — pre-render per-language HTML.
 
-### 決定
+### Decision
 
-ハイブリッド方式を選択
+Adopt the hybrid approach.
 
-### 理由
+### Rationale
 
-- **初期表示速度**: サーバーサイドで言語決定、HTML に埋め込み
-- **UX**: クライアントサイドでの即座な言語切り替え
-- **SEO**: 初期 HTML に適切な言語コンテンツが含まれる
-- **実装コスト**: 複雑すぎず、効果的
+- **Initial paint speed**: language is decided server-side and embedded in the HTML.
+- **UX**: instant language switching on the client.
+- **SEO**: the initial HTML carries the right language content.
+- **Cost**: not too complex, but effective.
 
-### 影響
+### Consequences
 
-- ローカルストレージによる言語設定保存
-- JavaScript 無効環境でもデフォルト言語で動作
-- 翻訳文字列の管理が必要
+- Language preference is persisted in local storage.
+- The default language still works without JavaScript.
+- Translation strings need to be maintained.
 
-## ADR-007: フィード検索アルゴリズム
+## ADR-007: Feed Discovery Algorithm
 
-### ステータス
+### Status
 
-承認済み
+Approved
 
-### コンテキスト
+### Context
 
-効率的で網羅的なフィード検索を実現するアルゴリズムが必要。精度と性能のバランスが重要。
+We need an algorithm that is both efficient and exhaustive for feed discovery; a balance of accuracy and speed is essential.
 
-### 検討した選択肢
+### Options Considered
 
-1. **HTML メタタグのみ** - RSS Autodiscovery 標準のみ
-2. **パス検索のみ** - 一般的なフィードパスのみ
-3. **並列検索** - メタタグとパス検索を同時実行
-4. **段階的検索** - メタタグ優先、見つからない場合はパス検索
+1. **HTML meta tags only** — RSS Autodiscovery only.
+2. **Path probing only** — common feed paths only.
+3. **Parallel search** — meta tags and paths concurrently.
+4. **Staged search** — prefer meta tags, fall back to path probes.
 
-### 決定
+### Decision
 
-段階的検索を選択
+Adopt staged search.
 
-### 理由
+### Rationale
 
-- **効率性**: 不必要な HTTP リクエストを削減
-- **精度**: 標準準拠のメタタグを優先
-- **網羅性**: パス検索によるフォールバック
-- **パフォーマンス**: 段階的実行により最適化
+- **Efficiency**: avoids unnecessary HTTP requests.
+- **Accuracy**: prefers standards-conformant meta tags.
+- **Coverage**: falls back to path probing.
+- **Performance**: optimized via the staged execution.
 
-### 影響
+### Consequences
 
-- 検索方法の記録が必要（デバッグ用）
-- 複雑な非同期フロー制御
-- 重複フィードの除去処理が必要
+- Each feed must record which method discovered it (for debugging).
+- Async control flow gets more involved.
+- Duplicates need to be removed.
 
-## ADR-008: データ永続化戦略
+## ADR-008: Data Persistence Strategy
 
-### ステータス
+### Status
 
-承認済み
+Approved
 
-### コンテキスト
+### Context
 
-検索履歴とお気に入り機能のためのデータ永続化が必要。プライバシーとパフォーマンスを考慮。
+The search-history and favorites features need persistent storage. Privacy and performance matter.
 
-### 検討した選択肢
+### Options Considered
 
-1. **ローカルストレージ** - ブラウザローカル保存
-2. **Cloudflare KV** - エッジストレージ
-3. **Cloudflare D1** - SQLite データベース
-4. **外部データベース** - PostgreSQL 等
+1. **Local storage** — browser-local storage.
+2. **Cloudflare KV** — edge key-value store.
+3. **Cloudflare D1** — SQLite database.
+4. **External database** — e.g., PostgreSQL.
 
-### 決定
+### Decision
 
-ローカルストレージを選択（第一段階）
+Adopt local storage (first phase).
 
-### 理由
+### Rationale
 
-- **プライバシー**: データがユーザーのブラウザに保存
-- **パフォーマンス**: ネットワーク通信不要
-- **実装コスト**: 追加インフラ不要
-- **段階的実装**: 将来的にクラウドストレージに移行可能
+- **Privacy**: data stays in the user's browser.
+- **Performance**: no network round-trips needed.
+- **Cost**: no additional infrastructure.
+- **Phased approach**: can migrate to cloud storage later if needed.
 
-### 影響
+### Consequences
 
-- デバイス間でのデータ同期不可
-- ブラウザデータ削除でデータ消失
-- ストレージ容量制限あり
+- No cross-device sync.
+- Clearing browser data wipes the state.
+- Storage is capped by browser quotas.
 
-## ADR-010: TailwindCSS バージョン戦略
+## ADR-010: TailwindCSS Versioning Strategy
 
-### ステータス
+### Status
 
-承認済み
+Approved
 
-### コンテキスト
+### Context
 
-TailwindCSS のバージョン選択において、最新の機能とパフォーマンス向上を活用する必要がある。v4 では大幅な改善が行われており、従来の v3 以前とは記法が異なる。
+We want the latest TailwindCSS features and performance. v4 introduces large changes and a new syntax incompatible with pre-v4.
 
-### 検討した選択肢
+### Options Considered
 
-1. **TailwindCSS v3** - 安定版、豊富なドキュメント
-2. **TailwindCSS v4** - 最新版、パフォーマンス向上
-3. **TailwindCSS v2** - 旧安定版
-4. **カスタム CSS** - TailwindCSS 不使用
+1. **TailwindCSS v3** — stable, well-documented.
+2. **TailwindCSS v4** — newest, faster.
+3. **TailwindCSS v2** — older stable version.
+4. **Custom CSS** — no Tailwind at all.
 
-### 決定
+### Decision
 
-TailwindCSS v4 を選択
+Adopt TailwindCSS v4.
 
-### 理由
+### Rationale
 
-- **パフォーマンス**: v4 での大幅な高速化
-- **新機能**: 改善された DX（開発者体験）
-- **将来性**: 長期的なサポートとアップデート
-- **モダンな記法**: より直感的で効率的な書き方
-- **バンドルサイズ**: さらなる最適化
+- **Performance**: significant speed-ups in v4.
+- **New features**: improved DX (developer experience).
+- **Future-proofing**: long-term support and updates.
+- **Modern syntax**: more intuitive and efficient.
+- **Bundle size**: further optimizations.
 
-### 影響
+### Consequences
 
-- **重要制約**: v3 以前の記法は使用禁止、すべて v4 記法で統一
-- 学習コストの発生（v3 からの移行）
-- ドキュメントが v4 準拠である必要
-- 開発チーム全体での v4 記法の習得が必要
+- **Hard constraint**: pre-v4 syntax is forbidden; everything uses v4 syntax.
+- Migration cost (learning v4).
+- Documentation must be v4-conformant.
+- Whole team needs to learn v4 syntax.
 
-## ADR-011: CI/CD パイプライン戦略
+## ADR-011: CI/CD Pipeline Strategy
 
-### ステータス
+### Status
 
-承認済み
+Approved
 
-### コンテキスト
+### Context
 
-継続的インテグレーション・継続的デプロイメント（CI/CD）により、コード品質の維持と効率的なデプロイメントを実現する必要がある。Cloudflare Workers 環境での最適な CI/CD 戦略を選択する必要がある。
+We need continuous integration and continuous delivery to keep code quality high and deployments efficient. We need a CI/CD strategy that fits the Cloudflare Workers environment.
 
-### 検討した選択肢
+### Options Considered
 
-1. **GitHub Actions** - GitHub 統合、豊富なエコシステム
-2. **GitLab CI/CD** - 統合された DevOps プラットフォーム
-3. **Cloudflare Workers CI/CD** - Cloudflare 専用ツール
-4. **手動デプロイ** - CI/CD なし
+1. **GitHub Actions** — GitHub-native and ecosystem-rich.
+2. **GitLab CI/CD** — integrated DevOps platform.
+3. **Cloudflare Workers CI/CD** — Cloudflare-specific tooling.
+4. **Manual deploys** — no CI/CD.
 
-### 決定
+### Decision
 
-GitHub Actions + 手動デプロイを選択
+Adopt GitHub Actions plus manual deploys.
 
-### 理由
+### Rationale
 
-- **統合性**: GitHub リポジトリとの完全統合
-- **エコシステム**: 豊富な Actions マーケットプレイス
-- **コスト**: パブリックリポジトリでは無料
-- **Cloudflare 対応**: wrangler との優れた統合
-- **セキュリティ**: 手動デプロイによる制御とリスク軽減
-- **柔軟性**: カスタムワークフローの作成が容易
+- **Integration**: works seamlessly with the GitHub repo.
+- **Ecosystem**: rich Actions marketplace.
+- **Cost**: free for public repositories.
+- **Cloudflare support**: integrates well with `wrangler`.
+- **Security**: manual deploys give us control and reduce risk.
+- **Flexibility**: easy to author custom workflows.
 
-### 影響
+### Consequences
 
-- GitHub リポジトリが必要
-- .github/workflows/ ディレクトリでの設定管理
-- 手動デプロイによる慎重なリリース管理
-- CI/CD パイプラインの高速化（pre-push: 0.41 秒）
+- Requires a GitHub repository.
+- Workflow config lives under `.github/workflows/`.
+- Manual deploys mean cautious release management.
+- CI/CD pipeline is fast (pre-push: 0.41 s).
 
-## ADR-012: Git フック戦略
+## ADR-012: Git Hook Strategy
 
-### ステータス
+### Status
 
-承認済み
+Approved
 
-### コンテキスト
+### Context
 
-コミット前とプッシュ前にコード品質チェックを自動実行し、問題のあるコードがリポジトリに入ることを防ぐ必要がある。開発者の生産性を損なわない効率的なフック戦略が必要。
+We need to run code-quality checks automatically on commit and push, so problematic code does not enter the repository — without sacrificing developer productivity.
 
-### 検討した選択肢
+### Options Considered
 
-1. **lefthook** - 高速で設定が簡単
-2. **husky** - Node.js エコシステムで人気
-3. **pre-commit** - Python ベースのツール
-4. **手動チェック** - フックなし
+1. **lefthook** — fast, with simple configuration.
+2. **husky** — popular in the Node.js ecosystem.
+3. **pre-commit** — Python-based tool.
+4. **Manual checks** — no hooks.
 
-### 決定
+### Decision
 
-lefthook を選択
+Adopt lefthook.
 
-### 理由
+### Rationale
 
-- **パフォーマンス**: Go 製で高速実行
-- **設定の簡潔性**: YAML ベースの直感的な設定
-- **並列実行**: 複数チェックの同時実行
-- **クロスプラットフォーム**: 各 OS での安定動作
-- **軽量**: 依存関係が少ない
+- **Performance**: fast (Go-based).
+- **Concise config**: intuitive YAML configuration.
+- **Parallel execution**: runs multiple checks concurrently.
+- **Cross-platform**: stable on every OS we use.
+- **Light weight**: few dependencies.
 
-### 影響
+### Consequences
 
-- lefthook.yml での設定管理
-- pre-commit と pre-push フックの自動実行
-- staged_files と push_files の効率的な処理
-- 開発者の初回セットアップが必要
-- **実装改善**:
-  - TypeScript 型チェック（tsc --noEmit）の追加
-  - npm audit による依存関係脆弱性チェック
-  - pre-push の高速化（4.89 秒 →0.41 秒、92%改善）
+- Configuration lives in `lefthook.yml`.
+- pre-commit and pre-push hooks run automatically.
+- `staged_files` and `push_files` are processed efficiently.
+- Developers need a one-time setup.
+- **Implementation improvements**:
+  - Added TypeScript type checks (`tsc --noEmit`).
+  - Added dependency vulnerability checks via `npm audit`.
+  - Sped up pre-push (4.89 s → 0.41 s, 92% faster).
 
-## ADR-013: テスト駆動開発（TDD）戦略
+## ADR-013: Test-Driven Development (TDD) Strategy
 
-### ステータス
+### Status
 
-承認済み
+Approved
 
-### コンテキスト
+### Context
 
-Agentic coding（AI エージェントによるコード生成）環境において、t-wada 氏が提唱する TDD 手法を適用し、高品質で保守性の高いコードを効率的に生成する必要がある。AI エージェントが理解しやすく、実行しやすい TDD プロセスを確立する必要がある。
+In an agentic-coding setup (AI agents writing code), we need to apply t-wada style TDD to produce high-quality, maintainable code efficiently. The TDD process must be easy for AI agents to understand and follow.
 
-### 検討した選択肢
+### Options Considered
 
-1. **t-wada 式 TDD** - Red-Green-Refactor サイクルの厳格な適用
-2. **従来の TDD** - 一般的なテストファースト開発
-3. **テスト後書き** - 実装後のテスト作成
-4. **テストなし** - テストを書かない開発
+1. **t-wada style TDD** — strict Red-Green-Refactor cycle.
+2. **Standard TDD** — generic test-first development.
+3. **Tests written after** — tests added after the implementation.
+4. **No tests** — skip testing entirely.
 
-### 決定
+### Decision
 
-t-wada 式 TDD を Agentic coding 向けに最適化して採用
+Adopt t-wada style TDD, optimized for agentic coding.
 
-### 理由
+### Rationale
 
-- **明確なプロセス**: AI エージェントが従いやすい明確な手順
-- **品質保証**: テストファーストによる高品質なコード
-- **リファクタリング安全性**: テストによる変更の安全性確保
-- **仕様の明確化**: テストが仕様書として機能
-- **デバッグ効率**: 問題の早期発見と修正
+- **Clear process**: a procedure that AI agents can follow.
+- **Quality**: test-first leads to higher quality code.
+- **Refactoring safety**: tests make changes safe.
+- **Spec clarity**: tests act as living specs.
+- **Debugging efficiency**: defects are caught early and locally.
 
-### 影響
+### Consequences
 
-- **厳格な Red-Green-Refactor サイクル**: 各ステップを明確に分離
-- **テストファースト**: 実装前に必ずテストを作成
-- **小さなステップ**: 一度に一つの機能のみ実装
-- **継続的リファクタリング**: Green 後の必須リファクタリング
+- **Strict Red-Green-Refactor**: clearly separated steps.
+- **Tests first**: never write implementation before the test.
+- **Small steps**: implement one thing at a time.
+- **Continuous refactoring**: refactoring after Green is mandatory.
 
-### Agentic Coding 向け最適化
+### Optimizations for Agentic Coding
 
-#### 1. テスト作成フェーズ（Red）
+#### 1. Test phase (Red)
 
 ```typescript
-// 1. 失敗するテストを最初に作成
+// 1. Write a failing test first
 describe("normalizeUrl", () => {
   it("should add https protocol to URL without protocol", () => {
     const result = normalizeUrl("example.com");
@@ -448,10 +448,10 @@ describe("normalizeUrl", () => {
 });
 ```
 
-#### 2. 最小実装フェーズ（Green）
+#### 2. Minimum-implementation phase (Green)
 
 ```typescript
-// 2. テストを通すための最小限の実装
+// 2. The minimum implementation that makes the test pass
 function normalizeUrl(url: string): Result<string, FeedSearchError> {
   if (!url.startsWith("http")) {
     return ok(`https://${url}`);
@@ -460,10 +460,10 @@ function normalizeUrl(url: string): Result<string, FeedSearchError> {
 }
 ```
 
-#### 3. リファクタリングフェーズ（Refactor）
+#### 3. Refactor phase
 
 ```typescript
-// 3. コードの改善（テストは変更しない）
+// 3. Improve the code (without touching the tests)
 function normalizeUrl(url: string): Result<string, FeedSearchError> {
   try {
     const parsed = new URL(url.startsWith("http") ? url : `https://${url}`);
@@ -474,66 +474,66 @@ function normalizeUrl(url: string): Result<string, FeedSearchError> {
 }
 ```
 
-## ADR-014: アクセシビリティ実装方針
+## ADR-014: Accessibility Implementation Approach
 
-### ステータス
+### Status
 
-承認済み
+Approved
 
-### コンテキスト
+### Context
 
-WCAG 2.2 AA 準拠のアクセシブルな Web アプリケーションを構築する必要がある。
+We need to build a WCAG 2.2 AA compliant accessible web application.
 
-### 検討した選択肢
+### Options Considered
 
-1. **セマンティック HTML + ARIA** - 標準的なアプローチ
-2. **アクセシビリティライブラリ** - 専用ライブラリ使用
-3. **後付け対応** - 基本機能完成後に対応
-4. **最小限対応** - 基本的な対応のみ
+1. **Semantic HTML + ARIA** — the standard approach.
+2. **Accessibility libraries** — purpose-built libraries.
+3. **Retrofit later** — handle a11y after the basics ship.
+4. **Minimal coverage** — only the basics.
 
-### 決定
+### Decision
 
-セマンティック HTML + ARIA を選択
+Adopt semantic HTML + ARIA.
 
-### 理由
+### Rationale
 
-- **標準準拠**: Web 標準に基づく実装
-- **保守性**: 追加ライブラリへの依存なし
-- **パフォーマンス**: 軽量な実装
-- **将来性**: 標準の進化に追従可能
+- **Standards-based**: built on web standards.
+- **Maintainability**: no dependency on extra libraries.
+- **Performance**: a lighter implementation.
+- **Future-proofing**: tracks the standards as they evolve.
 
-### 影響
+### Consequences
 
-- HTML 構造の慎重な設計が必要
-- ARIA ラベルの適切な実装
-- キーボードナビゲーションの実装
-- 色覚異常対応の配色設計
-- **WCAG 2.2 追加要件**:
-  - フォーカス時の要素が他の UI 要素で隠れないよう設計
-  - タッチターゲット（ボタン、リンク）の最小サイズを 24×24px 以上に設定
-  - ドラッグ操作がある場合は代替手段を提供（現在は該当なし）
+- HTML structure must be designed carefully.
+- ARIA labels need to be applied appropriately.
+- Keyboard navigation must be implemented.
+- Color choices need to support colorblind users.
+- **Additional WCAG 2.2 requirements**:
+  - Ensure focused elements are not obscured by other UI.
+  - Touch targets (buttons, links) must be at least 24×24px.
+  - When drag operations exist, provide alternatives (none currently).
 
-## システムアーキテクチャ
+## System Architecture
 
-### 全体構成図
+### Overall Diagram
 
 ```mermaid
 graph TB
-    User[ユーザー] --> Browser[ブラウザ]
+    User[User] --> Browser[Browser]
     Browser --> CDN[Cloudflare CDN]
     CDN --> Workers[Cloudflare Workers]
-    Workers --> External[外部サイト]
+    Workers --> External[External sites]
 
-    subgraph "ブラウザ環境"
+    subgraph "Browser environment"
         React[React App]
-        LocalStorage[ローカルストレージ]
-        I18nClient[クライアント国際化]
+        LocalStorage[Local Storage]
+        I18nClient[Client i18n]
 
-        subgraph "React コンポーネント"
-            SearchForm[検索フォーム]
-            ResultDisplay[結果表示]
-            LanguageToggle[言語切替]
-            FeedCard[フィードカード]
+        subgraph "React components"
+            SearchForm[Search form]
+            ResultDisplay[Results display]
+            LanguageToggle[Language toggle]
+            FeedCard[Feed card]
         end
 
         subgraph "shadcn/ui + TailwindCSS"
@@ -545,16 +545,16 @@ graph TB
     end
 
     subgraph "Cloudflare Workers (SSR)"
-        Hono[Hono Framework]
+        Hono[Hono framework]
         ReactSSR[React SSR]
-        Search[フィード検索エンジン]
-        I18nServer[サーバー国際化]
+        Search[Feed discovery engine]
+        I18nServer[Server i18n]
 
-        subgraph "検索エンジン"
-            URLNormalizer[URL正規化]
-            HTMLParser[HTMLパーサー]
-            PathSearcher[パス検索]
-            ResultAggregator[結果集約]
+        subgraph "Discovery engine"
+            URLNormalizer[URL normalization]
+            HTMLParser[HTML parser]
+            PathSearcher[Path probe]
+            ResultAggregator[Result aggregator]
         end
     end
 
@@ -581,65 +581,65 @@ graph TB
     Search --> ResultAggregator
 ```
 
-### データフロー図
+### Data Flow Diagram
 
 ```mermaid
 sequenceDiagram
-    participant U as ユーザー
-    participant RC as React Client
+    participant U as User
+    participant RC as React client
     participant LS as LocalStorage
     participant W as Workers (SSR)
-    participant SE as Workers検索エンジン
-    participant E as 外部サイト
+    participant SE as Worker discovery engine
+    participant E as External site
 
-    Note over U,E: 初期ページロード
+    Note over U,E: Initial page load
     U->>W: GET /
-    W->>W: サーバー国際化処理
-    W->>RC: React SSR (初期HTML)
-    RC->>U: ページ表示
+    W->>W: Server-side i18n
+    W->>RC: React SSR (initial HTML)
+    RC->>U: Page rendered
 
-    Note over U,E: クライアント初期化
-    RC->>LS: 言語設定読み込み
-    LS->>RC: 保存済み設定
-    RC->>RC: クライアント国際化初期化
+    Note over U,E: Client initialization
+    RC->>LS: Read language preference
+    LS->>RC: Stored preference
+    RC->>RC: Initialize client-side i18n
 
-    Note over U,E: フィード検索フロー
-    U->>RC: URL入力
-    RC->>LS: 検索履歴保存
+    Note over U,E: Feed discovery flow
+    U->>RC: Enter URL
+    RC->>LS: Store search history
     RC->>W: POST /api/search
-    W->>SE: Workers内フィード検索開始
+    W->>SE: Begin feed discovery in Workers
 
-    SE->>SE: URL正規化
-    SE->>E: HTML取得リクエスト
-    E->>SE: HTMLレスポンス
-    SE->>SE: メタタグ解析
+    SE->>SE: Normalize URL
+    SE->>E: Request HTML
+    E->>SE: HTML response
+    SE->>SE: Parse meta tags
 
-    alt メタタグでフィード発見
-        SE->>W: 検索結果
-    else メタタグで未発見
-        SE->>E: 一般的パス検索
-        E->>SE: パス存在確認
-        SE->>W: 検索結果
+    alt Found via meta tags
+        SE->>W: Return results
+    else Not found via meta tags
+        SE->>E: Probe common paths
+        E->>SE: Path existence
+        SE->>W: Return results
     end
 
-    W->>RC: JSON API レスポンス
-    RC->>RC: 結果表示更新
-    RC->>U: 検索結果表示
+    W->>RC: JSON API response
+    RC->>RC: Update results UI
+    RC->>U: Show results
 
-    Note over U,E: お気に入り機能
-    U->>RC: お気に入り追加
-    RC->>LS: フィード情報保存
+    Note over U,E: Favorites
+    U->>RC: Add to favorites
+    RC->>LS: Persist feed info
 
-    Note over U,E: 言語切替
-    U->>RC: 言語切替ボタン
-    RC->>LS: 言語設定保存
-    RC->>RC: UI言語更新
-    RC->>U: 言語変更反映
+    Note over U,E: Language toggle
+    U->>RC: Click language toggle
+    RC->>LS: Persist language
+    RC->>RC: Update UI language
+    RC->>U: Reflect new language
 ```
 
-## コンポーネント設計
+## Component Design
 
-### 1. フィード検索エンジン
+### 1. Feed Discovery Engine
 
 ```typescript
 interface FeedSearchEngine {
@@ -652,7 +652,7 @@ interface FeedSearchEngine {
 }
 ```
 
-### 2. 国際化システム
+### 2. Internationalization System
 
 ```typescript
 interface I18nSystem {
@@ -663,7 +663,7 @@ interface I18nSystem {
 }
 ```
 
-### 3. ストレージマネージャー
+### 3. Storage Manager
 
 ```typescript
 interface StorageManager {
@@ -675,10 +675,10 @@ interface StorageManager {
 }
 ```
 
-### 4. UI コンポーネント
+### 4. UI Components
 
 ```typescript
-// React コンポーネント
+// React components
 interface SearchFormProps {
   currentUrl?: string;
   onSubmit: (url: string) => void;
@@ -700,163 +700,128 @@ interface LanguageToggleProps {
 }
 ```
 
-## セキュリティ設計
+## Security Design
 
-### XSS 対策
+### XSS Prevention
 
-- すべてのユーザー入力を HTML エスケープ
-- Content Security Policy (CSP) の実装
-- SRI (Subresource Integrity) による外部リソース検証
+- HTML-escape every user input.
+- Implement a Content Security Policy (CSP).
+- Verify external resources via Subresource Integrity (SRI).
 
-### プライバシー保護
+### Privacy
 
-- ローカルストレージによるデータ保存
-- 外部への不要なデータ送信なし
-- ユーザー追跡の回避
+- Persist data in local storage.
+- Do not send unnecessary data externally.
+- Avoid user tracking.
 
-### ネットワークセキュリティ
+### Network Security
 
-- HTTPS 強制
-- 適切な User-Agent の設定
-- レート制限の実装（将来）
+- Enforce HTTPS.
+- Set an appropriate User-Agent.
+- Plan for rate limiting (future).
 
-## パフォーマンス設計
+## Performance Design
 
-### 最適化戦略
+### Optimization Strategies
 
-- HEAD リクエストによる効率的な存在確認
-- 段階的検索による不要リクエスト削減
-- CDN による静的リソース配信
-- エッジコンピューティングによる低レイテンシ
-- **非同期処理の積極活用**: 複数のフィードパス検索、外部サイトへのリクエストなど、並列実行可能な処理は積極的に非同期化してスケーラビリティを確保
-- **Promise.all()による並列処理**: 独立した複数の HTTP リクエストを同時実行
-- **ResultAsync 合成**: neverthrow ライブラリを活用した非同期エラーハンドリングの最適化
+- Use HEAD requests for efficient existence checks.
+- Reduce unnecessary requests via staged search.
+- Serve static resources from a CDN.
+- Achieve low latency through edge computing.
+- **Embrace async**: parallelize the work that can run concurrently — multiple feed-path probes, outbound site requests, and so on — to keep the system scalable.
+- **Promise.all() for parallelism**: run independent HTTP requests concurrently.
+- **ResultAsync composition**: optimize async error handling with neverthrow.
 
-### 監視指標
+### Monitoring Metrics
 
-- 検索レスポンス時間
-- フィード発見率
-- エラー発生率
-- ユーザー満足度
+- Search response time.
+- Feed discovery rate.
+- Error rate.
+- User satisfaction.
 
-## ADR-015: CI/CD パフォーマンス最適化戦略
+## ADR-015: CI/CD Performance Optimization Strategy
 
-### ステータス
+### Status
 
-承認済み
+Approved
 
-### コンテキスト
+### Context
 
-Git フックの実行時間が開発者体験に大きく影響するため、CI/CD パイプラインの高速化が必要。特に pre-push フックが 4.89 秒と長く、開発効率を損ねていた。
+Git hook execution time has a big impact on developer experience, so the CI/CD pipeline needs to be fast. In particular, pre-push was running for 4.89 seconds and slowing developers down.
 
-### 検討した選択肢
+### Options Considered
 
-1. **全ファイルチェック** - 確実だが遅い
-2. **変更ファイルのみチェック** - 高速だがリスクあり
-3. **段階的チェック** - pre-commit で基本、pre-push で最小限
-4. **並列実行** - 複数タスクの同時実行
+1. **Check every file** — reliable but slow.
+2. **Check only changed files** — fast but riskier.
+3. **Staged checks** — basics in pre-commit, minimum in pre-push.
+4. **Run in parallel** — multiple tasks at the same time.
 
-### 決定
+### Decision
 
-段階的チェック + ファイル絞り込み戦略を選択
+Adopt staged checks plus file scoping.
 
-### 理由
+### Rationale
 
-- **開発者体験**: 4.89 秒 → 0.41 秒（92%改善）
-- **品質維持**: 重要なチェックは保持
-- **効率性**: src フォルダのみに絞り込み
-- **実用性**: 日常的な使用で耐えられる速度
+- **Developer experience**: 4.89 s → 0.41 s (92% faster).
+- **Quality preserved**: keep the important checks.
+- **Efficiency**: scope to the `src` directory.
+- **Practicality**: a speed developers can actually live with.
 
-### 影響
+### Consequences
 
-- pre-push の対象を src フォルダに限定
-- 自動生成ファイル（\*.d.ts）の除外
-- Biome 設定の最適化
-- GitHub Actions での包括的チェック
+- pre-push only inspects the `src` directory.
+- Generated files (`*.d.ts`) are excluded.
+- Biome configuration is optimized.
+- GitHub Actions still runs the full set of checks.
 
-## ADR-015: CI/CD パフォーマンス最適化戦略
+## ADR-016: HTML Parsing Strategy
 
-### ステータス
+### Status
 
-承認済み
+Approved
 
-### コンテキスト
+### Context
 
-Git フックの実行時間が開発者体験に大きく影響するため、CI/CD パイプラインの高速化が必要。特に pre-push フックが 4.89 秒と長く、開発効率を損ねていた。
+For HTML meta-tag analysis in the feed discovery engine, we need a lightweight and high-performance HTML parser, mindful of Cloudflare Workers constraints.
 
-### 検討した選択肢
+### Options Considered
 
-1. **全ファイルチェック** - 確実だが遅い
-2. **変更ファイルのみチェック** - 高速だがリスクあり
-3. **段階的チェック** - pre-commit で基本、pre-push で最小限
-4. **並列実行** - 複数タスクの同時実行
+1. **node-html-parser** — light, fast, runs on Workers.
+2. **jsdom** — full DOM, but heavy.
+3. **cheerio** — jQuery-like, server-side focused.
+4. **Regular expressions** — light but inaccurate.
 
-### 決定
+### Decision
 
-段階的チェック + ファイル絞り込み戦略を選択
+Adopt `node-html-parser`.
 
-### 理由
+### Rationale
 
-- **開発者体験**: 4.89 秒 → 0.41 秒（92%改善）
-- **品質維持**: 重要なチェックは保持
-- **効率性**: src フォルダのみに絞り込み
-- **実用性**: 日常的な使用で耐えられる速度
+- **Light weight**: small bundle, ideal for Workers.
+- **Performance**: fast parsing.
+- **Workers compatibility**: confirmed to work on Cloudflare Workers.
+- **Functionality**: enough for RSS Autodiscovery meta-tag parsing.
+- **Type safety**: TypeScript support.
 
-### 影響
+### Consequences
 
-- pre-push の対象を src フォルダに限定
-- 自動生成ファイル（\*.d.ts）の除外
-- Biome 設定の最適化
-- GitHub Actions での包括的チェック
+- HTML meta-tag parsing is feasible.
+- We can detect RSS / Atom feeds.
+- A lightweight parser keeps things fast.
 
-## ADR-016: HTML パーシング戦略
+## Extensibility
 
-### ステータス
+### Future Extension Points
 
-承認済み
+1. **Authentication**: user accounts.
+2. **Cloud storage**: cross-device sync.
+3. **Public API**: integrations with external services.
+4. **Batch processing**: large-scale URL handling.
+5. **Feed analytics**: deeper metadata.
 
-### コンテキスト
+### Architectural Evolution
 
-フィード検索機能で HTML メタタグを解析するため、軽量で高性能な HTML パーサーが必要。Cloudflare Workers 環境での制約を考慮する必要がある。
-
-### 検討した選択肢
-
-1. **node-html-parser** - 軽量、高速、Workers 対応
-2. **jsdom** - 完全な DOM 実装だが重い
-3. **cheerio** - jQuery 風 API、サーバーサイド特化
-4. **正規表現** - 軽量だが不正確
-
-### 決定
-
-node-html-parser を選択
-
-### 理由
-
-- **軽量性**: バンドルサイズが小さく、Workers 環境に最適
-- **パフォーマンス**: 高速なパーシング性能
-- **Workers 対応**: Cloudflare Workers 環境で動作確認済み
-- **機能性**: RSS Autodiscovery 用のメタタグ解析に十分
-- **型安全性**: TypeScript 対応
-
-### 影響
-
-- HTML メタタグ解析の実装が可能
-- RSS/Atom フィード検出機能の実装
-- 軽量な HTML パーシングによる高速化
-
-## 拡張性設計
-
-### 将来の拡張ポイント
-
-1. **認証システム**: ユーザーアカウント機能
-2. **クラウドストレージ**: デバイス間同期
-3. **API 提供**: 外部サービス連携
-4. **バッチ処理**: 大量 URL 処理
-5. **フィード分析**: 詳細情報提供
-
-### アーキテクチャ進化
-
-- マイクロサービス化の可能性
-- GraphQL API の導入
-- リアルタイム機能の追加
-- 機械学習による精度向上
+- Possible move toward microservices.
+- A GraphQL API.
+- Real-time features.
+- ML-based accuracy improvements.

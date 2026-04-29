@@ -38,7 +38,7 @@ export function ResultDisplay({ result, error }: ResultDisplayProps) {
       >
         <XCircle className="h-4 w-4" aria-hidden="true" />
         <AlertDescription className="text-red-200">
-          <strong>エラーが発生しました:</strong> {error}
+          <strong>An error occurred:</strong> {error}
         </AlertDescription>
       </Alert>
     );
@@ -57,9 +57,9 @@ export function ResultDisplay({ result, error }: ResultDisplayProps) {
       >
         <Info className="h-4 w-4 text-[#90aecb]" aria-hidden="true" />
         <AlertDescription className="text-[#90aecb]">
-          <strong>フィードが見つかりませんでした</strong>
+          <strong>No feeds were found</strong>
           <br />
-          {result.searchedUrl} からRSS/Atomフィードを発見できませんでした。
+          Could not discover any RSS / Atom feeds for {result.searchedUrl}.
           {result.message && (
             <>
               <br />
@@ -75,7 +75,7 @@ export function ResultDisplay({ result, error }: ResultDisplayProps) {
     <section
       className="w-full max-w-2xl mx-auto space-y-4"
       data-testid="result-display"
-      aria-label="検索結果"
+      aria-label="Search results"
     >
       <header>
         <Alert
@@ -85,9 +85,9 @@ export function ResultDisplay({ result, error }: ResultDisplayProps) {
         >
           <CheckCircle className="h-4 w-4 text-green-400" aria-hidden="true" />
           <AlertDescription className="text-green-200">
-            <strong>{result.totalFound}個のフィードが見つかりました</strong>
+            <strong>Found {result.totalFound} feed(s)</strong>
             <br />
-            検索対象: {result.searchedUrl}
+            Searched: {result.searchedUrl}
           </AlertDescription>
         </Alert>
       </header>
@@ -119,8 +119,8 @@ function FeedCard({ feed, onCopyUrl, onOpenFeed, copiedUrl }: FeedCardProps) {
   const isUrlCopied = copiedUrl === feed.url;
   const discoveryMethodText =
     feed.discoveryMethod === "meta-tag"
-      ? "HTML メタタグから発見"
-      : "一般的なパスから発見";
+      ? "Discovered via HTML meta tag"
+      : "Discovered via common path";
 
   return (
     <article
@@ -143,13 +143,13 @@ function FeedCard({ feed, onCopyUrl, onOpenFeed, copiedUrl }: FeedCardProps) {
                     ? "bg-orange-900 text-orange-200"
                     : "bg-blue-900 text-blue-200"
                 }`}
-                aria-label={`フィードタイプ: ${feed.type}`}
+                aria-label={`Feed type: ${feed.type}`}
               >
                 {feed.type}
               </span>
               <span
                 className="text-xs text-[#90aecb]"
-                aria-label={`発見方法: ${discoveryMethodText}`}
+                aria-label={`Discovery method: ${discoveryMethodText}`}
               >
                 {discoveryMethodText}
               </span>
@@ -170,17 +170,13 @@ function FeedCard({ feed, onCopyUrl, onOpenFeed, copiedUrl }: FeedCardProps) {
             <code className="text-xs text-[#90aecb] break-all">{feed.url}</code>
           </div>
 
-          <div
-            className="flex gap-2"
-            role="group"
-            aria-label="フィードアクション"
-          >
+          <div className="flex gap-2" role="group" aria-label="Feed actions">
             <Button
               onClick={() => onOpenFeed(feed.url)}
               variant="outline"
               size="sm"
               className="flex-1 bg-[#182734] border-[#314d68] text-white hover:bg-[#314d68] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#0b80ee] focus:ring-offset-2 focus:ring-offset-[#182734]"
-              aria-label={`${feed.title || feed.url}のフィードを新しいタブで開く`}
+              aria-label={`Open the feed for ${feed.title || feed.url} in a new tab`}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
@@ -189,7 +185,7 @@ function FeedCard({ feed, onCopyUrl, onOpenFeed, copiedUrl }: FeedCardProps) {
               }}
             >
               <ExternalLink className="h-4 w-4 mr-2" />
-              フィードを開く
+              Open feed
             </Button>
 
             <Button
@@ -201,7 +197,7 @@ function FeedCard({ feed, onCopyUrl, onOpenFeed, copiedUrl }: FeedCardProps) {
                   ? "bg-green-900 border-green-700 text-green-200 hover:bg-green-800"
                   : "bg-[#182734] border-[#314d68] text-white hover:bg-[#314d68] hover:text-white"
               }`}
-              aria-label={`${feed.title || feed.url}のURLをクリップボードにコピー`}
+              aria-label={`Copy the URL of ${feed.title || feed.url} to the clipboard`}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
@@ -212,12 +208,12 @@ function FeedCard({ feed, onCopyUrl, onOpenFeed, copiedUrl }: FeedCardProps) {
               {isUrlCopied ? (
                 <>
                   <CheckCircle className="h-4 w-4 mr-2" />
-                  コピー済み
+                  Copied
                 </>
               ) : (
                 <>
                   <Copy className="h-4 w-4 mr-2" />
-                  URLをコピー
+                  Copy URL
                 </>
               )}
             </Button>

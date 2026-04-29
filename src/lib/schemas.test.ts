@@ -175,7 +175,7 @@ describe("parseSearchResult", () => {
     };
 
     expect(() => parseSearchResult(invalidData)).toThrow(
-      "サーバーからの応答が不正な形式でした",
+      "The server returned a response in an unexpected format",
     );
     expect(consoleSpy).toHaveBeenCalled();
     consoleSpy.mockRestore();
@@ -187,7 +187,7 @@ describe("parseSearchResult", () => {
       .mockImplementation(() => undefined);
 
     expect(() => parseSearchResult(null)).toThrow(
-      "サーバーからの応答が不正な形式でした",
+      "The server returned a response in an unexpected format",
     );
     consoleSpy.mockRestore();
   });
@@ -209,16 +209,16 @@ describe("parseApiError", () => {
     };
 
     const result = parseApiError(invalidError);
-    expect(result).toBe("予期しないエラーが発生しました");
+    expect(result).toBe("An unexpected error occurred");
   });
 
   it("should return fallback message for null", () => {
     const result = parseApiError(null);
-    expect(result).toBe("予期しないエラーが発生しました");
+    expect(result).toBe("An unexpected error occurred");
   });
 
   it("should return fallback message for undefined", () => {
     const result = parseApiError(undefined);
-    expect(result).toBe("予期しないエラーが発生しました");
+    expect(result).toBe("An unexpected error occurred");
   });
 });

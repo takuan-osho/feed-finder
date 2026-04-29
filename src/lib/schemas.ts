@@ -39,7 +39,7 @@ export function parseSearchResult(data: unknown) {
   const result = SearchResultSchema.safeParse(data);
   if (!result.success) {
     console.error("Invalid API response:", result.error.flatten());
-    throw new Error("サーバーからの応答が不正な形式でした");
+    throw new Error("The server returned a response in an unexpected format");
   }
   return result.data;
 }
@@ -52,5 +52,5 @@ export function parseApiError(data: unknown): string {
   if (result.success) {
     return result.data.error;
   }
-  return "予期しないエラーが発生しました";
+  return "An unexpected error occurred";
 }

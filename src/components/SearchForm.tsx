@@ -33,7 +33,7 @@ export function SearchForm({
 
   const validateUrlSafe = (input: string): Result<string, string> => {
     if (!input.trim()) {
-      return err("URLを入力してください");
+      return err("Please enter a URL");
     }
 
     // Basic URL validation using URL API - allow with or without protocol
@@ -47,7 +47,7 @@ export function SearchForm({
       return ok(testUrl);
     } catch {
       return err(
-        "有効なURLを入力してください（例: example.com または https://example.com）",
+        "Please enter a valid URL (e.g., example.com or https://example.com)",
       );
     }
   };
@@ -93,18 +93,18 @@ export function SearchForm({
       <CardContent className="p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
           <fieldset className="space-y-2">
-            <legend className="sr-only">フィード検索フォーム</legend>
+            <legend className="sr-only">Feed search form</legend>
             <label
               htmlFor="url-input"
               className="block text-sm font-medium text-white"
             >
-              ウェブサイトのURL
+              Website URL
             </label>
             <Input
               ref={inputRef}
               id="url-input"
               type="url"
-              placeholder="example.com または https://example.com"
+              placeholder="example.com or https://example.com"
               value={url}
               onChange={handleUrlChange}
               disabled={isLoading}
@@ -159,8 +159,8 @@ export function SearchForm({
             aria-describedby="url-help"
             aria-label={
               isLoading
-                ? "フィード検索を実行中です"
-                : "入力されたURLでフィードを検索"
+                ? "Searching for feeds"
+                : "Search feeds for the entered URL"
             }
             onKeyDown={(e) => {
               if (
@@ -173,13 +173,14 @@ export function SearchForm({
               }
             }}
           >
-            {isLoading ? "検索中..." : "フィードを検索"}
+            {isLoading ? "Searching..." : "Search feeds"}
           </Button>
         </form>
 
         <aside className="mt-4 text-sm text-[#90aecb]">
           <p id="url-help">
-            このツールは、指定されたウェブサイトのRSS/Atomフィードを自動検索します。
+            This tool automatically discovers RSS / Atom feeds for the website
+            you specify.
           </p>
         </aside>
       </CardContent>

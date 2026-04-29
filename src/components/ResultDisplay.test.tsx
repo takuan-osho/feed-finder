@@ -22,7 +22,7 @@ describe("ResultDisplay", () => {
       const alert = screen.getByRole("alert");
       expect(alert).toBeInTheDocument();
       expect(alert).toHaveAttribute("aria-live", "assertive");
-      expect(screen.getByText(/エラーが発生しました:/)).toBeInTheDocument();
+      expect(screen.getByText(/An error occurred:/)).toBeInTheDocument();
       expect(screen.getByText(/Network error occurred/)).toBeInTheDocument();
     });
 
@@ -49,11 +49,11 @@ describe("ResultDisplay", () => {
       const status = screen.getByRole("status");
       expect(status).toBeInTheDocument();
       expect(status).toHaveAttribute("aria-live", "polite");
+      expect(screen.getByText(/No feeds were found/)).toBeInTheDocument();
       expect(
-        screen.getByText(/フィードが見つかりませんでした/),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByText(/https:\/\/example.com からRSS\/Atomフィードを発見/),
+        screen.getByText(
+          /Could not discover any RSS \/ Atom feeds for https:\/\/example.com/,
+        ),
       ).toBeInTheDocument();
     });
 
@@ -78,9 +78,7 @@ describe("ResultDisplay", () => {
       };
       render(<ResultDisplay result={failedResult} />);
 
-      expect(
-        screen.getByText(/フィードが見つかりませんでした/),
-      ).toBeInTheDocument();
+      expect(screen.getByText(/No feeds were found/)).toBeInTheDocument();
     });
   });
 
@@ -111,11 +109,9 @@ describe("ResultDisplay", () => {
     it("should display success message with feed count", () => {
       render(<ResultDisplay result={successResult} />);
 
+      expect(screen.getByText(/Found 2 feed\(s\)/)).toBeInTheDocument();
       expect(
-        screen.getByText(/2個のフィードが見つかりました/),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByText(/検索対象: https:\/\/example.com/),
+        screen.getByText(/Searched: https:\/\/example.com/),
       ).toBeInTheDocument();
     });
 
@@ -139,8 +135,12 @@ describe("ResultDisplay", () => {
     it("should display discovery method correctly", () => {
       render(<ResultDisplay result={successResult} />);
 
-      expect(screen.getByText("HTML メタタグから発見")).toBeInTheDocument();
-      expect(screen.getByText("一般的なパスから発見")).toBeInTheDocument();
+      expect(
+        screen.getByText("Discovered via HTML meta tag"),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText("Discovered via common path"),
+      ).toBeInTheDocument();
     });
 
     it("should display feed description when provided", () => {
@@ -201,7 +201,7 @@ describe("ResultDisplay", () => {
       render(<ResultDisplay result={successResult} />);
 
       const section = screen.getByTestId("result-display");
-      expect(section).toHaveAttribute("aria-label", "検索結果");
+      expect(section).toHaveAttribute("aria-label", "Search results");
     });
 
     it("should have list role on feed container", () => {
@@ -222,17 +222,17 @@ describe("ResultDisplay", () => {
       render(<ResultDisplay result={successResult} />);
 
       expect(
-        screen.getByLabelText(/Example Feedのフィードを新しいタブで開く/),
+        screen.getByLabelText(/Open the feed for Example Feed in a new tab/),
       ).toBeInTheDocument();
       expect(
-        screen.getByLabelText(/Example FeedのURLをクリップボードにコピー/),
+        screen.getByLabelText(/Copy the URL of Example Feed to the clipboard/),
       ).toBeInTheDocument();
     });
 
     it("should have group role on action buttons", () => {
       render(<ResultDisplay result={successResult} />);
 
-      const group = screen.getByRole("group", { name: "フィードアクション" });
+      const group = screen.getByRole("group", { name: "Feed actions" });
       expect(group).toBeInTheDocument();
     });
 
@@ -277,7 +277,7 @@ describe("ResultDisplay", () => {
       render(<ResultDisplay result={successResult} />);
 
       const copyButton = screen.getByLabelText(
-        /Example FeedのURLをクリップボードにコピー/,
+        /Copy the URL of Example Feed to the clipboard/,
       );
       fireEvent.click(copyButton);
 
@@ -290,12 +290,12 @@ describe("ResultDisplay", () => {
       render(<ResultDisplay result={successResult} />);
 
       const copyButton = screen.getByLabelText(
-        /Example FeedのURLをクリップボードにコピー/,
+        /Copy the URL of Example Feed to the clipboard/,
       );
       fireEvent.click(copyButton);
 
       await vi.waitFor(() => {
-        expect(screen.getByText("コピー済み")).toBeInTheDocument();
+        expect(screen.getByText("Copied")).toBeInTheDocument();
       });
 
       expect(copyButton.className).toContain("bg-green-900");
@@ -303,7 +303,7 @@ describe("ResultDisplay", () => {
       vi.advanceTimersByTime(2000);
 
       await vi.waitFor(() => {
-        expect(screen.getByText("URLをコピー")).toBeInTheDocument();
+        expect(screen.getByText("Copy URL")).toBeInTheDocument();
       });
     });
 
@@ -311,7 +311,7 @@ describe("ResultDisplay", () => {
       render(<ResultDisplay result={successResult} />);
 
       const copyButton = screen.getByLabelText(
-        /Example FeedのURLをクリップボードにコピー/,
+        /Copy the URL of Example Feed to the clipboard/,
       );
 
       fireEvent.keyDown(copyButton, { key: "Enter" });
@@ -347,7 +347,7 @@ describe("ResultDisplay", () => {
       render(<ResultDisplay result={successResult} />);
 
       const openButton = screen.getByLabelText(
-        /Example Feedのフィードを新しいタブで開く/,
+        /Open the feed for Example Feed in a new tab/,
       );
       fireEvent.click(openButton);
 
@@ -362,7 +362,7 @@ describe("ResultDisplay", () => {
       render(<ResultDisplay result={successResult} />);
 
       const openButton = screen.getByLabelText(
-        /Example Feedのフィードを新しいタブで開く/,
+        /Open the feed for Example Feed in a new tab/,
       );
 
       fireEvent.keyDown(openButton, { key: "Enter" });
@@ -377,7 +377,7 @@ describe("ResultDisplay", () => {
       render(<ResultDisplay result={successResult} />);
 
       const openButton = screen.getByLabelText(
-        /Example Feedのフィードを新しいタブで開く/,
+        /Open the feed for Example Feed in a new tab/,
       );
 
       fireEvent.keyDown(openButton, { key: " " });
