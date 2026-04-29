@@ -488,15 +488,34 @@ describe("Performance Optimization Tests", () => {
         status: 200,
         headers: { "content-type": "application/rss+xml" },
       });
+      const mockHtmlResponse = new Response("", {
+        status: 200,
+        headers: { "content-type": "text/html" },
+      });
 
-      let requestCount = 0;
-      const requestTimes: number[] = [];
+      let headRequestCount = 0;
+      let inFlightHeadRequests = 0;
+      let maxConcurrentHeadRequests = 0;
+      const resolveHeadRequests: Array<() => void> = [];
 
-      mockFetch.mockImplementation(() => {
-        requestCount++;
-        const startTime = performance.now();
-        requestTimes.push(startTime);
-        return Promise.resolve(mockResponse);
+      mockFetch.mockImplementation((_url: string, options?: RequestInit) => {
+        if (!options || options.method !== "HEAD") {
+          return Promise.resolve(mockHtmlResponse);
+        }
+
+        headRequestCount++;
+        inFlightHeadRequests++;
+        maxConcurrentHeadRequests = Math.max(
+          maxConcurrentHeadRequests,
+          inFlightHeadRequests,
+        );
+
+        return new Promise<Response>((resolve) => {
+          resolveHeadRequests.push(() => {
+            inFlightHeadRequests--;
+            resolve(mockResponse.clone());
+          });
+        });
       });
 
       const startTime = performance.now();
@@ -511,26 +530,28 @@ describe("Performance Optimization Tests", () => {
         body: JSON.stringify({ url: baseUrl }),
       });
 
-      await worker.fetch(request);
+      const responsePromise = worker.fetch(request);
 
-      const endTime = performance.now();
-      const totalTime = endTime - startTime;
-
-      // Test should verify parallel execution characteristics:
-      // 1. Multiple requests were made (common paths)
-      // 2. They executed in parallel (similar timing)
-      expect(requestCount).toBeGreaterThan(1);
-
-      // Parallel requests should have similar start times (within 10ms)
-      if (requestTimes.length > 1) {
-        const timeDifferences = requestTimes
-          .slice(1)
-          .map((time, i) => Math.abs(time - requestTimes[i]));
-        const maxTimeDifference = Math.max(...timeDifferences);
-        expect(maxTimeDifference).toBeLessThan(10); // Should be nearly simultaneous
+      try {
+        await vi.waitFor(() => {
+          expect(headRequestCount).toBeGreaterThan(1);
+          expect(maxConcurrentHeadRequests).toBeGreaterThan(1);
+        });
+      } finally {
+        resolveHeadRequests.forEach((resolve) => resolve());
       }
 
+      await responsePromise;
+
+      // Test should verify parallel execution characteristics:
+      // 1. Multiple HEAD requests were made (common paths)
+      // 2. More than one HEAD request was in flight at the same time
+      expect(headRequestCount).toBeGreaterThan(1);
+      expect(maxConcurrentHeadRequests).toBeGreaterThan(1);
+
       // Total time should be reasonable for parallel execution
+      const endTime = performance.now();
+      const totalTime = endTime - startTime;
       expect(totalTime).toBeLessThan(1000); // Should complete within 1 second
     });
 
