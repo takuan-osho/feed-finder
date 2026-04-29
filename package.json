@@ -32,7 +32,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.1.2",
+    "@biomejs/biome": "2.4.13",
     "@cloudflare/vite-plugin": "^1.9.6",
     "@mizchi/lsmcp": "^0.9.4",
     "@testing-library/jest-dom": "^6.6.4",
