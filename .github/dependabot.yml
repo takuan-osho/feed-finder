@@ -2,7 +2,7 @@ version: 2
 
 updates:
   - package-ecosystem: "github-actions"
-    directory: "/" # Location of package manifests
+    directory: "/" # Location of GitHub Actions workflow files
     schedule:
       interval: "weekly"
       day: "saturday"
