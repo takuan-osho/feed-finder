@@ -4,22 +4,7 @@ import { CheckCircle, Copy, ExternalLink, Info, XCircle } from "lucide-react";
 import { useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-
-export interface FeedResult {
-  url: string;
-  title?: string;
-  type: "RSS" | "Atom";
-  description?: string;
-  discoveryMethod: "meta-tag" | "common-path";
-}
-
-export interface SearchResult {
-  success: boolean;
-  feeds: FeedResult[];
-  searchedUrl: string;
-  totalFound: number;
-  message?: string;
-}
+import type { FeedResult, SearchResult } from "../../shared/types";
 
 interface ResultDisplayProps {
   result: SearchResult | null;

@@ -1,7 +1,7 @@
 pre-commit:
   commands:
     biome:
-      glob: "src/**/*.{js,ts,jsx,tsx}"
+      glob: "{src,worker}/**/*.{js,ts,jsx,tsx}"
       run: npx @biomejs/biome check --write --no-errors-on-unmatched --files-ignore-unknown=true --colors=off {staged_files}
       stage_fixed: true
 
@@ -12,7 +12,7 @@ pre-commit:
 pre-push:
   commands:
     biome:
-      glob: "src/**/*.{js,ts,jsx,tsx}"
+      glob: "{src,worker}/**/*.{js,ts,jsx,tsx}"
       run: npx @biomejs/biome check --no-errors-on-unmatched --files-ignore-unknown=true --colors=off {push_files}
 
     typecheck:
