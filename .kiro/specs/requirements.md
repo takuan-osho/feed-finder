@@ -1,158 +1,158 @@
-# Feed Finder 改良版 - 要件仕様書
+# Feed Finder - Requirements Specification
 
-## はじめに
+## Introduction
 
-サイトの URL をフォーム経由で入力すると、そのサイトの RSS/Atom フィードを自動検索し、発見されたフィードをリンク付きで表示する Web アプリケーションです。フィードが見つからない場合は、その旨を明確に表示します。
+Feed Finder is a web application: when a user enters a website URL through a form, the system automatically discovers the site's RSS/Atom feeds and renders them as clickable links. If no feed is found, the application says so clearly.
 
-## 要件の優先度
+## Requirement Priority
 
-### 第一優先度（必須実装）
+### First Priority (Must-Have)
 
-要件 1〜9 は必須実装項目です。これらの要件を満たすことで、基本的なフィード検索機能が完成します。
+Requirements 1 through 9 are mandatory. Together they make up the basic feed discovery feature.
 
-### 第二優先度（オプション機能）
+### Second Priority (Optional Features)
 
-要件 10〜12 はオプション機能です。基本機能の実装完了後に、必要に応じて実装を検討します。実装するかどうかは今後の判断に委ねられます。
+Requirements 10 through 12 are optional. They will be considered after the must-have requirements ship; whether to implement them is left for later.
 
-## 要件
+## Requirements
 
-### 要件 1: フィード検索機能
+### Requirement 1: Feed Discovery
 
-**ユーザーストーリー:** サイト管理者として、任意の Web サイトの RSS/Atom フィードを簡単に発見したい。そうすることで、フィードリーダーに登録したり、他のサービスと連携したりできる。
+**User story:** As a site administrator, I want to easily discover the RSS/Atom feeds of any website so that I can subscribe in a feed reader or wire them into other services.
 
-#### 受入基準
+#### Acceptance Criteria
 
-1. WHEN ユーザーが URL を入力して検索ボタンを押す THEN システムはそのサイトの RSS/Atom フィードを自動検索する
-2. WHEN フィードが発見される THEN システムはフィードの URL、タイトル、種別（RSS/Atom）を表示する
-3. WHEN 複数のフィードが発見される THEN システムはすべてのフィードを一覧表示する
-4. WHEN フィードが発見されない THEN システムは「フィードが見つかりませんでした」と明確に表示する
+1. WHEN the user enters a URL and presses the search button THEN the system automatically discovers the site's RSS/Atom feeds.
+2. WHEN a feed is discovered THEN the system displays its URL, title, and type (RSS / Atom).
+3. WHEN multiple feeds are discovered THEN the system lists all of them.
+4. WHEN no feed is discovered THEN the system clearly states "No feeds were found."
 
-### 要件 2: 多段階検索戦略
+### Requirement 2: Multi-Stage Search Strategy
 
-**ユーザーストーリー:** 開発者として、可能な限り多くのフィードを発見したい。そうすることで、ユーザーの満足度を高められる。
+**User story:** As a developer, I want to discover as many feeds as possible so that I can maximize user satisfaction.
 
-#### 受入基準
+#### Acceptance Criteria
 
-1. WHEN HTML メタタグにフィード情報がある THEN システムは RSS Autodiscovery 標準に従ってフィードを検出する
-2. WHEN HTML メタタグでフィードが見つからない THEN システムは一般的なフィードパス（/feed、/rss.xml 等）を確認する
-3. WHEN 両方の方法でフィードを発見する THEN システムは重複を除去して表示する
-4. WHEN 検索方法を記録する THEN システムは各フィードがどの方法で発見されたかを表示する
+1. WHEN HTML meta tags advertise feeds THEN the system detects them following the RSS Autodiscovery convention.
+2. WHEN no feed is found via meta tags THEN the system probes common feed paths (e.g., `/feed`, `/rss.xml`).
+3. WHEN both methods find feeds THEN the system de-duplicates the results.
+4. WHEN reporting results THEN the system records and displays which method found each feed.
 
-### 要件 3: URL 正規化とエラーハンドリング
+### Requirement 3: URL Normalization and Error Handling
 
-**ユーザーストーリー:** 一般ユーザーとして、URL の入力形式を気にせずに検索したい。そうすることで、使いやすいツールとして活用できる。
+**User story:** As a casual user, I want the tool to forgive different URL formats so that it remains easy to use.
 
-#### 受入基準
+#### Acceptance Criteria
 
-1. WHEN プロトコルなしの URL（example.com）を入力する THEN システムは自動的に https://を追加する
-2. WHEN http://の URL を入力する THEN システムは自動的に https://に変換する
-3. WHEN 無効な URL 形式を入力する THEN システムは分かりやすいエラーメッセージを表示する
-4. WHEN ネットワークエラーが発生する THEN システムは適切なエラーメッセージを表示する
+1. WHEN the user enters a URL without a protocol (e.g., `example.com`) THEN the system automatically prepends `https://`.
+2. WHEN the user enters an `http://` URL THEN the system upgrades it to `https://`.
+3. WHEN the URL is malformed THEN the system shows a clear error message.
+4. WHEN a network error occurs THEN the system shows an appropriate error message.
 
-### 要件 4: ユーザーインターフェース
+### Requirement 4: User Interface
 
-**ユーザーストーリー:** 一般ユーザーとして、直感的で使いやすいインターフェースでフィード検索を行いたい。そうすることで、技術的な知識がなくても簡単に利用できる。
+**User story:** As a casual user, I want an intuitive UI so that I can use the tool without technical knowledge.
 
-#### 受入基準
+#### Acceptance Criteria
 
-1. WHEN メインページにアクセスする THEN システムはシンプルな URL 入力フォームを表示する
-2. WHEN 検索結果が表示される THEN システムは各フィードに対して「開く」と「URL コピー」ボタンを提供する
-3. WHEN フィード URL をコピーする THEN システムはクリップボードに URL をコピーする
-4. WHEN フィードを開く THEN システムは新しいタブでフィードを表示する
-5. WHEN モバイルデバイスでアクセスする THEN システムはレスポンシブデザインで適切に表示する
+1. WHEN the user opens the main page THEN the system shows a simple URL input form.
+2. WHEN search results are shown THEN the system provides "Open" and "Copy URL" buttons for each feed.
+3. WHEN the user copies a feed URL THEN the system places it on the clipboard.
+4. WHEN the user opens a feed THEN the system opens it in a new tab.
+5. WHEN the user accesses the site on a mobile device THEN the system renders responsively.
 
-### 要件 5: パフォーマンスとセキュリティ
+### Requirement 5: Performance and Security
 
-**ユーザーストーリー:** システム管理者として、高速で安全なアプリケーションを提供したい。そうすることで、ユーザーに信頼性の高いサービスを提供できる。
+**User story:** As a system administrator, I want the application to be fast and secure so that we can offer a reliable service.
 
-#### 受入基準
+#### Acceptance Criteria
 
-1. WHEN フィードの存在確認を行う THEN システムは HEAD リクエストを使用して効率的に確認する
-2. WHEN ユーザー入力を表示する THEN システムは XSS 攻撃を防ぐために HTML エスケープを行う
-3. WHEN 外部リソースを読み込む THEN システムは SRI（Subresource Integrity）を使用して整合性を確認する
-4. WHEN 検索処理を実行する THEN システムは 5 秒以内にレスポンスを返す
+1. WHEN checking whether a feed exists THEN the system uses a HEAD request for efficiency.
+2. WHEN displaying user input THEN the system HTML-escapes it to prevent XSS.
+3. WHEN loading external resources THEN the system uses Subresource Integrity (SRI) to verify them.
+4. WHEN performing a search THEN the system responds within 5 seconds.
 
-### 要件 6: 国際化対応
+### Requirement 6: Internationalization
 
-**ユーザーストーリー:** 日本のユーザーとして、日本語で操作できるインターフェースを使いたい。また、海外のユーザーとして、英語でも利用できるようにしたい。そうすることで、より多くのユーザーに使いやすいツールを提供できる。
+**User story:** As a Japanese user, I want a Japanese UI; as an international user, I want an English UI as well — so that more users can use the tool comfortably.
 
-#### 受入基準
+#### Acceptance Criteria
 
-1. WHEN アプリケーションにアクセスする THEN システムはデフォルトで日本語のユーザーインターフェースを表示する
-2. WHEN 言語切り替えボタンをクリックする THEN システムは英語のユーザーインターフェースに切り替える
-3. WHEN エラーが発生する THEN システムは選択された言語でエラーメッセージを表示する
-4. WHEN 検索結果を表示する THEN システムは選択された言語で説明文を表示する
-5. WHEN 言語設定を変更する THEN システムはブラウザのローカルストレージに設定を保存する
+1. WHEN the user opens the application THEN the system shows the Japanese UI by default.
+2. WHEN the user clicks the language toggle THEN the system switches to the English UI.
+3. WHEN an error occurs THEN the system displays the error in the selected language.
+4. WHEN search results are rendered THEN the system displays explanatory text in the selected language.
+5. WHEN the user changes the language setting THEN the system persists it in the browser's local storage.
 
-### 要件 7: CI/CD 自動化
+### Requirement 7: CI/CD Automation
 
-**ユーザーストーリー:** 開発者として、コードの品質と安全性を保ちながら効率的にデプロイしたい。そうすることで、手動作業によるミスを防ぎ、継続的な改善を実現できる。
+**User story:** As a developer, I want to deploy efficiently while maintaining quality and safety so that we can avoid manual errors and continue improving.
 
-#### 受入基準
+#### Acceptance Criteria
 
-1. WHEN コードをコミットする THEN 自動的に lint、フォーマット、型チェックが実行される
-2. WHEN コードを push する THEN 自動的にテストスイートと依存関係脆弱性チェックが実行される
-3. WHEN プルリクエストを作成する THEN 自動的に全品質チェックが実行される
-4. WHEN セキュリティ脆弱性が検出される THEN システムは自動的にアラートを送信する
-5. WHEN デプロイを実行する THEN 手動承認後に本番環境にデプロイされる
-6. WHEN Git フックが実行される THEN 高速化されたチェック（0.41 秒以内）で開発効率を維持する
+1. WHEN code is committed THEN lint, formatting, and type checks run automatically.
+2. WHEN code is pushed THEN the test suite and a dependency vulnerability scan run automatically.
+3. WHEN a pull request is opened THEN all quality checks run automatically.
+4. WHEN a security vulnerability is detected THEN the system raises an alert automatically.
+5. WHEN deploying THEN deployment to production happens after manual approval.
+6. WHEN Git hooks run THEN they complete fast (within 0.41 s) to keep developer velocity.
 
-### 要件 8: テスト駆動開発（TDD）
+### Requirement 8: Test-Driven Development (TDD)
 
-**ユーザーストーリー:** 開発者として、高品質で保守性の高いコードを効率的に作成したい。また、AI エージェントとして、明確な手順に従って確実にコードを実装したい。そうすることで、バグの少ない信頼性の高いアプリケーションを構築できる。
+**User story:** As a developer, I want to produce high-quality, maintainable code efficiently. As an AI agent, I want to follow a clear procedure to implement code reliably. Together these enable a low-defect, dependable application.
 
-#### 受入基準
+#### Acceptance Criteria
 
-1. WHEN 新しい機能を実装する THEN 必ず失敗するテストを最初に作成する（Red フェーズ）
-2. WHEN テストを作成する THEN そのテストを通すための最小限の実装のみを行う（Green フェーズ）
-3. WHEN テストが通る THEN コードの品質向上のためのリファクタリングを行う（Refactor フェーズ）
-4. WHEN リファクタリングを行う THEN テストコードは変更せず、実装コードのみを改善する
-5. WHEN 一つの機能が完成する THEN 次の機能に進む前に Red-Green-Refactor サイクルを完了する
-6. WHEN 複雑な機能を実装する THEN 小さな単位に分割して段階的に実装する
-7. WHEN エラーハンドリングを実装する THEN 正常系と異常系の両方のテストケースを作成する
+1. WHEN implementing a new feature THEN we always write a failing test first (Red phase).
+2. WHEN writing tests THEN we add only the minimum implementation required to make them pass (Green phase).
+3. WHEN tests pass THEN we refactor for code quality (Refactor phase).
+4. WHEN refactoring THEN we change implementation only, leaving test code untouched.
+5. WHEN one feature is complete THEN we finish the Red-Green-Refactor cycle before moving on.
+6. WHEN implementing complex features THEN we break them into small steps and build them up incrementally.
+7. WHEN implementing error handling THEN we cover both happy and unhappy paths in tests.
 
-### 要件 9: アクセシビリティ
+### Requirement 9: Accessibility
 
-**ユーザーストーリー:** 視覚障害や運動障害のあるユーザーとして、スクリーンリーダーやキーボード操作でアプリケーションを利用したい。そうすることで、誰でも平等にフィード検索機能を活用できる。
+**User story:** As a user with visual or motor impairments, I want to use the application via a screen reader or keyboard so that everyone has equal access to the feed discovery feature.
 
-#### 受入基準
+#### Acceptance Criteria
 
-1. WHEN スクリーンリーダーを使用する THEN システムは適切な ARIA ラベルとセマンティック HTML を提供する
-2. WHEN キーボードのみで操作する THEN システムはすべての機能にキーボードでアクセスできる
-3. WHEN フォーカスを移動する THEN システムは視覚的にフォーカス状態を明確に表示する
-4. WHEN 色覚異常のユーザーがアクセスする THEN システムは色だけに依存しない情報表示を行う
+1. WHEN a user is on a screen reader THEN the system provides appropriate ARIA labels and semantic HTML.
+2. WHEN the user navigates with a keyboard only THEN the system makes every feature reachable.
+3. WHEN focus moves THEN the system makes the focus state visually obvious.
+4. WHEN a colorblind user opens the page THEN the system communicates without relying on color alone.
 
-### 要件 10: 検索履歴とお気に入り
+### Requirement 10: Search History and Favorites
 
-**ユーザーストーリー:** 頻繁にフィード検索を行うユーザーとして、過去に検索した URL や見つけたフィードを簡単に再利用したい。そうすることで、作業効率を向上させることができる。
+**User story:** As a frequent user, I want to easily reuse URLs I have searched and feeds I have discovered so that I can be more efficient.
 
-#### 受入基準
+#### Acceptance Criteria
 
-1. WHEN URL を検索する THEN システムは検索履歴をローカルストレージに保存する
-2. WHEN 検索フォームをクリックする THEN システムは過去の検索履歴を候補として表示する
-3. WHEN フィードを発見する THEN システムは「お気に入りに追加」ボタンを表示する
-4. WHEN お気に入りに追加する THEN システムはフィード情報をローカルストレージに保存する
-5. WHEN お気に入り一覧を表示する THEN システムは保存されたフィードを一覧表示する
+1. WHEN the user runs a search THEN the system stores the search in local storage.
+2. WHEN the user clicks the search field THEN the system shows previous searches as suggestions.
+3. WHEN a feed is discovered THEN the system shows an "Add to favorites" button.
+4. WHEN the user adds a feed to favorites THEN the system stores its info in local storage.
+5. WHEN the favorites view opens THEN the system lists every saved feed.
 
-### 要件 11: バッチ検索機能
+### Requirement 11: Batch Search
 
-**ユーザーストーリー:** 複数のサイトのフィードを一度に調べたいユーザーとして、複数の URL を一括で検索したい。そうすることで、大量のサイトのフィード情報を効率的に収集できる。
+**User story:** As a user investigating multiple sites, I want to search several URLs at once so that I can collect feed information at scale efficiently.
 
-#### 受入基準
+#### Acceptance Criteria
 
-1. WHEN 複数 URL モードを選択する THEN システムはテキストエリアで複数の URL 入力を受け付ける
-2. WHEN 複数の URL を入力する THEN システムは改行区切りまたはカンマ区切りで URL を解析する
-3. WHEN バッチ検索を実行する THEN システムは各 URL を順次検索して結果を表示する
-4. WHEN バッチ検索中にエラーが発生する THEN システムは該当 URL のエラーを表示し、他の URL の検索を継続する
-5. WHEN バッチ検索が完了する THEN システムは結果を CSV または JSON 形式でエクスポートできる
+1. WHEN the user selects multi-URL mode THEN the system shows a textarea that accepts multiple URLs.
+2. WHEN the user enters multiple URLs THEN the system parses them split by newlines or commas.
+3. WHEN a batch search runs THEN the system searches each URL in turn and shows the results.
+4. WHEN an error occurs during a batch search THEN the system shows the error for the failing URL and keeps searching the rest.
+5. WHEN a batch search completes THEN the system can export the results as CSV or JSON.
 
-### 要件 12: フィード詳細情報
+### Requirement 12: Feed Detail Information
 
-**ユーザーストーリー:** フィードの詳細を知りたいユーザーとして、フィードの最新記事や更新頻度などの情報を確認したい。そうすることで、フィードの品質や活動状況を判断できる。
+**User story:** As a user who wants to dig into a feed, I want to see things like the latest entries and update frequency so that I can judge feed quality and activity.
 
-#### 受入基準
+#### Acceptance Criteria
 
-1. WHEN フィードの詳細ボタンをクリックする THEN システムはフィードの内容を解析して詳細情報を表示する
-2. WHEN フィード詳細を表示する THEN システムは最新記事のタイトルと日付を表示する
-3. WHEN フィード詳細を表示する THEN システムは推定される更新頻度を表示する
-4. WHEN フィード詳細を表示する THEN システムはフィードの説明文を表示する
+1. WHEN the user clicks the feed details button THEN the system parses the feed and shows detail information.
+2. WHEN feed details are shown THEN the system displays the latest entry's title and publication date.
+3. WHEN feed details are shown THEN the system displays an estimated update frequency.
+4. WHEN feed details are shown THEN the system displays the feed's description.

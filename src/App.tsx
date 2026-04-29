@@ -40,7 +40,7 @@ function App() {
       setSearchResult(validatedResult);
     } catch {
       setError(
-        "フィード検索中にエラーが発生しました。しばらく後にもう一度お試しください。",
+        "An error occurred while searching for feeds. Please try again later.",
       );
     } finally {
       setIsLoading(false);
@@ -73,10 +73,11 @@ function App() {
           <div className="layout-content-container flex flex-col max-w-[960px] flex-1 space-y-8">
             <section className="text-center">
               <h1 className="text-white tracking-light text-[28px] font-bold leading-tight">
-                RSS・Atomフィード検索
+                RSS / Atom Feed Discovery
               </h1>
               <p className="text-[#90aecb] mt-2 text-base">
-                ウェブサイトのURLを入力して、RSSやAtomフィードを自動検索します
+                Enter a website URL to automatically discover its RSS and Atom
+                feeds
               </p>
             </section>
 

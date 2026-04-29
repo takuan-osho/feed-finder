@@ -23,14 +23,14 @@ describe("SearchForm URL Validation", () => {
     it("should reject http:// as invalid URL", async () => {
       render(<SearchForm onSubmit={mockOnSubmit} isLoading={false} />);
 
-      const input = screen.getByLabelText(/ウェブサイトのURL/);
+      const input = screen.getByLabelText(/Website URL/);
 
       fireEvent.change(input, { target: { value: "http://" } });
       fireEvent.submit(input.closest("form")!);
 
       // Should show validation error
       await waitFor(() => {
-        const errorElement = screen.queryByText(/有効なURLを入力してください/);
+        const errorElement = screen.queryByText(/Please enter a valid URL/);
         expect(errorElement).toBeTruthy();
       });
       expect(mockOnSubmit).not.toHaveBeenCalled();
@@ -39,14 +39,14 @@ describe("SearchForm URL Validation", () => {
     it("should reject https:// as invalid URL", async () => {
       render(<SearchForm onSubmit={mockOnSubmit} isLoading={false} />);
 
-      const input = screen.getByLabelText(/ウェブサイトのURL/);
+      const input = screen.getByLabelText(/Website URL/);
 
       fireEvent.change(input, { target: { value: "https://" } });
       fireEvent.submit(input.closest("form")!);
 
       // Should show validation error
       await waitFor(() => {
-        const errorElement = screen.queryByText(/有効なURLを入力してください/);
+        const errorElement = screen.queryByText(/Please enter a valid URL/);
         expect(errorElement).toBeTruthy();
       });
       expect(mockOnSubmit).not.toHaveBeenCalled();
@@ -55,13 +55,13 @@ describe("SearchForm URL Validation", () => {
     it("should accept example.com as valid URL", async () => {
       render(<SearchForm onSubmit={mockOnSubmit} isLoading={false} />);
 
-      const input = screen.getByLabelText(/ウェブサイトのURL/);
+      const input = screen.getByLabelText(/Website URL/);
 
       fireEvent.change(input, { target: { value: "example.com" } });
       fireEvent.submit(input.closest("form")!);
 
       // Should not show validation error
-      expect(screen.queryByText(/有効なURLを入力してください/)).toBeNull();
+      expect(screen.queryByText(/Please enter a valid URL/)).toBeNull();
 
       // Should call onSubmit with normalized URL
       expect(mockOnSubmit).toHaveBeenCalledWith("https://example.com");
@@ -70,13 +70,13 @@ describe("SearchForm URL Validation", () => {
     it("should accept example.technology (long TLD) as valid URL", async () => {
       render(<SearchForm onSubmit={mockOnSubmit} isLoading={false} />);
 
-      const input = screen.getByLabelText(/ウェブサイトのURL/);
+      const input = screen.getByLabelText(/Website URL/);
 
       fireEvent.change(input, { target: { value: "example.technology" } });
       fireEvent.submit(input.closest("form")!);
 
       // Should not show validation error
-      expect(screen.queryByText(/有効なURLを入力してください/)).toBeNull();
+      expect(screen.queryByText(/Please enter a valid URL/)).toBeNull();
 
       // Should call onSubmit with normalized URL
       expect(mockOnSubmit).toHaveBeenCalledWith("https://example.technology");

@@ -1,200 +1,200 @@
-# Feed Finder 改良版 - Claude Code 開発ガイド
+# Feed Finder - Claude Code Development Guide
 
-## プロジェクト概要
+## Project Overview
 
-Feed Finder 改良版は、Web サイトの URL 入力から RSS/Atom フィードを自動検索・表示する Web アプリケーションです。
+Feed Finder is a web application that takes a website URL as input and automatically discovers and displays RSS/Atom feeds.
 
-### 技術スタック
+### Tech Stack
 
-- **フロントエンド**: React 19 + TypeScript + Vite
+- **Frontend**: React 19 + TypeScript + Vite
 - **UI**: shadcn/ui + TailwindCSS v4
-- **バックエンド**: Cloudflare Workers
-- **テスト**: Vitest
-- **品質管理**: Biome (lint/format) + lefthook
-- **エラーハンドリング**: neverthrow (ResultAsync)
+- **Backend**: Cloudflare Workers
+- **Testing**: Vitest
+- **Code Quality**: Biome (lint/format) + lefthook
+- **Error Handling**: neverthrow (ResultAsync)
 
-## 重要な開発原則
+## Core Development Principles
 
 ### 1. TDD (Test-Driven Development)
 
-- **t-wada 式 TDD**を厳格に適用
-- Red → Green → Refactor サイクルを必ず守る
-- 小さなステップで段階的に実装
+- Apply **t-wada style TDD** strictly.
+- Always follow the Red → Green → Refactor cycle.
+- Implement incrementally in small steps.
 
-### 2. TailwindCSS v4 記法
+### 2. TailwindCSS v4 Syntax
 
-- **v4 記法のみ使用** (v3 以前の記法は禁止)
-- 新しい CSS 機能とカスタムプロパティを活用
+- **Use v4 syntax only** (pre-v4 syntax is forbidden).
+- Take advantage of new CSS features and custom properties.
 
-### 3. アクセシビリティ
+### 3. Accessibility
 
-- WCAG 2.2 準拠
-- セマンティック HTML、ARIA、キーボードナビゲーション
-- タッチターゲット 24×24px 以上
+- WCAG 2.2 compliant.
+- Semantic HTML, ARIA, and keyboard navigation.
+- Touch targets at least 24×24px.
 
-## プロジェクト構造
+## Project Structure
 
 ```
 feed-finder/
-├── .kiro/specs/           # 仕様書
-│   ├── requirements.md   # 要件仕様
-│   ├── design.md         # 設計仕様
-│   └── tasks.md          # 実装タスクリスト
+├── .kiro/specs/           # Specifications
+│   ├── requirements.md   # Requirements spec
+│   ├── design.md         # Design spec
+│   └── tasks.md          # Implementation task list
 ├── src/
-│   ├── components/       # Reactコンポーネント
-│   └── lib/             # ユーティリティ関数
-├── worker/              # Cloudflare Workers用コード
-├── .github/workflows/   # CI/CD設定
-└── lefthook.yml        # Git hooks設定
+│   ├── components/       # React components
+│   └── lib/              # Utility functions
+├── worker/              # Cloudflare Workers code
+├── .github/workflows/   # CI/CD configuration
+└── lefthook.yml         # Git hooks configuration
 ```
 
-## 現在の実装状況
+## Current Implementation Status
 
-### ✅ 完了済み
+### Done
 
-- プロジェクト基盤セットアップ (React + Vite + TypeScript)
-- shadcn/ui + TailwindCSS v4 導入
-- 基本 UI コンポーネント (Button, Input, Card, Alert)
-- 検索フォームコンポーネント (SearchForm)
-- 結果表示コンポーネント (ResultDisplay, FeedCard)
-- CI/CD パイプライン (lefthook + GitHub Actions)
+- Project foundation (React + Vite + TypeScript)
+- shadcn/ui + TailwindCSS v4 setup
+- Base UI components (Button, Input, Card, Alert)
+- Search form component (SearchForm)
+- Result display components (ResultDisplay, FeedCard)
+- CI/CD pipeline (lefthook + GitHub Actions)
 
-### 🚧 実装中/次のタスク
+### In Progress / Up Next
 
-- 型定義とコア関数の実装 (2.1-2.3)
-- フィード検索エンジンの実装 (3.1-3.4)
-- 国際化システムの実装 (4.1-4.2)
+- Type definitions and core function implementation (2.1-2.3)
+- Feed discovery engine (3.1-3.4)
+- Internationalization system (4.1-4.2)
 
-## 開発時の注意事項
+## Development Notes
 
-### コーディング規約
+### Coding Conventions
 
-1. **TypeScript**: 厳格な型定義を使用
-2. **エラーハンドリング**: neverthrow の ResultAsync を活用
-3. **非同期処理**: Promise.all()で並列処理を最適化
-4. **セキュリティ**: XSS 対策、HTML エスケープを徹底
+1. **TypeScript**: use strict type definitions.
+2. **Error handling**: leverage neverthrow's ResultAsync.
+3. **Async work**: parallelize with `Promise.all()` where it helps.
+4. **Security**: enforce XSS protection and HTML escaping rigorously.
 
-### テスト戦略
+### Testing Strategy
 
-- 単体テスト: 各関数の動作確認
-- コンポーネントテスト: React Testing Library 使用
-- アクセシビリティテスト: 自動化テスト含む
+- Unit tests: verify behavior of individual functions.
+- Component tests: use React Testing Library.
+- Accessibility tests: include automated checks.
 
-### パフォーマンス要件
+### Performance Targets
 
-- 初回読み込み: 2 秒以内
-- フィード検索: 5 秒以内
-- バンドルサイズ: 最小化
+- Initial load: under 2 seconds.
+- Feed search: under 5 seconds.
+- Minimize bundle size.
 
-## 重要なファイル
+## Important Files
 
-### 仕様書 (必読)
+### Specifications (Required Reading)
 
-- `.kiro/specs/requirements.md` - 要件仕様書
-- `.kiro/specs/design.md` - 設計仕様書
-- `.kiro/specs/tasks.md` - 実装タスクリスト
+- `.kiro/specs/requirements.md` - Requirements spec
+- `.kiro/specs/design.md` - Design spec
+- `.kiro/specs/tasks.md` - Implementation task list
 
-### 設定ファイル
+### Configuration Files
 
-- `package.json` - 依存関係とスクリプト
-- `tsconfig.json` - TypeScript 設定
-- `biome.json` - Linter/Formatter 設定
-- `lefthook.yml` - Git hooks 設定
+- `package.json` - dependencies and scripts
+- `tsconfig.json` - TypeScript configuration
+- `biome.json` - linter/formatter configuration
+- `lefthook.yml` - Git hooks configuration
 
-### 開発コマンド
+### Development Commands
 
 ```bash
-npm run dev          # 開発サーバー起動
-npm run build        # プロダクションビルド（型チェック→アプリ・Worker両方ビルド）
-npm run preview      # プロダクション版プレビュー
-npm run test         # テスト実行（watch/対話モード）
-npm run test:run     # テスト実行（CI用・一回のみ）
-npm run lint         # Biome Linter実行
-npm run deploy       # Cloudflare Workersにデプロイ
-npm run cf-typegen   # Cloudflare型定義生成
+npm run dev          # Start the dev server
+npm run build        # Production build (type-check then build app + worker)
+npm run preview      # Preview the production build
+npm run test         # Run tests (watch / interactive mode)
+npm run test:run     # Run tests once (for CI)
+npm run lint         # Run the Biome linter
+npm run deploy       # Deploy to Cloudflare Workers
+npm run cf-typegen   # Generate Cloudflare type definitions
 ```
 
-## 実装時のベストプラクティス
+## Implementation Best Practices
 
-### 1. 新機能実装の流れ（t-wada式TDD）
+### 1. New Feature Workflow (t-wada style TDD)
 
-1. 仕様書で要件を確認
-2. **TDD でテスト作成 (Red)** - 失敗する最小のテストを書く
-3. **最小実装でテスト通過 (Green)** - 必要最小限の実装でグリーンにする
-4. **リファクタリング (Refactor)** - コードをよりよい設計に改善
-5. 統合テスト実行・CI確認
+1. Confirm requirements in the spec files.
+2. **Write a failing test (Red)** — author the smallest failing test.
+3. **Make the test pass (Green)** — write the minimum implementation needed.
+4. **Refactor** — improve the design without changing behavior.
+5. Run integration tests and verify CI.
 
-**重要**: すべての実装は原則 t-wada 式 TDD（Red → Green → Refactor）で進める。セキュリティ・パフォーマンスのregression防止のため、失敗ケース・境界値も必ずカバーする。
+**Important**: All implementation work follows the t-wada Red → Green → Refactor cycle. Always cover failure cases and boundary values to prevent security and performance regressions.
 
-### 2. コンポーネント設計
+### 2. Component Design
 
-- 単一責任の原則
-- Props 型定義の徹底
-- アクセシビリティ属性の設定
-- TailwindCSS v4 記法でスタイリング
-- ファイル命名: コンポーネントは `PascalCase.tsx`（例: `SearchForm.tsx`）
-- ユーティリティは `camelCase.ts`（例: `variants.ts`）
-- ESM imports使用（CommonJS禁止）
+- Single Responsibility Principle.
+- Strict Props type definitions.
+- Apply accessibility attributes.
+- Style with TailwindCSS v4 syntax.
+- File naming: components use `PascalCase.tsx` (e.g., `SearchForm.tsx`).
+- Utilities use `camelCase.ts` (e.g., `variants.ts`).
+- Use ESM imports (CommonJS is forbidden).
 
-### 3. エラーハンドリング
+### 3. Error Handling
 
-- neverthrow の Result 型使用
-- ユーザーフレンドリーなエラーメッセージ
-- 適切な HTTP ステータスコード
+- Use neverthrow's Result type.
+- User-friendly error messages.
+- Appropriate HTTP status codes.
 
-### 4. 国際化対応
+### 4. Internationalization
 
-- 日本語・英語対応
-- Accept-Language ヘッダー検出
-- ローカルストレージでの言語設定保存
+- Japanese and English support.
+- Detect language from the `Accept-Language` header.
+- Persist user language preference in local storage.
 
-## コミット・PR ガイドライン
+## Commit & PR Guidelines
 
-### コミットメッセージ
-- 簡潔で命令法を使用
-- 関連issue・PRを参照（例: "Fix SSRF checks (#15)"）
-- ブランチ命名: `feat/…`, `fix/…`, `chore/…`
+### Commit Messages
+- Concise and in the imperative mood.
+- Reference related issues/PRs (e.g., "Fix SSRF checks (#15)").
+- Branch naming: `feat/…`, `fix/…`, `chore/…`.
 
-### プルリクエスト
-- 明確な説明とissueリンク
-- テスト証跡（ログ・スナップショット）
-- UI変更時はスクリーンショット添付
-- `npm run lint`とテストが通過していることを確認
+### Pull Requests
+- Clear description with linked issues.
+- Test evidence (logs / snapshots).
+- Attach screenshots for UI changes.
+- Confirm `npm run lint` and tests pass.
 
-## セキュリティ・設定のヒント
+## Security & Configuration Tips
 
-### CORS・SSRF対策
-- CORS origins: `worker/index.ts`の`ALLOWED_ORIGINS`を更新
-- SSRF対策: `validateTargetUrl`のチェックを弱めない
-- プライベート・ループバックホストや異常なポートを避ける
-- クライアント側にシークレットを含めない
-- サーバー側の値はWrangler・環境変数で設定
+### CORS / SSRF
+- CORS origins: update `ALLOWED_ORIGINS` in `worker/index.ts`.
+- SSRF: do not weaken the checks in `validateTargetUrl`.
+- Avoid private/loopback hosts and unusual ports.
+- Keep secrets out of the client.
+- Provide server-side values via Wrangler / environment variables.
 
-## トラブルシューティング
+## Troubleshooting
 
-### よくある問題
+### Common Issues
 
-1. **TailwindCSS v3 記法の使用**: v4 記法に変更
-2. **型エラー**: 厳格な型定義を確認
-3. **テスト失敗**: TDD サイクルを再確認
-4. **ビルドエラー**: 依存関係と TypeScript 設定を確認
+1. **Pre-v4 TailwindCSS syntax in use**: migrate to v4 syntax.
+2. **Type errors**: review the strict type definitions.
+3. **Failing tests**: revisit the TDD cycle.
+4. **Build errors**: check dependencies and TypeScript configuration.
 
-### デバッグ方法
+### Debugging
 
-- ブラウザ開発者ツール
-- Vite の開発サーバーログ
-- Vitest のテスト結果
-- Biome の lint 結果
+- Browser dev tools.
+- Vite dev server logs.
+- Vitest test output.
+- Biome lint output.
 
-## 参考リンク
+## References
 
-- [要件仕様書](.kiro/specs/requirements.md)
-- [設計仕様書](.kiro/specs/design.md)
-- [実装タスクリスト](.kiro/specs/tasks.md)
+- [Requirements spec](.kiro/specs/requirements.md)
+- [Design spec](.kiro/specs/design.md)
+- [Implementation task list](.kiro/specs/tasks.md)
 - [TailwindCSS v4 Documentation](https://tailwindcss.com/docs)
 - [shadcn/ui Components](https://ui.shadcn.com/)
 - [neverthrow Documentation](https://github.com/supermacro/neverthrow)
 
 ---
 
-このガイドを参考に、効率的で高品質な開発を進めてください。不明な点があれば、仕様書を確認するか、プロジェクトの設計原則に立ち返って判断してください。
+Use this guide as a reference for efficient, high-quality development. When in doubt, consult the spec files or fall back on the project's design principles.

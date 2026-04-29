@@ -2,7 +2,7 @@ import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import App from "./App";
 
-// Bundle Optimization Tests (t-wada式TDD)
+// Bundle Optimization Tests (t-wada style TDD)
 describe("Bundle Optimization Tests", () => {
   describe("Code Splitting Verification", () => {
     it("should lazy load ResultDisplay component to reduce initial bundle", async () => {
@@ -55,7 +55,7 @@ describe("Bundle Optimization Tests", () => {
       // Verify that the app renders with the expected title content instead
       render(<App />);
       const title = document.querySelector("h1");
-      expect(title?.textContent).toContain("RSS・Atomフィード検索");
+      expect(title?.textContent).toContain("RSS / Atom Feed Discovery");
     });
   });
 });
