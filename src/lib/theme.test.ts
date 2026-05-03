@@ -6,6 +6,8 @@ import {
   THEME_STORAGE_KEY,
 } from "./theme";
 
+const realLocalStorage = window.localStorage;
+
 function mockColorSchemePreference(prefersDark: boolean) {
   Object.defineProperty(window, "matchMedia", {
     writable: true,
@@ -34,6 +36,19 @@ function ensureMetaThemeColor(initialContent = "#ffffff") {
   return meta;
 }
 
+function mockLocalStorageAccess(overrides: Partial<Storage>) {
+  Object.defineProperty(window, "localStorage", {
+    configurable: true,
+    value: {
+      clear: vi.fn(),
+      getItem: vi.fn(() => null),
+      removeItem: vi.fn(),
+      setItem: vi.fn(),
+      ...overrides,
+    },
+  });
+}
+
 describe("theme module", () => {
   beforeEach(() => {
     window.localStorage.clear();
@@ -47,6 +62,10 @@ describe("theme module", () => {
   });
 
   afterEach(() => {
+    Object.defineProperty(window, "localStorage", {
+      configurable: true,
+      value: realLocalStorage,
+    });
     window.localStorage.clear();
     vi.restoreAllMocks();
   });
@@ -76,6 +95,17 @@ describe("theme module", () => {
     it("returns 'light' when system prefers light and no theme is saved", () => {
       mockColorSchemePreference(false);
       expect(getInitialTheme()).toBe("light");
+    });
+
+    it("falls back to system preference when localStorage cannot be read", () => {
+      mockLocalStorageAccess({
+        getItem: vi.fn(() => {
+          throw new Error("localStorage is blocked");
+        }),
+      });
+      mockColorSchemePreference(true);
+
+      expect(getInitialTheme()).toBe("dark");
     });
   });
 
@@ -127,6 +157,18 @@ describe("theme module", () => {
     it("persists the theme to localStorage", () => {
       applyTheme("dark");
       expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe("dark");
+    });
+
+    it("does not throw when localStorage cannot be written", () => {
+      mockLocalStorageAccess({
+        setItem: vi.fn(() => {
+          throw new Error("localStorage is blocked");
+        }),
+      });
+
+      expect(() => applyTheme("dark")).not.toThrow();
+      expect(document.documentElement.dataset["theme"]).toBe("dark");
+      expect(document.documentElement.classList.contains("dark")).toBe(true);
     });
   });
 });

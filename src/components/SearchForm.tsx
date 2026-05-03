@@ -1,6 +1,6 @@
 "use client";
 
-import { err, ok, Result } from "neverthrow";
+import { err, Result } from "neverthrow";
 import { useEffect, useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -41,15 +41,13 @@ export function SearchForm({
     const hasProtocol = /^https?:\/\//i.test(trimmed);
     const testUrl = hasProtocol ? trimmed : `https://${trimmed}`;
 
-    try {
-      // Throws on invalid URLs
-      new URL(testUrl);
-      return ok(testUrl);
-    } catch {
-      return err(
+    const safeCreateUrl = Result.fromThrowable(
+      () => new URL(testUrl),
+      () =>
         "Please enter a valid URL (e.g., example.com or https://example.com)",
-      );
-    }
+    );
+
+    return safeCreateUrl().map(() => testUrl);
   };
 
   const validateUrl = (input: string): boolean => {
