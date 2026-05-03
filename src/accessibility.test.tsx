@@ -1,5 +1,5 @@
-import { render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 
 async function renderAppAfterLazyBoundary() {
@@ -10,8 +10,39 @@ async function renderAppAfterLazyBoundary() {
   });
 }
 
+function mockSuccessfulSearchFetch() {
+  const fetchMock = vi.fn().mockResolvedValue({
+    ok: true,
+    json: vi.fn().mockResolvedValue({
+      success: true,
+      feeds: [],
+      searchedUrl: "https://example.com",
+      totalFound: 0,
+    }),
+  });
+
+  vi.stubGlobal("fetch", fetchMock);
+
+  return fetchMock;
+}
+
+function getEnabledSearchButton() {
+  const buttons = screen.getAllByRole("button", { name: /Search feeds/ });
+  const enabledButton = buttons.find(
+    (button) => !button.hasAttribute("disabled"),
+  );
+
+  expect(enabledButton).toBeDefined();
+
+  return enabledButton!;
+}
+
 // t-wada style TDD: accessibility tests
 describe("Accessibility Tests (WCAG 2.2)", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   describe("ARIA Labels and Live Regions", () => {
     it("should have proper aria-live regions for dynamic content", async () => {
       // Red Phase: Test aria-live attributes for dynamic announcements
@@ -63,19 +94,14 @@ describe("Accessibility Tests (WCAG 2.2)", () => {
       expect(urlInput).toHaveAttribute("aria-invalid", "false");
     });
 
-    it("should use aria-hidden on decorative icons", async () => {
-      // Red Phase: Test that decorative icons are hidden from screen readers
+    it("should render SVG icons for decorative UI elements", async () => {
       await renderAppAfterLazyBoundary();
 
-      // Icons should be marked as decorative
       const icons = document.querySelectorAll("svg");
 
-      // Green Phase: Accept that some icons might not have aria-hidden yet
-      // This test will guide implementation
       expect(icons.length).toBeGreaterThan(0);
 
-      // Future improvement: icons should have aria-hidden="true"
-      // This assertion will be enabled after implementation
+      // TODO: Enable after adding aria-hidden="true" to decorative SVGs in production.
       // const hiddenIcons = Array.from(icons).filter(icon =>
       //   icon.getAttribute('aria-hidden') === 'true'
       // );
@@ -179,12 +205,37 @@ describe("Accessibility Tests (WCAG 2.2)", () => {
     });
 
     it("should support Enter and Space key activation on interactive elements", async () => {
-      // Red Phase: Test keyboard activation (will need implementation)
+      const fetchMock = mockSuccessfulSearchFetch();
       await renderAppAfterLazyBoundary();
 
-      // Test form submission with Enter key
       const urlInput = screen.getByLabelText(/Website URL/);
-      expect(urlInput).toHaveProperty("onkeydown");
+      fireEvent.change(urlInput, { target: { value: "example.com" } });
+
+      fireEvent.keyDown(urlInput, { key: "Enter", code: "Enter" });
+
+      await waitFor(() => {
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+      });
+      expect(fetchMock).toHaveBeenLastCalledWith(
+        "/api/search-feeds",
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({ url: "https://example.com" }),
+        }),
+      );
+
+      await waitFor(() => {
+        expect(getEnabledSearchButton()).toBeEnabled();
+      });
+
+      fireEvent.keyDown(getEnabledSearchButton(), {
+        key: " ",
+        code: "Space",
+      });
+
+      await waitFor(() => {
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+      });
     });
 
     it("should have visible focus indicators", async () => {
