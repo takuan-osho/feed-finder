@@ -3,16 +3,31 @@ import type { AppError } from "../types";
 /**
  * Secure error response helper that prevents information leakage
  */
+const ERROR_ID_ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789";
+const ERROR_ID_LENGTH = 9;
+const MAX_UNBIASED_BYTE = 252;
+
 export function generateErrorId(): string {
-  const bytes = new Uint8Array(6);
-  crypto.getRandomValues(bytes);
+  let errorId = "";
 
-  const randomValue = bytes.reduce(
-    (value, byte) => (value << 8n) + BigInt(byte),
-    0n,
-  );
+  while (errorId.length < ERROR_ID_LENGTH) {
+    const bytes = new Uint8Array(ERROR_ID_LENGTH);
+    crypto.getRandomValues(bytes);
 
-  return randomValue.toString(36).padStart(9, "0").slice(-9);
+    for (const byte of bytes) {
+      if (byte >= MAX_UNBIASED_BYTE) {
+        continue;
+      }
+
+      errorId += ERROR_ID_ALPHABET[byte % ERROR_ID_ALPHABET.length];
+
+      if (errorId.length === ERROR_ID_LENGTH) {
+        break;
+      }
+    }
+  }
+
+  return errorId;
 }
 
 export function createErrorResponse(error: AppError): Response {
