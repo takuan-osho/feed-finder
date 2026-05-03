@@ -6,6 +6,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { THEME_STORAGE_KEY } from "@/lib/theme";
 import App from "./App";
 
 function mockColorSchemePreference(prefersDark: boolean) {
@@ -29,6 +30,7 @@ describe("Bundle Optimization Tests", () => {
   beforeEach(() => {
     window.localStorage.clear();
     document.documentElement.classList.remove("dark");
+    document.documentElement.removeAttribute("data-theme");
     document.documentElement.style.colorScheme = "";
     mockColorSchemePreference(false);
   });
@@ -37,6 +39,7 @@ describe("Bundle Optimization Tests", () => {
     cleanup();
     window.localStorage.clear();
     document.documentElement.classList.remove("dark");
+    document.documentElement.removeAttribute("data-theme");
     document.documentElement.style.colorScheme = "";
     vi.restoreAllMocks();
   });
@@ -64,7 +67,7 @@ describe("Bundle Optimization Tests", () => {
       render(<App />);
 
       // Check if critical CSS classes are applied to elements
-      const appElement = document.querySelector(".bg-slate-50");
+      const appElement = document.querySelector(".app-shell");
       const minHeightElement = document.querySelector(".min-h-screen");
 
       // At least one critical CSS class should be present
@@ -103,12 +106,12 @@ describe("Bundle Optimization Tests", () => {
       await waitFor(() => {
         expect(document.documentElement).toHaveClass("dark");
       });
-      expect(window.localStorage.getItem("feed-finder-theme")).toBe("dark");
+      expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe("dark");
     });
 
     it("should prefer saved theme over system preference", async () => {
       mockColorSchemePreference(true);
-      window.localStorage.setItem("feed-finder-theme", "light");
+      window.localStorage.setItem(THEME_STORAGE_KEY, "light");
 
       render(<App />);
 
@@ -129,7 +132,7 @@ describe("Bundle Optimization Tests", () => {
       await waitFor(() => {
         expect(document.documentElement).toHaveClass("dark");
       });
-      expect(window.localStorage.getItem("feed-finder-theme")).toBe("dark");
+      expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe("dark");
       expect(themeToggle).toHaveAttribute("aria-pressed", "true");
     });
   });

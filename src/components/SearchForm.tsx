@@ -89,15 +89,7 @@ export function SearchForm({
   };
 
   return (
-    <Card
-      className="app-surface mx-auto w-full max-w-3xl border shadow-xl backdrop-blur"
-      style={{
-        backgroundColor: "var(--app-surface)",
-        borderColor: "var(--app-border)",
-        color: "var(--app-text)",
-        boxShadow: "0 24px 48px var(--app-card-shadow)",
-      }}
-    >
+    <Card className="app-surface mx-auto w-full max-w-3xl border shadow-xl backdrop-blur">
       <CardContent className="p-5 sm:p-7">
         <form onSubmit={handleSubmit} className="space-y-5">
           <fieldset className="space-y-2.5">
@@ -114,11 +106,6 @@ export function SearchForm({
               onChange={handleUrlChange}
               disabled={isLoading}
               className="app-input h-12 w-full rounded-lg border px-4 shadow-inner transition-colors focus:ring-2 focus:outline-none"
-              style={{
-                backgroundColor: "var(--app-input-bg)",
-                borderColor: "var(--app-input-border)",
-                color: "var(--app-text)",
-              }}
               aria-describedby={
                 validationError
                   ? "url-error"
@@ -172,11 +159,6 @@ export function SearchForm({
             type="submit"
             disabled={isLoading || !url.trim()}
             className="app-primary-button h-12 w-full rounded-lg px-4 py-2 font-semibold shadow-lg transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2"
-            style={{
-              backgroundColor: "var(--app-button-bg)",
-              color: "var(--app-button-text)",
-              boxShadow: "0 10px 15px -3px var(--app-button-shadow)",
-            }}
             aria-describedby="url-help"
             aria-label={
               isLoading
@@ -198,13 +180,7 @@ export function SearchForm({
           </Button>
         </form>
 
-        <aside
-          className="app-muted mt-5 border-t border-[var(--app-border)] pt-4 text-sm leading-6"
-          style={{
-            borderColor: "var(--app-border)",
-            color: "var(--app-muted)",
-          }}
-        >
+        <aside className="app-muted mt-5 border-t border-[var(--app-border)] pt-4 text-sm leading-6">
           <p id="url-help" className="max-w-2xl">
             This tool automatically discovers RSS / Atom feeds for the website
             you specify.

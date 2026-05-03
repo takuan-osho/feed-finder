@@ -52,11 +52,6 @@ export function ResultDisplay({ result, error }: ResultDisplayProps) {
     return (
       <Alert
         className="app-surface app-muted mx-auto max-w-3xl border shadow-lg"
-        style={{
-          backgroundColor: "var(--app-surface)",
-          borderColor: "var(--app-border)",
-          color: "var(--app-muted)",
-        }}
         role="status"
         aria-live="polite"
       >
@@ -133,12 +128,6 @@ function FeedCard({ feed, onCopyUrl, onOpenFeed, copiedUrl }: FeedCardProps) {
   return (
     <article
       className="app-surface rounded-lg border shadow-lg transition-colors duration-200 hover:border-[var(--app-accent-border)]"
-      style={{
-        backgroundColor: "var(--app-surface)",
-        borderColor: "var(--app-border)",
-        color: "var(--app-text)",
-        boxShadow: "0 10px 24px var(--app-card-shadow)",
-      }}
       aria-labelledby={`feed-title-${feed.url.replace(/[^a-zA-Z0-9]/g, "-")}`}
     >
       <header className="p-6 pb-3">
@@ -146,8 +135,7 @@ function FeedCard({ feed, onCopyUrl, onOpenFeed, copiedUrl }: FeedCardProps) {
           <div className="flex-1 min-w-0">
             <h3
               id={`feed-title-${feed.url.replace(/[^a-zA-Z0-9]/g, "-")}`}
-              className="truncate text-lg font-semibold leading-tight"
-              style={{ color: "var(--app-text)" }}
+              className="app-text truncate text-lg font-semibold leading-tight"
             >
               {feed.title || feed.url}
             </h3>
@@ -164,7 +152,6 @@ function FeedCard({ feed, onCopyUrl, onOpenFeed, copiedUrl }: FeedCardProps) {
               </span>
               <span
                 className="app-muted text-xs"
-                style={{ color: "var(--app-muted)" }}
                 aria-label={`Discovery method: ${discoveryMethodText}`}
               >
                 {discoveryMethodText}
@@ -176,28 +163,14 @@ function FeedCard({ feed, onCopyUrl, onOpenFeed, copiedUrl }: FeedCardProps) {
 
       <div className="px-6 pb-6">
         {feed.description && (
-          <p
-            className="app-muted mb-3 line-clamp-2 text-sm leading-6"
-            style={{ color: "var(--app-muted)" }}
-          >
+          <p className="app-muted mb-3 line-clamp-2 text-sm leading-6">
             {feed.description}
           </p>
         )}
 
         <div className="space-y-2">
-          <div
-            className="app-code-block rounded border p-3"
-            style={{
-              backgroundColor: "var(--app-code-bg)",
-              borderColor: "var(--app-input-border)",
-            }}
-          >
-            <code
-              className="app-muted break-all text-xs"
-              style={{ color: "var(--app-muted)" }}
-            >
-              {feed.url}
-            </code>
+          <div className="app-code-block rounded border p-3">
+            <code className="app-muted break-all text-xs">{feed.url}</code>
           </div>
 
           <div
@@ -210,11 +183,6 @@ function FeedCard({ feed, onCopyUrl, onOpenFeed, copiedUrl }: FeedCardProps) {
               variant="outline"
               size="sm"
               className="app-control border focus:outline-none focus:ring-2 focus:ring-offset-2"
-              style={{
-                backgroundColor: "var(--app-control-bg)",
-                borderColor: "var(--app-border)",
-                color: "var(--app-muted)",
-              }}
               aria-label={`Open the feed for ${feed.title || feed.url} in a new tab`}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
@@ -236,15 +204,6 @@ function FeedCard({ feed, onCopyUrl, onOpenFeed, copiedUrl }: FeedCardProps) {
                   ? "border-emerald-200 bg-emerald-100 text-emerald-900 hover:bg-emerald-200 dark:border-emerald-500/30 dark:bg-emerald-900/60 dark:text-emerald-100 dark:hover:bg-emerald-800/70"
                   : "app-control border"
               }`}
-              style={
-                isUrlCopied
-                  ? undefined
-                  : {
-                      backgroundColor: "var(--app-control-bg)",
-                      borderColor: "var(--app-border)",
-                      color: "var(--app-muted)",
-                    }
-              }
               aria-label={`Copy the URL of ${feed.title || feed.url} to the clipboard`}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
