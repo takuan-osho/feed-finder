@@ -30,8 +30,8 @@ describe("ResultDisplay", () => {
       render(<ResultDisplay result={null} error="Test error" />);
 
       const alert = screen.getByRole("alert");
-      expect(alert.className).toContain("bg-red-950");
-      expect(alert.className).toContain("border-red-800");
+      expect(alert.className).toContain("bg-red-50");
+      expect(alert.className).toContain("border-red-200");
     });
   });
 
@@ -128,8 +128,8 @@ describe("ResultDisplay", () => {
       const rssBadge = screen.getByText("RSS");
       const atomBadge = screen.getByText("Atom");
 
-      expect(rssBadge.className).toContain("bg-orange-900");
-      expect(atomBadge.className).toContain("bg-blue-900");
+      expect(rssBadge.className).toContain("bg-orange-100");
+      expect(atomBadge.className).toContain("bg-blue-100");
     });
 
     it("should display discovery method correctly", () => {
@@ -298,7 +298,7 @@ describe("ResultDisplay", () => {
         expect(screen.getByText("Copied")).toBeInTheDocument();
       });
 
-      expect(copyButton.className).toContain("bg-green-900");
+      expect(copyButton.className).toContain("bg-emerald-100");
 
       vi.advanceTimersByTime(2000);
 

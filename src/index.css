@@ -46,6 +46,35 @@
 
 :root {
   --radius: 0.625rem;
+  --app-bg: #f8fafc;
+  --app-text: #020617;
+  --app-muted: #475569;
+  --app-placeholder: #94a3b8;
+  --app-border: rgb(226 232 240 / 0.85);
+  --app-header-bg: rgb(255 255 255 / 0.82);
+  --app-surface: rgb(255 255 255 / 0.92);
+  --app-surface-solid: #ffffff;
+  --app-control-bg: rgb(255 255 255 / 0.92);
+  --app-control-hover: #f1f5f9;
+  --app-input-bg: rgb(248 250 252 / 0.85);
+  --app-input-border: #e2e8f0;
+  --app-input-shadow: rgb(226 232 240 / 0.6);
+  --app-code-bg: #f8fafc;
+  --app-card-shadow: rgb(226 232 240 / 0.6);
+  --app-button-bg: #0d9488;
+  --app-button-hover: #0f766e;
+  --app-button-text: #ffffff;
+  --app-button-shadow: rgb(13 148 136 / 0.2);
+  --app-accent: #0f766e;
+  --app-accent-soft: #f0fdfa;
+  --app-accent-border: #99f6e4;
+  --app-focus: #14b8a6;
+  --app-focus-soft: rgb(20 184 166 / 0.2);
+  --app-hero-glow: radial-gradient(
+    circle at 50% 0%,
+    rgb(20 184 166 / 0.18),
+    transparent 58%
+  );
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -79,7 +108,37 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
+:root[data-theme="dark"],
 .dark {
+  --app-bg: #0b1118;
+  --app-text: #ffffff;
+  --app-muted: #cbd5e1;
+  --app-placeholder: #64748b;
+  --app-border: rgb(255 255 255 / 0.1);
+  --app-header-bg: rgb(11 17 24 / 0.82);
+  --app-surface: rgb(255 255 255 / 0.06);
+  --app-surface-solid: #111c27;
+  --app-control-bg: rgb(255 255 255 / 0.05);
+  --app-control-hover: rgb(255 255 255 / 0.1);
+  --app-input-bg: #0d1823;
+  --app-input-border: rgb(255 255 255 / 0.1);
+  --app-input-shadow: transparent;
+  --app-code-bg: #0b1118;
+  --app-card-shadow: rgb(0 0 0 / 0.2);
+  --app-button-bg: #0ea5e9;
+  --app-button-hover: #38bdf8;
+  --app-button-text: #020617;
+  --app-button-shadow: rgb(14 165 233 / 0.2);
+  --app-accent: #7dd3fc;
+  --app-accent-soft: rgb(56 189 248 / 0.1);
+  --app-accent-border: rgb(56 189 248 / 0.35);
+  --app-focus: #38bdf8;
+  --app-focus-soft: rgb(56 189 248 / 0.2);
+  --app-hero-glow: radial-gradient(
+    circle at 50% 0%,
+    rgb(56 189 248 / 0.2),
+    transparent 58%
+  );
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -120,4 +179,85 @@
   body {
     @apply bg-background text-foreground font-sans;
   }
+}
+
+.app-shell {
+  background-color: var(--app-bg);
+  color: var(--app-text);
+}
+
+.app-hero-glow {
+  background-image: var(--app-hero-glow);
+}
+
+.app-header {
+  background-color: var(--app-header-bg);
+  border-color: var(--app-border);
+}
+
+.app-surface {
+  background-color: var(--app-surface);
+  border-color: var(--app-border);
+  color: var(--app-text);
+  box-shadow: 0 24px 48px var(--app-card-shadow);
+}
+
+.app-muted {
+  color: var(--app-muted);
+}
+
+.app-accent-text {
+  color: var(--app-accent);
+}
+
+.app-accent-box {
+  background-color: var(--app-accent-soft);
+  border-color: var(--app-accent-border);
+  color: var(--app-accent);
+}
+
+.app-control {
+  background-color: var(--app-control-bg);
+  border-color: var(--app-border);
+  color: var(--app-muted);
+  --tw-ring-color: var(--app-focus);
+  --tw-ring-offset-color: var(--app-bg);
+}
+
+.app-control:hover {
+  background-color: var(--app-control-hover);
+  color: var(--app-text);
+}
+
+.app-input {
+  background-color: var(--app-input-bg);
+  border-color: var(--app-input-border);
+  color: var(--app-text);
+  --tw-shadow-color: var(--app-input-shadow);
+  --tw-ring-color: var(--app-focus-soft);
+}
+
+.app-input::placeholder {
+  color: var(--app-placeholder);
+}
+
+.app-input:focus {
+  border-color: var(--app-focus);
+}
+
+.app-primary-button {
+  background-color: var(--app-button-bg);
+  color: var(--app-button-text);
+  --tw-shadow-color: var(--app-button-shadow);
+  --tw-ring-color: var(--app-focus);
+  --tw-ring-offset-color: var(--app-surface-solid);
+}
+
+.app-primary-button:hover {
+  background-color: var(--app-button-hover);
+}
+
+.app-code-block {
+  background-color: var(--app-code-bg);
+  border-color: var(--app-input-border);
 }
