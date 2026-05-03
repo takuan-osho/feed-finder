@@ -3,7 +3,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { SearchForm } from "@/components/SearchForm";
 import { Button } from "@/components/ui/button";
 import { parseApiError, parseSearchResult } from "@/lib/schemas";
-import { THEME_STORAGE_KEY } from "@/lib/theme";
+import { applyTheme, getInitialTheme, type Theme } from "@/lib/theme";
 import type { SearchResult } from "../shared/types";
 
 // Lazy load the ResultDisplay component to reduce initial bundle size
@@ -13,27 +13,6 @@ const ResultDisplay = lazy(() =>
   })),
 );
 
-type Theme = "light" | "dark";
-
-function getInitialTheme(): Theme {
-  if (typeof window === "undefined") {
-    return "light";
-  }
-
-  const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
-  if (storedTheme === "light" || storedTheme === "dark") {
-    return storedTheme;
-  }
-
-  if (typeof window.matchMedia !== "function") {
-    return "light";
-  }
-
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
-}
-
 function App() {
   const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -41,12 +20,7 @@ function App() {
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
 
   useEffect(() => {
-    const isDark = theme === "dark";
-
-    document.documentElement.classList.toggle("dark", isDark);
-    document.documentElement.dataset["theme"] = theme;
-    document.documentElement.style.colorScheme = theme;
-    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+    applyTheme(theme);
   }, [theme]);
 
   const handleSearch = async (url: string) => {

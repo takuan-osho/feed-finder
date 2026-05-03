@@ -72,13 +72,20 @@
       }
       /* Loading state */
       .loading-skeleton {
-        background: linear-gradient(90deg, #223649 25%, #2a3f5a 50%, #223649 75%);
+        background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
         background-size: 200% 100%;
         animation: loading 1.5s infinite;
+      }
+      :root[data-theme="dark"] .loading-skeleton {
+        background: linear-gradient(90deg, #223649 25%, #2a3f5a 50%, #223649 75%);
+        background-size: 200% 100%;
       }
       @keyframes loading {
         0% { background-position: 200% 0; }
         100% { background-position: -200% 0; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .loading-skeleton { animation: none; }
       }
     </style>
   </head>

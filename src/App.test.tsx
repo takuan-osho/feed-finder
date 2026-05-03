@@ -6,7 +6,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { THEME_STORAGE_KEY } from "@/lib/theme";
+import { THEME_COLORS, THEME_STORAGE_KEY } from "@/lib/theme";
 import App from "./App";
 
 function mockColorSchemePreference(prefersDark: boolean) {
@@ -25,6 +25,17 @@ function mockColorSchemePreference(prefersDark: boolean) {
   });
 }
 
+function ensureMetaThemeColor(initialContent = "#ffffff") {
+  document
+    .querySelectorAll('meta[name="theme-color"]')
+    .forEach((node) => node.remove());
+  const meta = document.createElement("meta");
+  meta.setAttribute("name", "theme-color");
+  meta.setAttribute("content", initialContent);
+  document.head.appendChild(meta);
+  return meta;
+}
+
 // Bundle Optimization Tests (t-wada style TDD)
 describe("Bundle Optimization Tests", () => {
   beforeEach(() => {
@@ -32,6 +43,9 @@ describe("Bundle Optimization Tests", () => {
     document.documentElement.classList.remove("dark");
     document.documentElement.removeAttribute("data-theme");
     document.documentElement.style.colorScheme = "";
+    document
+      .querySelectorAll('meta[name="theme-color"]')
+      .forEach((node) => node.remove());
     mockColorSchemePreference(false);
   });
 
@@ -41,6 +55,9 @@ describe("Bundle Optimization Tests", () => {
     document.documentElement.classList.remove("dark");
     document.documentElement.removeAttribute("data-theme");
     document.documentElement.style.colorScheme = "";
+    document
+      .querySelectorAll('meta[name="theme-color"]')
+      .forEach((node) => node.remove());
     vi.restoreAllMocks();
   });
 
@@ -134,6 +151,26 @@ describe("Bundle Optimization Tests", () => {
       });
       expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe("dark");
       expect(themeToggle).toHaveAttribute("aria-pressed", "true");
+    });
+
+    it("should sync meta[name=theme-color] when toggling theme", async () => {
+      ensureMetaThemeColor(THEME_COLORS.light);
+
+      render(<App />);
+
+      await waitFor(() => {
+        const meta = document.querySelector('meta[name="theme-color"]');
+        expect(meta?.getAttribute("content")).toBe(THEME_COLORS.light);
+      });
+
+      fireEvent.click(
+        screen.getByRole("button", { name: "Switch to dark mode" }),
+      );
+
+      await waitFor(() => {
+        const meta = document.querySelector('meta[name="theme-color"]');
+        expect(meta?.getAttribute("content")).toBe(THEME_COLORS.dark);
+      });
     });
   });
 });
