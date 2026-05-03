@@ -3,9 +3,36 @@ import type { AppError } from "../types";
 /**
  * Secure error response helper that prevents information leakage
  */
+const ERROR_ID_ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyz";
+const ERROR_ID_LENGTH = 9;
+const MAX_UNBIASED_BYTE = 252;
+
+export function generateErrorId(): string {
+  let errorId = "";
+
+  while (errorId.length < ERROR_ID_LENGTH) {
+    const bytes = new Uint8Array(ERROR_ID_LENGTH);
+    crypto.getRandomValues(bytes);
+
+    for (const byte of bytes) {
+      if (byte >= MAX_UNBIASED_BYTE) {
+        continue;
+      }
+
+      errorId += ERROR_ID_ALPHABET[byte % ERROR_ID_ALPHABET.length];
+
+      if (errorId.length === ERROR_ID_LENGTH) {
+        break;
+      }
+    }
+  }
+
+  return errorId;
+}
+
 export function createErrorResponse(error: AppError): Response {
   // Log detailed error information for debugging (server-side only)
-  const errorId = Math.random().toString(36).slice(2, 11);
+  const errorId = generateErrorId();
   console.error(
     `[${errorId}] Error type: ${error.type}, Details: ${error.message}`,
   );

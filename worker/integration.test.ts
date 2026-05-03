@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { findMetaFeeds } from "./discovery/html";
+import { generateErrorId } from "./http/errors";
 
 // Mock console.error to avoid noise in tests
 vi.spyOn(console, "error").mockImplementation(() => {
@@ -111,8 +112,8 @@ describe("Security Integration Tests", () => {
   describe("Error Response Security", () => {
     it("should generate consistent error IDs", () => {
       // Test error ID generation format
-      const errorId1 = Math.random().toString(36).slice(2, 11);
-      const errorId2 = Math.random().toString(36).slice(2, 11);
+      const errorId1 = generateErrorId();
+      const errorId2 = generateErrorId();
 
       expect(errorId1).toMatch(/^[a-z0-9]{9}$/);
       expect(errorId2).toMatch(/^[a-z0-9]{9}$/);

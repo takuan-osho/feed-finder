@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppError } from "../types";
-import { createErrorResponse } from "./errors";
+import { createErrorResponse, generateErrorId } from "./errors";
 
 // Type for error response JSON
 interface ErrorResponseData {
@@ -11,18 +11,16 @@ interface ErrorResponseData {
 
 describe("http/errors", () => {
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
-  let mathRandomSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {
       // Mock implementation - intentionally empty for testing
     });
-    mathRandomSpy = vi.spyOn(Math, "random").mockReturnValue(0.123456789);
   });
 
   afterEach(() => {
     consoleErrorSpy.mockRestore();
-    mathRandomSpy.mockRestore();
+    vi.restoreAllMocks();
   });
 
   describe("createErrorResponse", () => {
@@ -191,9 +189,7 @@ describe("http/errors", () => {
       );
     });
 
-    it("should generate unique error IDs", () => {
-      mathRandomSpy.mockRestore(); // Use real Math.random for this test
-
+    it("should generate unique error IDs", async () => {
       const error = {
         type: "NETWORK_ERROR" as const,
         message: "Test error",
@@ -209,11 +205,11 @@ describe("http/errors", () => {
       };
 
       // Error IDs should be different (though this is probabilistic)
-      Promise.all([getErrorId(response1), getErrorId(response2)]).then(
-        ([id1, id2]) => {
-          expect(id1).not.toBe(id2);
-        },
-      );
+      const [id1, id2] = await Promise.all([
+        getErrorId(response1),
+        getErrorId(response2),
+      ]);
+      expect(id1).not.toBe(id2);
     });
 
     it("should return JSON response with correct structure", async () => {
@@ -233,6 +229,36 @@ describe("http/errors", () => {
       expect(responseData).toHaveProperty("error");
       expect(responseData).toHaveProperty("errorId");
       expect(typeof responseData.errorId).toBe("string");
+    });
+  });
+
+  describe("generateErrorId", () => {
+    it("should generate exactly 9 base-36 characters", () => {
+      const errorId = generateErrorId();
+
+      expect(errorId).toMatch(/^[a-z0-9]{9}$/);
+    });
+
+    it("should reject random bytes that would bias character selection", () => {
+      const bytes = [0, 35, 36, 71, 251, 252, 255, 1, 2, 3, 4, 5];
+      let offset = 0;
+
+      vi.spyOn(crypto, "getRandomValues").mockImplementation(
+        <T extends ArrayBufferView | null>(array: T): T => {
+          if (!(array instanceof Uint8Array)) {
+            throw new TypeError("Expected Uint8Array");
+          }
+
+          for (let index = 0; index < array.length; index += 1) {
+            array[index] = bytes[offset] ?? 0;
+            offset += 1;
+          }
+
+          return array as T;
+        },
+      );
+
+      expect(generateErrorId()).toBe("0z0zz1234");
     });
   });
 });

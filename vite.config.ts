@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { cloudflare } from "@cloudflare/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react-swc";
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -39,16 +39,26 @@ export default defineConfig({
     // Code splitting configuration
     rollupOptions: {
       output: {
-        manualChunks: {
+        manualChunks(id) {
           // Separate vendor dependencies
-          react: ["react", "react-dom"],
-          ui: [
-            "@radix-ui/react-slot",
-            "class-variance-authority",
-            "clsx",
-            "tailwind-merge",
-          ],
-          icons: ["lucide-react"],
+          if (id.includes("node_modules/react")) {
+            return "react";
+          }
+
+          if (
+            id.includes("node_modules/@radix-ui/react-slot") ||
+            id.includes("node_modules/class-variance-authority") ||
+            id.includes("node_modules/clsx") ||
+            id.includes("node_modules/tailwind-merge")
+          ) {
+            return "ui";
+          }
+
+          if (id.includes("node_modules/lucide-react")) {
+            return "icons";
+          }
+
+          return undefined;
         },
         // Optimize chunk file names
         chunkFileNames: "assets/[name]-[hash].js",
