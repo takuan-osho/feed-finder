@@ -3,9 +3,21 @@ import type { AppError } from "../types";
 /**
  * Secure error response helper that prevents information leakage
  */
+export function generateErrorId(): string {
+  const bytes = new Uint8Array(6);
+  crypto.getRandomValues(bytes);
+
+  const randomValue = bytes.reduce(
+    (value, byte) => (value << 8n) + BigInt(byte),
+    0n,
+  );
+
+  return randomValue.toString(36).padStart(9, "0").slice(-9);
+}
+
 export function createErrorResponse(error: AppError): Response {
   // Log detailed error information for debugging (server-side only)
-  const errorId = Math.random().toString(36).slice(2, 11);
+  const errorId = generateErrorId();
   console.error(
     `[${errorId}] Error type: ${error.type}, Details: ${error.message}`,
   );

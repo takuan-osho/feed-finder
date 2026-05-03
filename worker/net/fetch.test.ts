@@ -3,7 +3,7 @@ import { safeFetch } from "./fetch";
 
 // Mock fetch globally
 const mockFetch = vi.fn();
-global.fetch = mockFetch;
+globalThis.fetch = mockFetch;
 
 describe("net/fetch", () => {
   beforeEach(() => {
@@ -65,12 +65,12 @@ describe("net/fetch", () => {
 
     it("should timeout after configured timeout period", async () => {
       // Mock setTimeout to immediately call the callback
-      vi.spyOn(global, "setTimeout").mockImplementation((callback) => {
+      vi.spyOn(globalThis, "setTimeout").mockImplementation((callback) => {
         // Call callback immediately to simulate timeout
         if (typeof callback === "function") {
           callback();
         }
-        return 1 as unknown as NodeJS.Timeout;
+        return 1 as unknown as ReturnType<typeof setTimeout>;
       });
 
       // Mock fetch to return a promise that gets aborted
@@ -236,7 +236,7 @@ describe("net/fetch", () => {
       const mockResponse = new Response("test", { status: 200 });
       mockFetch.mockResolvedValueOnce(mockResponse);
 
-      const clearTimeoutSpy = vi.spyOn(global, "clearTimeout");
+      const clearTimeoutSpy = vi.spyOn(globalThis, "clearTimeout");
 
       const result = await safeFetch("https://example.com");
 
@@ -247,7 +247,7 @@ describe("net/fetch", () => {
     it("should cleanup timeout on network error", async () => {
       mockFetch.mockRejectedValueOnce(new Error("Network error"));
 
-      const clearTimeoutSpy = vi.spyOn(global, "clearTimeout");
+      const clearTimeoutSpy = vi.spyOn(globalThis, "clearTimeout");
 
       const result = await safeFetch("https://example.com");
 
