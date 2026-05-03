@@ -32,12 +32,12 @@ export function ResultDisplay({ result, error }: ResultDisplayProps) {
     return (
       <Alert
         variant="destructive"
-        className="bg-red-950 border-red-800 max-w-2xl mx-auto"
+        className="mx-auto max-w-3xl border-red-200 bg-red-50 text-red-900 dark:border-red-500/30 dark:bg-red-950/40 dark:text-red-100"
         role="alert"
         aria-live="assertive"
       >
         <XCircle className="h-4 w-4" aria-hidden="true" />
-        <AlertDescription className="text-red-200">
+        <AlertDescription className="text-red-800 dark:text-red-100">
           <strong>An error occurred:</strong> {error}
         </AlertDescription>
       </Alert>
@@ -51,12 +51,12 @@ export function ResultDisplay({ result, error }: ResultDisplayProps) {
   if (!result.success || result.feeds.length === 0) {
     return (
       <Alert
-        className="bg-[#182734] border-[#314d68] max-w-2xl mx-auto"
+        className="app-surface app-muted mx-auto max-w-3xl border shadow-lg"
         role="status"
         aria-live="polite"
       >
-        <Info className="h-4 w-4 text-[#90aecb]" aria-hidden="true" />
-        <AlertDescription className="text-[#90aecb]">
+        <Info className="app-accent-text h-4 w-4" aria-hidden="true" />
+        <AlertDescription className="app-muted">
           <strong>No feeds were found</strong>
           <br />
           Could not discover any RSS / Atom feeds for {result.searchedUrl}.
@@ -73,18 +73,21 @@ export function ResultDisplay({ result, error }: ResultDisplayProps) {
 
   return (
     <section
-      className="w-full max-w-2xl mx-auto space-y-4"
+      className="mx-auto w-full max-w-3xl space-y-4"
       data-testid="result-display"
       aria-label="Search results"
     >
       <header>
         <Alert
-          className="bg-green-950 border-green-800"
+          className="border-emerald-200 bg-emerald-50 text-emerald-950 shadow-lg shadow-emerald-100/60 dark:border-emerald-400/25 dark:bg-emerald-950/35 dark:text-emerald-100 dark:shadow-black/20"
           role="status"
           aria-live="polite"
         >
-          <CheckCircle className="h-4 w-4 text-green-400" aria-hidden="true" />
-          <AlertDescription className="text-green-200">
+          <CheckCircle
+            className="h-4 w-4 text-emerald-600 dark:text-emerald-300"
+            aria-hidden="true"
+          />
+          <AlertDescription className="text-emerald-900 dark:text-emerald-100">
             <strong>Found {result.totalFound} feed(s)</strong>
             <br />
             Searched: {result.searchedUrl}
@@ -124,7 +127,7 @@ function FeedCard({ feed, onCopyUrl, onOpenFeed, copiedUrl }: FeedCardProps) {
 
   return (
     <article
-      className="bg-[#182734] border border-[#314d68] hover:border-[#0b80ee]/50 transition-colors duration-200 rounded-lg"
+      className="app-surface rounded-lg border shadow-lg transition-colors duration-200 hover:border-[var(--app-accent-border)]"
       aria-labelledby={`feed-title-${feed.url.replace(/[^a-zA-Z0-9]/g, "-")}`}
     >
       <header className="p-6 pb-3">
@@ -132,23 +135,23 @@ function FeedCard({ feed, onCopyUrl, onOpenFeed, copiedUrl }: FeedCardProps) {
           <div className="flex-1 min-w-0">
             <h3
               id={`feed-title-${feed.url.replace(/[^a-zA-Z0-9]/g, "-")}`}
-              className="text-white text-lg leading-tight truncate"
+              className="app-text truncate text-lg font-semibold leading-tight"
             >
               {feed.title || feed.url}
             </h3>
-            <div className="flex items-center gap-2 mt-1">
+            <div className="mt-2 flex flex-wrap items-center gap-2">
               <span
-                className={`px-2 py-1 text-xs font-medium rounded ${
+                className={`rounded px-2 py-1 text-xs font-semibold ${
                   feed.type === "RSS"
-                    ? "bg-orange-900 text-orange-200"
-                    : "bg-blue-900 text-blue-200"
+                    ? "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200"
+                    : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
                 }`}
                 aria-label={`Feed type: ${feed.type}`}
               >
                 {feed.type}
               </span>
               <span
-                className="text-xs text-[#90aecb]"
+                className="app-muted text-xs"
                 aria-label={`Discovery method: ${discoveryMethodText}`}
               >
                 {discoveryMethodText}
@@ -160,22 +163,26 @@ function FeedCard({ feed, onCopyUrl, onOpenFeed, copiedUrl }: FeedCardProps) {
 
       <div className="px-6 pb-6">
         {feed.description && (
-          <p className="text-sm text-[#90aecb] mb-3 line-clamp-2">
+          <p className="app-muted mb-3 line-clamp-2 text-sm leading-6">
             {feed.description}
           </p>
         )}
 
         <div className="space-y-2">
-          <div className="p-2 bg-[#101a23] rounded border border-[#314d68]">
-            <code className="text-xs text-[#90aecb] break-all">{feed.url}</code>
+          <div className="app-code-block rounded border p-3">
+            <code className="app-muted break-all text-xs">{feed.url}</code>
           </div>
 
-          <div className="flex gap-2" role="group" aria-label="Feed actions">
+          <div
+            className="grid gap-2 sm:grid-cols-2"
+            role="group"
+            aria-label="Feed actions"
+          >
             <Button
               onClick={() => onOpenFeed(feed.url)}
               variant="outline"
               size="sm"
-              className="flex-1 bg-[#182734] border-[#314d68] text-white hover:bg-[#314d68] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#0b80ee] focus:ring-offset-2 focus:ring-offset-[#182734]"
+              className="app-control border focus:outline-none focus:ring-2 focus:ring-offset-2"
               aria-label={`Open the feed for ${feed.title || feed.url} in a new tab`}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
@@ -192,10 +199,10 @@ function FeedCard({ feed, onCopyUrl, onOpenFeed, copiedUrl }: FeedCardProps) {
               onClick={() => onCopyUrl(feed.url)}
               variant="outline"
               size="sm"
-              className={`flex-1 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#0b80ee] focus:ring-offset-2 focus:ring-offset-[#182734] ${
+              className={`transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
                 isUrlCopied
-                  ? "bg-green-900 border-green-700 text-green-200 hover:bg-green-800"
-                  : "bg-[#182734] border-[#314d68] text-white hover:bg-[#314d68] hover:text-white"
+                  ? "border-emerald-200 bg-emerald-100 text-emerald-900 hover:bg-emerald-200 dark:border-emerald-500/30 dark:bg-emerald-900/60 dark:text-emerald-100 dark:hover:bg-emerald-800/70"
+                  : "app-control border"
               }`}
               aria-label={`Copy the URL of ${feed.title || feed.url} to the clipboard`}
               onKeyDown={(e) => {

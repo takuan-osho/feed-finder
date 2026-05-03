@@ -1,6 +1,6 @@
 "use client";
 
-import { err, ok, Result } from "neverthrow";
+import { err, Result } from "neverthrow";
 import { useEffect, useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -41,15 +41,13 @@ export function SearchForm({
     const hasProtocol = /^https?:\/\//i.test(trimmed);
     const testUrl = hasProtocol ? trimmed : `https://${trimmed}`;
 
-    try {
-      // Throws on invalid URLs
-      new URL(testUrl);
-      return ok(testUrl);
-    } catch {
-      return err(
+    const safeCreateUrl = Result.fromThrowable(
+      () => new URL(testUrl),
+      () =>
         "Please enter a valid URL (e.g., example.com or https://example.com)",
-      );
-    }
+    );
+
+    return safeCreateUrl().map(() => testUrl);
   };
 
   const validateUrl = (input: string): boolean => {
@@ -89,15 +87,12 @@ export function SearchForm({
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto bg-[#182734] border-[#314d68]">
-      <CardContent className="p-6">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <fieldset className="space-y-2">
+    <Card className="app-surface mx-auto w-full max-w-3xl border shadow-xl backdrop-blur">
+      <CardContent className="p-5 sm:p-7">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <fieldset className="space-y-2.5">
             <legend className="sr-only">Feed search form</legend>
-            <label
-              htmlFor="url-input"
-              className="block text-sm font-medium text-white"
-            >
+            <label htmlFor="url-input" className="block text-sm font-semibold">
               Website URL
             </label>
             <Input
@@ -108,7 +103,7 @@ export function SearchForm({
               value={url}
               onChange={handleUrlChange}
               disabled={isLoading}
-              className="w-full bg-[#182734] border-[#314d68] text-white placeholder:text-[#90aecb] focus:border-[#0b80ee] focus:ring-1 focus:ring-[#0b80ee] focus:outline-none"
+              className="app-input h-12 w-full rounded-lg border px-4 shadow-inner transition-colors focus:ring-2 focus:outline-none"
               aria-describedby={
                 validationError
                   ? "url-error"
@@ -129,12 +124,15 @@ export function SearchForm({
           {validationError && (
             <Alert
               variant="destructive"
-              className="bg-red-950 border-red-800"
+              className="border-red-200 bg-red-50 text-red-900 dark:border-red-500/30 dark:bg-red-950/40 dark:text-red-100"
               role="alert"
               ref={errorRef}
               tabIndex={-1}
             >
-              <AlertDescription id="url-error" className="text-red-200">
+              <AlertDescription
+                id="url-error"
+                className="text-red-800 dark:text-red-100"
+              >
                 {validationError}
               </AlertDescription>
             </Alert>
@@ -143,10 +141,13 @@ export function SearchForm({
           {error && (
             <Alert
               variant="destructive"
-              className="bg-red-950 border-red-800"
+              className="border-red-200 bg-red-50 text-red-900 dark:border-red-500/30 dark:bg-red-950/40 dark:text-red-100"
               role="alert"
             >
-              <AlertDescription id="submit-error" className="text-red-200">
+              <AlertDescription
+                id="submit-error"
+                className="text-red-800 dark:text-red-100"
+              >
                 {error}
               </AlertDescription>
             </Alert>
@@ -155,7 +156,7 @@ export function SearchForm({
           <Button
             type="submit"
             disabled={isLoading || !url.trim()}
-            className="w-full bg-[#0b80ee] hover:bg-[#0b80ee]/80 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[#0b80ee] focus:ring-offset-2 focus:ring-offset-[#182734]"
+            className="app-primary-button h-12 w-full rounded-lg px-4 py-2 font-semibold shadow-lg transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2"
             aria-describedby="url-help"
             aria-label={
               isLoading
@@ -177,8 +178,8 @@ export function SearchForm({
           </Button>
         </form>
 
-        <aside className="mt-4 text-sm text-[#90aecb]">
-          <p id="url-help">
+        <aside className="app-muted mt-5 border-t border-[var(--app-border)] pt-4 text-sm leading-6">
+          <p id="url-help" className="max-w-2xl">
             This tool automatically discovers RSS / Atom feeds for the website
             you specify.
           </p>

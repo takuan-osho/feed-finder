@@ -1,9 +1,66 @@
-import { render } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { THEME_COLORS, THEME_STORAGE_KEY } from "@/lib/theme";
 import App from "./App";
+
+function mockColorSchemePreference(prefersDark: boolean) {
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    value: vi.fn().mockImplementation((query: string) => ({
+      matches: query === "(prefers-color-scheme: dark)" && prefersDark,
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  });
+}
+
+function ensureMetaThemeColor(initialContent = "#ffffff") {
+  document
+    .querySelectorAll('meta[name="theme-color"]')
+    .forEach((node) => node.remove());
+  const meta = document.createElement("meta");
+  meta.setAttribute("name", "theme-color");
+  meta.setAttribute("content", initialContent);
+  document.head.appendChild(meta);
+  return meta;
+}
 
 // Bundle Optimization Tests (t-wada style TDD)
 describe("Bundle Optimization Tests", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    document.documentElement.classList.remove("dark");
+    document.documentElement.removeAttribute("data-theme");
+    document.documentElement.style.colorScheme = "";
+    document
+      .querySelectorAll('meta[name="theme-color"]')
+      .forEach((node) => node.remove());
+    mockColorSchemePreference(false);
+  });
+
+  afterEach(() => {
+    cleanup();
+    window.localStorage.clear();
+    document.documentElement.classList.remove("dark");
+    document.documentElement.removeAttribute("data-theme");
+    document.documentElement.style.colorScheme = "";
+    document
+      .querySelectorAll('meta[name="theme-color"]')
+      .forEach((node) => node.remove());
+    vi.restoreAllMocks();
+  });
+
   describe("Code Splitting Verification", () => {
     it("should lazy load ResultDisplay component to reduce initial bundle", async () => {
       // Green Phase: Adapt test for test environment
@@ -17,9 +74,7 @@ describe("Bundle Optimization Tests", () => {
 
       // Suspense fallback is present in test environment but hidden via Suspense
       // This test validates that the lazy loading structure is in place
-      const suspenseFallback = document.querySelector(
-        ".text-center.text-\\[\\#90aecb\\]",
-      );
+      const suspenseFallback = document.querySelector('[role="status"]');
       // In test environment, Suspense fallback might be visible
       expect(suspenseFallback).not.toBeNull();
     });
@@ -29,7 +84,7 @@ describe("Bundle Optimization Tests", () => {
       render(<App />);
 
       // Check if critical CSS classes are applied to elements
-      const appElement = document.querySelector(".bg-\\[\\#101a23\\]");
+      const appElement = document.querySelector(".app-shell");
       const minHeightElement = document.querySelector(".min-h-screen");
 
       // At least one critical CSS class should be present
@@ -56,6 +111,66 @@ describe("Bundle Optimization Tests", () => {
       render(<App />);
       const title = document.querySelector("h1");
       expect(title?.textContent).toContain("RSS / Atom Feed Discovery");
+    });
+  });
+
+  describe("Theme Toggle Verification", () => {
+    it("should use system dark preference when no theme is saved", async () => {
+      mockColorSchemePreference(true);
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(document.documentElement).toHaveClass("dark");
+      });
+      expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe("dark");
+    });
+
+    it("should prefer saved theme over system preference", async () => {
+      mockColorSchemePreference(true);
+      window.localStorage.setItem(THEME_STORAGE_KEY, "light");
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(document.documentElement).not.toHaveClass("dark");
+      });
+      expect(document.documentElement.style.colorScheme).toBe("light");
+    });
+
+    it("should toggle theme and persist the user choice", async () => {
+      render(<App />);
+
+      const themeToggle = screen.getByRole("button", {
+        name: "Switch to dark mode",
+      });
+      fireEvent.click(themeToggle);
+
+      await waitFor(() => {
+        expect(document.documentElement).toHaveClass("dark");
+      });
+      expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe("dark");
+      expect(themeToggle).toHaveAttribute("aria-pressed", "true");
+    });
+
+    it("should sync meta[name=theme-color] when toggling theme", async () => {
+      ensureMetaThemeColor(THEME_COLORS.light);
+
+      render(<App />);
+
+      await waitFor(() => {
+        const meta = document.querySelector('meta[name="theme-color"]');
+        expect(meta?.getAttribute("content")).toBe(THEME_COLORS.light);
+      });
+
+      fireEvent.click(
+        screen.getByRole("button", { name: "Switch to dark mode" }),
+      );
+
+      await waitFor(() => {
+        const meta = document.querySelector('meta[name="theme-color"]');
+        expect(meta?.getAttribute("content")).toBe(THEME_COLORS.dark);
+      });
     });
   });
 });
