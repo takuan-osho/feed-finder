@@ -3,7 +3,7 @@ import type { AppError } from "../types";
 /**
  * Secure error response helper that prevents information leakage
  */
-const ERROR_ID_ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789";
+const ERROR_ID_ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyz";
 const ERROR_ID_LENGTH = 9;
 const MAX_UNBIASED_BYTE = 252;
 

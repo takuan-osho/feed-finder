@@ -258,7 +258,7 @@ describe("http/errors", () => {
         },
       );
 
-      expect(generateErrorId()).toBe("a9a99bcde");
+      expect(generateErrorId()).toBe("0z0zz1234");
     });
   });
 });
