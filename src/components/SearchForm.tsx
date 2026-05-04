@@ -4,7 +4,6 @@ import { err, Result } from "neverthrow";
 import {
   type ChangeEvent,
   type FormEvent,
-  type KeyboardEvent,
   useEffect,
   useRef,
   useState,
@@ -83,25 +82,6 @@ export function SearchForm({
     }
   };
 
-  const handleUrlKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && !e.nativeEvent.isComposing) {
-      e.preventDefault();
-      submitUrl(url);
-    }
-  };
-
-  const handleSubmitKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
-    if (
-      (e.key === "Enter" || e.key === " ") &&
-      !isLoading &&
-      url.trim() &&
-      !e.nativeEvent.isComposing
-    ) {
-      e.preventDefault();
-      submitUrl(url);
-    }
-  };
-
   return (
     <Card className="app-surface mx-auto w-full max-w-3xl border shadow-xl backdrop-blur">
       <CardContent className="p-5 sm:p-7">
@@ -129,7 +109,6 @@ export function SearchForm({
                     : "url-help"
               }
               aria-invalid={validationError ? "true" : "false"}
-              onKeyDown={handleUrlKeyDown}
             />
           </fieldset>
 
@@ -175,7 +154,6 @@ export function SearchForm({
                 ? "Searching for feeds"
                 : "Search feeds for the entered URL"
             }
-            onKeyDown={handleSubmitKeyDown}
           >
             {isLoading ? "Searching..." : "Search feeds"}
           </Button>

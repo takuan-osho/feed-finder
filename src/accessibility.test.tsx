@@ -204,7 +204,7 @@ describe("Accessibility Tests (WCAG 2.2)", () => {
       expect(focusableElements.length).toBeGreaterThan(0);
     });
 
-    it("should support Enter and Space key activation on interactive elements", async () => {
+    it("should rely on native submit and button activation", async () => {
       const fetchMock = mockSuccessfulSearchFetch();
       await renderAppAfterLazyBoundary();
 
@@ -212,6 +212,15 @@ describe("Accessibility Tests (WCAG 2.2)", () => {
       fireEvent.change(urlInput, { target: { value: "example.com" } });
 
       fireEvent.keyDown(urlInput, { key: "Enter", code: "Enter" });
+      fireEvent.keyDown(urlInput, {
+        key: "Enter",
+        code: "Enter",
+        repeat: true,
+      });
+
+      expect(fetchMock).not.toHaveBeenCalled();
+
+      fireEvent.submit(urlInput.closest("form")!);
 
       await waitFor(() => {
         expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -228,10 +237,16 @@ describe("Accessibility Tests (WCAG 2.2)", () => {
         expect(getEnabledSearchButton()).toBeEnabled();
       });
 
+      fireEvent.keyDown(getEnabledSearchButton(), { key: " ", code: "Space" });
       fireEvent.keyDown(getEnabledSearchButton(), {
         key: " ",
         code: "Space",
+        repeat: true,
       });
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      fireEvent.click(getEnabledSearchButton());
 
       await waitFor(() => {
         expect(fetchMock).toHaveBeenCalledTimes(2);

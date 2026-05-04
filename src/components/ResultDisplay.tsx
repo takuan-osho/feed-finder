@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle, Copy, ExternalLink, Info, XCircle } from "lucide-react";
-import { type KeyboardEvent, useState } from "react";
+import { useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import type { FeedResult, SearchResult } from "../../shared/types";
@@ -133,13 +133,6 @@ function FeedCard({
     feed.discoveryMethod === "meta-tag"
       ? "Discovered via HTML meta tag"
       : "Discovered via common path";
-  const handleActionKeyDown =
-    (action: () => void) => (event: KeyboardEvent<HTMLButtonElement>) => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        action();
-      }
-    };
 
   return (
     <article
@@ -201,7 +194,6 @@ function FeedCard({
               size="sm"
               className="app-control border focus:outline-none focus:ring-2 focus:ring-offset-2"
               aria-label={`Open the feed for ${feed.title || feed.url} in a new tab`}
-              onKeyDown={handleActionKeyDown(() => onOpenFeed(feed.url))}
             >
               <ExternalLink className="h-4 w-4 mr-2" />
               Open feed
@@ -218,7 +210,6 @@ function FeedCard({
                   : "app-control border"
               }`}
               aria-label={`Copy the URL of ${feed.title || feed.url} to the clipboard`}
-              onKeyDown={handleActionKeyDown(() => onCopyUrl(feed.url))}
             >
               {isUrlCopied ? (
                 <>

@@ -381,7 +381,7 @@ describe("ResultDisplay", () => {
       });
     });
 
-    it("should handle keyboard activation for copy button", () => {
+    it("should not copy directly from repeated keydown events", () => {
       render(<ResultDisplay result={successResult} />);
 
       const copyButton = screen.getByLabelText(
@@ -389,9 +389,10 @@ describe("ResultDisplay", () => {
       );
 
       fireEvent.keyDown(copyButton, { key: "Enter" });
-      expect(mockClipboard.writeText).toHaveBeenCalledWith(
-        "https://example.com/feed.xml",
-      );
+      fireEvent.keyDown(copyButton, { key: "Enter", repeat: true });
+      fireEvent.keyDown(copyButton, { key: " ", repeat: true });
+
+      expect(mockClipboard.writeText).not.toHaveBeenCalled();
     });
   });
 
@@ -432,7 +433,7 @@ describe("ResultDisplay", () => {
       );
     });
 
-    it("should handle keyboard activation for open button", () => {
+    it("should not open directly from repeated Enter keydown events", () => {
       render(<ResultDisplay result={successResult} />);
 
       const openButton = screen.getByLabelText(
@@ -440,14 +441,12 @@ describe("ResultDisplay", () => {
       );
 
       fireEvent.keyDown(openButton, { key: "Enter" });
-      expect(mockOpen).toHaveBeenCalledWith(
-        "https://example.com/feed.xml",
-        "_blank",
-        "noopener,noreferrer",
-      );
+      fireEvent.keyDown(openButton, { key: "Enter", repeat: true });
+
+      expect(mockOpen).not.toHaveBeenCalled();
     });
 
-    it("should handle space key activation for open button", () => {
+    it("should not open directly from repeated Space keydown events", () => {
       render(<ResultDisplay result={successResult} />);
 
       const openButton = screen.getByLabelText(
@@ -455,11 +454,9 @@ describe("ResultDisplay", () => {
       );
 
       fireEvent.keyDown(openButton, { key: " " });
-      expect(mockOpen).toHaveBeenCalledWith(
-        "https://example.com/feed.xml",
-        "_blank",
-        "noopener,noreferrer",
-      );
+      fireEvent.keyDown(openButton, { key: " ", repeat: true });
+
+      expect(mockOpen).not.toHaveBeenCalled();
     });
   });
 });

@@ -93,19 +93,20 @@ describe("SearchForm URL Validation", () => {
     });
   });
 
-  describe("keyboard submission", () => {
-    it("should submit with Enter from the URL input", () => {
+  describe("keyboard handling", () => {
+    it("should not submit directly from repeated URL input keydown events", () => {
       render(<SearchForm onSubmit={mockOnSubmit} isLoading={false} />);
 
       const input = screen.getByLabelText(/Website URL/);
 
       fireEvent.change(input, { target: { value: "example.com" } });
       fireEvent.keyDown(input, { key: "Enter" });
+      fireEvent.keyDown(input, { key: "Enter", repeat: true });
 
-      expect(mockOnSubmit).toHaveBeenCalledWith("https://example.com");
+      expect(mockOnSubmit).not.toHaveBeenCalled();
     });
 
-    it("should not submit with Enter from the URL input during IME composition", () => {
+    it("should leave IME composition Enter to native input handling", () => {
       render(<SearchForm onSubmit={mockOnSubmit} isLoading={false} />);
 
       const input = screen.getByLabelText(/Website URL/);
@@ -116,7 +117,7 @@ describe("SearchForm URL Validation", () => {
       expect(mockOnSubmit).not.toHaveBeenCalled();
     });
 
-    it("should submit with Enter from the submit button", () => {
+    it("should not submit directly from repeated submit button Enter keydown events", () => {
       render(<SearchForm onSubmit={mockOnSubmit} isLoading={false} />);
 
       const input = screen.getByLabelText(/Website URL/);
@@ -126,11 +127,12 @@ describe("SearchForm URL Validation", () => {
 
       fireEvent.change(input, { target: { value: "example.com" } });
       fireEvent.keyDown(button, { key: "Enter" });
+      fireEvent.keyDown(button, { key: "Enter", repeat: true });
 
-      expect(mockOnSubmit).toHaveBeenCalledWith("https://example.com");
+      expect(mockOnSubmit).not.toHaveBeenCalled();
     });
 
-    it("should submit with Space from the submit button", () => {
+    it("should not submit directly from repeated submit button Space keydown events", () => {
       render(<SearchForm onSubmit={mockOnSubmit} isLoading={false} />);
 
       const input = screen.getByLabelText(/Website URL/);
@@ -140,11 +142,12 @@ describe("SearchForm URL Validation", () => {
 
       fireEvent.change(input, { target: { value: "example.com" } });
       fireEvent.keyDown(button, { key: " " });
+      fireEvent.keyDown(button, { key: " ", repeat: true });
 
-      expect(mockOnSubmit).toHaveBeenCalledWith("https://example.com");
+      expect(mockOnSubmit).not.toHaveBeenCalled();
     });
 
-    it("should not submit from the submit button during IME composition", () => {
+    it("should leave submit button IME composition Enter to native button handling", () => {
       render(<SearchForm onSubmit={mockOnSubmit} isLoading={false} />);
 
       const input = screen.getByLabelText(/Website URL/);
