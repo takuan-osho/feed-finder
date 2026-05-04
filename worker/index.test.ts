@@ -448,7 +448,7 @@ describe("URL Validation Security Tests", () => {
     it("should detect feeds with uppercase link tags in fallback parsing", async () => {
       // Mock node-html-parser to force fallback parsing
       await vi.resetModules();
-      vi.mock("node-html-parser", () => ({
+      vi.doMock("node-html-parser", () => ({
         parse: vi.fn(() => {
           throw new Error("Parse failed");
         }),
@@ -469,7 +469,8 @@ describe("URL Validation Security Tests", () => {
       expect(feeds[0].type).toBe("RSS");
       expect(feeds[1].type).toBe("Atom");
 
-      vi.unmock("node-html-parser");
+      vi.doUnmock("node-html-parser");
+      await vi.resetModules();
     });
   });
 });

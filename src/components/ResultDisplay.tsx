@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle, Copy, ExternalLink, Info, XCircle } from "lucide-react";
-import { useState } from "react";
+import { type KeyboardEvent, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import type { FeedResult, SearchResult } from "../../shared/types";
@@ -96,8 +96,8 @@ export function ResultDisplay({ result, error }: ResultDisplayProps) {
       </header>
 
       <ul className="space-y-3" role="list">
-        {result.feeds.map((feed, index) => (
-          <li key={`${feed.url}-${index}`} role="listitem">
+        {result.feeds.map((feed) => (
+          <li key={feed.url} role="listitem">
             <FeedCard
               feed={feed}
               onCopyUrl={handleCopyUrl}
@@ -120,21 +120,29 @@ interface FeedCardProps {
 
 function FeedCard({ feed, onCopyUrl, onOpenFeed, copiedUrl }: FeedCardProps) {
   const isUrlCopied = copiedUrl === feed.url;
+  const feedTitleId = `feed-title-${feed.url.replace(/[^a-zA-Z0-9]/g, "-")}`;
   const discoveryMethodText =
     feed.discoveryMethod === "meta-tag"
       ? "Discovered via HTML meta tag"
       : "Discovered via common path";
+  const handleActionKeyDown =
+    (action: () => void) => (event: KeyboardEvent<HTMLButtonElement>) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        action();
+      }
+    };
 
   return (
     <article
       className="app-surface rounded-lg border shadow-lg transition-colors duration-200 hover:border-[var(--app-accent-border)]"
-      aria-labelledby={`feed-title-${feed.url.replace(/[^a-zA-Z0-9]/g, "-")}`}
+      aria-labelledby={feedTitleId}
     >
       <header className="p-6 pb-3">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
             <h3
-              id={`feed-title-${feed.url.replace(/[^a-zA-Z0-9]/g, "-")}`}
+              id={feedTitleId}
               className="app-text truncate text-lg font-semibold leading-tight"
             >
               {feed.title || feed.url}
@@ -179,23 +187,20 @@ function FeedCard({ feed, onCopyUrl, onOpenFeed, copiedUrl }: FeedCardProps) {
             aria-label="Feed actions"
           >
             <Button
+              type="button"
               onClick={() => onOpenFeed(feed.url)}
               variant="outline"
               size="sm"
               className="app-control border focus:outline-none focus:ring-2 focus:ring-offset-2"
               aria-label={`Open the feed for ${feed.title || feed.url} in a new tab`}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  onOpenFeed(feed.url);
-                }
-              }}
+              onKeyDown={handleActionKeyDown(() => onOpenFeed(feed.url))}
             >
               <ExternalLink className="h-4 w-4 mr-2" />
               Open feed
             </Button>
 
             <Button
+              type="button"
               onClick={() => onCopyUrl(feed.url)}
               variant="outline"
               size="sm"
@@ -205,12 +210,7 @@ function FeedCard({ feed, onCopyUrl, onOpenFeed, copiedUrl }: FeedCardProps) {
                   : "app-control border"
               }`}
               aria-label={`Copy the URL of ${feed.title || feed.url} to the clipboard`}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  onCopyUrl(feed.url);
-                }
-              }}
+              onKeyDown={handleActionKeyDown(() => onCopyUrl(feed.url))}
             >
               {isUrlCopied ? (
                 <>

@@ -108,6 +108,13 @@ describe("discovery/html", () => {
         "https://example.com/feed?param=value&amp;other=1",
       );
     });
+
+    it("should not match attribute names inside longer attributes", () => {
+      const tag =
+        '<link data-href="https://example.com/not-a-feed.xml" hrefx="/wrong.xml" href="/feed.xml" rel="alternate">';
+
+      expect(extractAttributeValue(tag, "href")).toBe("/feed.xml");
+    });
   });
 
   describe("findMetaFeeds", () => {
@@ -303,6 +310,16 @@ describe("discovery/html", () => {
       const result = findMetaFeedsWithStringParsing(html, baseUrl);
 
       expect(result).toHaveLength(1);
+    });
+
+    it("should handle whitespace around fallback attribute separators", () => {
+      const html =
+        '<link rel = "alternate" type = "application/rss+xml" href = "/feed.xml">';
+
+      const result = findMetaFeedsWithStringParsing(html, baseUrl);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].url).toBe("https://example.com/feed.xml");
     });
   });
 });

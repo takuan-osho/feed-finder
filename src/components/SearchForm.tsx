@@ -1,7 +1,14 @@
 "use client";
 
 import { err, Result } from "neverthrow";
-import { useEffect, useRef, useState } from "react";
+import {
+  type ChangeEvent,
+  type FormEvent,
+  type KeyboardEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,7 +27,6 @@ export function SearchForm({
 }: SearchFormProps) {
   const [url, setUrl] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
   const errorRef = useRef<HTMLDivElement>(null);
 
   // Focus management for error handling (WCAG 2.2 Focus Not Obscured)
@@ -50,39 +56,44 @@ export function SearchForm({
     return safeCreateUrl().map(() => testUrl);
   };
 
-  const validateUrl = (input: string): boolean => {
+  const submitUrl = (input: string): void => {
     const result = validateUrlSafe(input);
 
     if (result.isErr()) {
       setValidationError(result.error);
-      return false;
-    }
-
-    setValidationError(null);
-    return true;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const isValid = validateUrl(url);
-
-    if (!isValid) {
       return;
     }
 
-    // Normalize URL - add https if no protocol
-    const normalizedUrl = url.startsWith("http") ? url : `https://${url}`;
-    onSubmit(normalizedUrl);
+    setValidationError(null);
+    onSubmit(result.value);
   };
 
-  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    submitUrl(url);
+  };
+
+  const handleUrlChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setUrl(value);
 
     // Clear validation error when user starts typing
     if (validationError && value.trim()) {
       setValidationError(null);
+    }
+  };
+
+  const handleUrlKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      submitUrl(url);
+    }
+  };
+
+  const handleSubmitKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
+    if ((e.key === "Enter" || e.key === " ") && !isLoading && url.trim()) {
+      e.preventDefault();
+      submitUrl(url);
     }
   };
 
@@ -96,7 +107,6 @@ export function SearchForm({
               Website URL
             </label>
             <Input
-              ref={inputRef}
               id="url-input"
               type="url"
               placeholder="example.com or https://example.com"
@@ -112,12 +122,7 @@ export function SearchForm({
                     : "url-help"
               }
               aria-invalid={validationError ? "true" : "false"}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleSubmit(e as unknown as React.FormEvent);
-                }
-              }}
+              onKeyDown={handleUrlKeyDown}
             />
           </fieldset>
 
@@ -163,16 +168,7 @@ export function SearchForm({
                 ? "Searching for feeds"
                 : "Search feeds for the entered URL"
             }
-            onKeyDown={(e) => {
-              if (
-                (e.key === "Enter" || e.key === " ") &&
-                !isLoading &&
-                url.trim()
-              ) {
-                e.preventDefault();
-                handleSubmit(e as unknown as React.FormEvent);
-              }
-            }}
+            onKeyDown={handleSubmitKeyDown}
           >
             {isLoading ? "Searching..." : "Search feeds"}
           </Button>

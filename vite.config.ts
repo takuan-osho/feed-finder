@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { cloudflare } from "@cloudflare/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react-swc";
+import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -23,19 +23,7 @@ export default defineConfig({
     include: ["**/*.{test,spec}.{js,ts,tsx}"],
   },
   build: {
-    // Bundle size optimization
-    minify: "terser",
-    terserOptions: {
-      compress: {
-        // Only remove console.log, console.info, and console.debug in production
-        drop_debugger: true,
-        pure_funcs: [
-          "console.log",
-          "console.info",
-          "console.debug",
-        ],
-      },
-    },
+    minify: "oxc",
     // Code splitting configuration
     rollupOptions: {
       output: {
@@ -66,8 +54,6 @@ export default defineConfig({
         assetFileNames: "assets/[name]-[hash].[ext]",
       },
     },
-    // Target ES2020 for better compression
-    target: "es2020",
     // Ensure consistent chunk hashes
     cssCodeSplit: true,
   },
