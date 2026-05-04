@@ -92,4 +92,70 @@ describe("SearchForm URL Validation", () => {
       expect(mockOnSubmit).toHaveBeenCalledWith("https://example.technology");
     });
   });
+
+  describe("keyboard submission", () => {
+    it("should submit with Enter from the URL input", () => {
+      render(<SearchForm onSubmit={mockOnSubmit} isLoading={false} />);
+
+      const input = screen.getByLabelText(/Website URL/);
+
+      fireEvent.change(input, { target: { value: "example.com" } });
+      fireEvent.keyDown(input, { key: "Enter" });
+
+      expect(mockOnSubmit).toHaveBeenCalledWith("https://example.com");
+    });
+
+    it("should not submit with Enter from the URL input during IME composition", () => {
+      render(<SearchForm onSubmit={mockOnSubmit} isLoading={false} />);
+
+      const input = screen.getByLabelText(/Website URL/);
+
+      fireEvent.change(input, { target: { value: "example.com" } });
+      fireEvent.keyDown(input, { isComposing: true, key: "Enter" });
+
+      expect(mockOnSubmit).not.toHaveBeenCalled();
+    });
+
+    it("should submit with Enter from the submit button", () => {
+      render(<SearchForm onSubmit={mockOnSubmit} isLoading={false} />);
+
+      const input = screen.getByLabelText(/Website URL/);
+      const button = screen.getByRole("button", {
+        name: "Search feeds for the entered URL",
+      });
+
+      fireEvent.change(input, { target: { value: "example.com" } });
+      fireEvent.keyDown(button, { key: "Enter" });
+
+      expect(mockOnSubmit).toHaveBeenCalledWith("https://example.com");
+    });
+
+    it("should submit with Space from the submit button", () => {
+      render(<SearchForm onSubmit={mockOnSubmit} isLoading={false} />);
+
+      const input = screen.getByLabelText(/Website URL/);
+      const button = screen.getByRole("button", {
+        name: "Search feeds for the entered URL",
+      });
+
+      fireEvent.change(input, { target: { value: "example.com" } });
+      fireEvent.keyDown(button, { key: " " });
+
+      expect(mockOnSubmit).toHaveBeenCalledWith("https://example.com");
+    });
+
+    it("should not submit from the submit button during IME composition", () => {
+      render(<SearchForm onSubmit={mockOnSubmit} isLoading={false} />);
+
+      const input = screen.getByLabelText(/Website URL/);
+      const button = screen.getByRole("button", {
+        name: "Search feeds for the entered URL",
+      });
+
+      fireEvent.change(input, { target: { value: "example.com" } });
+      fireEvent.keyDown(button, { isComposing: true, key: "Enter" });
+
+      expect(mockOnSubmit).not.toHaveBeenCalled();
+    });
+  });
 });

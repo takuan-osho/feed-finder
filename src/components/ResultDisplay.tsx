@@ -97,7 +97,7 @@ export function ResultDisplay({ result, error }: ResultDisplayProps) {
 
       <ul className="space-y-3" role="list">
         {result.feeds.map((feed, index) => (
-          <li key={feed.url} role="listitem">
+          <li key={`${feed.url}-${index}`} role="listitem">
             <FeedCard
               feed={feed}
               itemId={`feed-${index}`}

@@ -115,6 +115,13 @@ describe("discovery/html", () => {
 
       expect(extractAttributeValue(tag, "href")).toBe("/feed.xml");
     });
+
+    it("should ignore attribute-like text inside quoted values", () => {
+      const tag =
+        '<link title=" href " href="/feed.xml" rel="alternate" type="application/rss+xml">';
+
+      expect(extractAttributeValue(tag, "href")).toBe("/feed.xml");
+    });
   });
 
   describe("findMetaFeeds", () => {

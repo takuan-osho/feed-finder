@@ -84,14 +84,19 @@ export function SearchForm({
   };
 
   const handleUrlKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
+    if (e.key === "Enter" && !e.nativeEvent.isComposing) {
       e.preventDefault();
       submitUrl(url);
     }
   };
 
   const handleSubmitKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
-    if ((e.key === "Enter" || e.key === " ") && !isLoading && url.trim()) {
+    if (
+      (e.key === "Enter" || e.key === " ") &&
+      !isLoading &&
+      url.trim() &&
+      !e.nativeEvent.isComposing
+    ) {
       e.preventDefault();
       submitUrl(url);
     }

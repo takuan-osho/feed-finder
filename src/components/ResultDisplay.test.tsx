@@ -122,6 +122,45 @@ describe("ResultDisplay", () => {
       expect(screen.getByText("Example Atom Feed")).toBeInTheDocument();
     });
 
+    it("should render duplicate feed URLs as separate cards", () => {
+      const consoleErrorSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => undefined);
+      const duplicateUrlResult: SearchResult = {
+        success: true,
+        feeds: [
+          {
+            url: "https://example.com/feed.xml",
+            title: "Primary Feed",
+            type: "RSS",
+            discoveryMethod: "meta-tag",
+          },
+          {
+            url: "https://example.com/feed.xml",
+            title: "Fallback Feed",
+            type: "RSS",
+            discoveryMethod: "common-path",
+          },
+        ],
+        searchedUrl: "https://example.com",
+        totalFound: 2,
+      };
+
+      try {
+        render(<ResultDisplay result={duplicateUrlResult} />);
+
+        expect(screen.getByText("Primary Feed")).toBeInTheDocument();
+        expect(screen.getByText("Fallback Feed")).toBeInTheDocument();
+        expect(screen.getAllByRole("listitem")).toHaveLength(2);
+        expect(consoleErrorSpy).not.toHaveBeenCalledWith(
+          expect.stringContaining("Encountered two children with the same key"),
+          expect.anything(),
+        );
+      } finally {
+        consoleErrorSpy.mockRestore();
+      }
+    });
+
     it("should display feed type badges correctly", () => {
       render(<ResultDisplay result={successResult} />);
 

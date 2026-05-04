@@ -26,51 +26,87 @@ export function extractAttributeValue(
 ): string | null {
   const lowerTag = tag.toLowerCase();
   const attrNameLower = attributeName.toLowerCase();
-  let attrIndex = lowerTag.indexOf(attrNameLower);
 
-  while (
-    attrIndex !== -1 &&
-    !isAttributeNameMatch(lowerTag, attrIndex, attrNameLower.length)
-  ) {
-    attrIndex = lowerTag.indexOf(
+  let scanIndex = 0;
+  while (scanIndex < tag.length) {
+    const attrIndex = findNextAttributeNameIndex(
+      lowerTag,
       attrNameLower,
-      attrIndex + attrNameLower.length,
+      scanIndex,
     );
-  }
 
-  if (attrIndex === -1) {
-    return null;
-  }
+    if (attrIndex === -1) {
+      return null;
+    }
 
-  // Start searching after the attribute name
-  let searchIndex = attrIndex + attrNameLower.length;
+    // Start searching after the attribute name
+    let searchIndex = attrIndex + attrNameLower.length;
 
-  // Skip whitespace characters (spaces and tabs) after attribute name
-  while (searchIndex < tag.length && isHtmlWhitespace(tag[searchIndex])) {
+    // Skip whitespace characters after attribute name
+    while (searchIndex < tag.length && isHtmlWhitespace(tag[searchIndex])) {
+      searchIndex++;
+    }
+
+    if (searchIndex >= tag.length || tag[searchIndex] !== "=") {
+      scanIndex = attrIndex + attrNameLower.length;
+      continue;
+    }
+
+    // Skip whitespace after equal sign
     searchIndex++;
+    while (searchIndex < tag.length && isHtmlWhitespace(tag[searchIndex])) {
+      searchIndex++;
+    }
+
+    const quote = tag[searchIndex];
+    if (quote !== '"' && quote !== "'") {
+      scanIndex = attrIndex + attrNameLower.length;
+      continue;
+    }
+
+    const valueContentStart = searchIndex + 1;
+    const valueEnd = tag.indexOf(quote, valueContentStart);
+
+    if (valueEnd === -1) return null;
+
+    return tag.substring(valueContentStart, valueEnd);
   }
 
-  // Check if we found the equal sign
-  if (searchIndex >= tag.length || tag[searchIndex] !== "=") {
-    return null;
+  return null;
+}
+
+function findNextAttributeNameIndex(
+  tag: string,
+  attrNameLower: string,
+  startIndex: number,
+): number {
+  let quote: string | null = null;
+
+  for (let index = 0; index < tag.length; index++) {
+    const character = tag[index];
+
+    if (quote) {
+      if (character === quote) {
+        quote = null;
+      }
+      continue;
+    }
+
+    if (character === '"' || character === "'") {
+      quote = character;
+      continue;
+    }
+
+    if (
+      index >= startIndex &&
+      tag.startsWith(attrNameLower, index) &&
+      isAttributeNameMatch(tag, index, attrNameLower.length)
+    ) {
+      return index;
+    }
   }
 
-  // Skip whitespace after equal sign
-  searchIndex++; // Skip the '=' character
-  while (searchIndex < tag.length && isHtmlWhitespace(tag[searchIndex])) {
-    searchIndex++;
-  }
-
-  // Check for quote character
-  const quote = tag[searchIndex];
-  if (quote !== '"' && quote !== "'") return null;
-
-  const valueContentStart = searchIndex + 1;
-  const valueEnd = tag.indexOf(quote, valueContentStart);
-
-  if (valueEnd === -1) return null;
-
-  return tag.substring(valueContentStart, valueEnd);
+  return -1;
 }
 
 function isHtmlWhitespace(character: string | undefined): boolean {
