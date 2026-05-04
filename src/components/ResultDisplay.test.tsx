@@ -316,6 +316,26 @@ describe("ResultDisplay", () => {
         expect(document.getElementById(labelledby!)).toBeTruthy();
       });
     });
+
+    it("should generate unique labelledby targets across result displays", () => {
+      render(
+        <>
+          <ResultDisplay result={successResult} />
+          <ResultDisplay result={successResult} />
+        </>,
+      );
+
+      const articles = document.querySelectorAll("article[aria-labelledby]");
+      const labelledbyValues = Array.from(articles).map((article) =>
+        article.getAttribute("aria-labelledby"),
+      );
+
+      expect(new Set(labelledbyValues).size).toBe(labelledbyValues.length);
+      labelledbyValues.forEach((labelledby) => {
+        expect(labelledby).toBeTruthy();
+        expect(document.getElementById(labelledby!)).toBeTruthy();
+      });
+    });
   });
 
   describe("URL copy functionality", () => {

@@ -85,6 +85,16 @@ describe("discovery/html", () => {
       );
     });
 
+    it("should handle HTML whitespace around attribute separators", () => {
+      const tag =
+        '<link href\n=\r"https://example.com/feed.xml" rel\f=\n"alternate">';
+
+      expect(extractAttributeValue(tag, "href")).toBe(
+        "https://example.com/feed.xml",
+      );
+      expect(extractAttributeValue(tag, "rel")).toBe("alternate");
+    });
+
     it("should return null for missing attributes", () => {
       const tag = '<link href="https://example.com/feed.xml">';
       expect(extractAttributeValue(tag, "rel")).toBe(null);
@@ -335,6 +345,29 @@ describe("discovery/html", () => {
     it("should handle whitespace around fallback attribute separators", () => {
       const html =
         '<link rel = "alternate" type = "application/rss+xml" href = "/feed.xml">';
+
+      const result = findMetaFeedsWithStringParsing(html, baseUrl);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].url).toBe("https://example.com/feed.xml");
+    });
+
+    it("should handle multiline fallback link attributes", () => {
+      const html = `<link
+        rel="alternate"
+        type="application/rss+xml"
+        href="/feed.xml"
+      >`;
+
+      const result = findMetaFeedsWithStringParsing(html, baseUrl);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].url).toBe("https://example.com/feed.xml");
+    });
+
+    it("should trim feed MIME values in fallback parsing", () => {
+      const html =
+        '<link rel="alternate" type=" application/rss+xml ; charset=utf-8" href="/feed.xml">';
 
       const result = findMetaFeedsWithStringParsing(html, baseUrl);
 

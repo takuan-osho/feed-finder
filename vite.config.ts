@@ -26,6 +26,9 @@ export default defineConfig({
     minify: "oxc",
     // Code splitting configuration
     rollupOptions: {
+      treeshake: {
+        manualPureFunctions: ["console.log", "console.info", "console.debug"],
+      },
       output: {
         manualChunks(id) {
           // Separate vendor dependencies
