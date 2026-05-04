@@ -108,6 +108,20 @@ describe("discovery/html", () => {
         "https://example.com/feed?param=value&amp;other=1",
       );
     });
+
+    it("should not match attribute names inside longer attributes", () => {
+      const tag =
+        '<link data-href="https://example.com/not-a-feed.xml" hrefx="/wrong.xml" href="/feed.xml" rel="alternate">';
+
+      expect(extractAttributeValue(tag, "href")).toBe("/feed.xml");
+    });
+
+    it("should ignore attribute-like text inside quoted values", () => {
+      const tag =
+        '<link title=" href " href="/feed.xml" rel="alternate" type="application/rss+xml">';
+
+      expect(extractAttributeValue(tag, "href")).toBe("/feed.xml");
+    });
   });
 
   describe("findMetaFeeds", () => {
@@ -248,8 +262,9 @@ describe("discovery/html", () => {
       expect(result[0].url).toBe("https://example.com/valid-feed.xml");
     });
 
-    it("should fallback to string parsing on HTML parse error", () => {
+    it("should fallback to string parsing on HTML parse error", async () => {
       // Mock parse function to throw error
+      await vi.resetModules();
       vi.doMock("node-html-parser", () => ({
         parse: vi.fn().mockImplementation(() => {
           throw new Error("Parse error");
@@ -259,10 +274,22 @@ describe("discovery/html", () => {
       const html =
         '<link rel="alternate" type="application/rss+xml" href="/feed.xml">';
 
-      const result = findMetaFeeds(html, baseUrl);
+      try {
+        const { findMetaFeeds: findMetaFeedsWithMock } = await import("./html");
+        const result = findMetaFeedsWithMock(html, baseUrl);
 
-      // Should fallback to string parsing (tested separately)
-      expect(Array.isArray(result)).toBe(true);
+        expect(result).toEqual([
+          {
+            title: "RSS/Atom feed",
+            url: "https://example.com/feed.xml",
+            type: "RSS",
+            discoveryMethod: "meta-tag",
+          },
+        ]);
+      } finally {
+        vi.doUnmock("node-html-parser");
+        await vi.resetModules();
+      }
     });
   });
 
@@ -303,6 +330,16 @@ describe("discovery/html", () => {
       const result = findMetaFeedsWithStringParsing(html, baseUrl);
 
       expect(result).toHaveLength(1);
+    });
+
+    it("should handle whitespace around fallback attribute separators", () => {
+      const html =
+        '<link rel = "alternate" type = "application/rss+xml" href = "/feed.xml">';
+
+      const result = findMetaFeedsWithStringParsing(html, baseUrl);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].url).toBe("https://example.com/feed.xml");
     });
   });
 });

@@ -26,57 +26,125 @@ export function extractAttributeValue(
 ): string | null {
   const lowerTag = tag.toLowerCase();
   const attrNameLower = attributeName.toLowerCase();
-  const attrIndex = lowerTag.indexOf(attrNameLower);
 
-  if (attrIndex === -1) return null;
+  let scanIndex = 0;
+  while (scanIndex < tag.length) {
+    const attrIndex = findNextAttributeNameIndex(
+      lowerTag,
+      attrNameLower,
+      scanIndex,
+    );
 
-  // Start searching after the attribute name
-  let searchIndex = attrIndex + attrNameLower.length;
+    if (attrIndex === -1) {
+      return null;
+    }
 
-  // Skip whitespace characters (spaces and tabs) after attribute name
-  while (
-    searchIndex < tag.length &&
-    (tag[searchIndex] === " " || tag[searchIndex] === "\t")
-  ) {
+    // Start searching after the attribute name
+    let searchIndex = attrIndex + attrNameLower.length;
+
+    // Skip whitespace characters after attribute name
+    while (searchIndex < tag.length && isHtmlWhitespace(tag[searchIndex])) {
+      searchIndex++;
+    }
+
+    if (searchIndex >= tag.length || tag[searchIndex] !== "=") {
+      scanIndex = attrIndex + attrNameLower.length;
+      continue;
+    }
+
+    // Skip whitespace after equal sign
     searchIndex++;
+    while (searchIndex < tag.length && isHtmlWhitespace(tag[searchIndex])) {
+      searchIndex++;
+    }
+
+    const quote = tag[searchIndex];
+    if (quote !== '"' && quote !== "'") {
+      scanIndex = attrIndex + attrNameLower.length;
+      continue;
+    }
+
+    const valueContentStart = searchIndex + 1;
+    const valueEnd = tag.indexOf(quote, valueContentStart);
+
+    if (valueEnd === -1) return null;
+
+    return tag.substring(valueContentStart, valueEnd);
   }
 
-  // Check if we found the equal sign
-  if (searchIndex >= tag.length || tag[searchIndex] !== "=") {
-    return null;
+  return null;
+}
+
+function findNextAttributeNameIndex(
+  tag: string,
+  attrNameLower: string,
+  startIndex: number,
+): number {
+  let quote: string | null = null;
+
+  for (let index = 0; index < tag.length; index++) {
+    const character = tag[index];
+
+    if (quote) {
+      if (character === quote) {
+        quote = null;
+      }
+      continue;
+    }
+
+    if (character === '"' || character === "'") {
+      quote = character;
+      continue;
+    }
+
+    if (
+      index >= startIndex &&
+      tag.startsWith(attrNameLower, index) &&
+      isAttributeNameMatch(tag, index, attrNameLower.length)
+    ) {
+      return index;
+    }
   }
 
-  // Skip whitespace after equal sign
-  searchIndex++; // Skip the '=' character
-  while (
-    searchIndex < tag.length &&
-    (tag[searchIndex] === " " || tag[searchIndex] === "\t")
-  ) {
-    searchIndex++;
-  }
+  return -1;
+}
 
-  // Check for quote character
-  const quote = tag[searchIndex];
-  if (quote !== '"' && quote !== "'") return null;
+function isHtmlWhitespace(character: string | undefined): boolean {
+  return (
+    character === " " ||
+    character === "\t" ||
+    character === "\n" ||
+    character === "\r" ||
+    character === "\f"
+  );
+}
 
-  const valueContentStart = searchIndex + 1;
-  const valueEnd = tag.indexOf(quote, valueContentStart);
+function isAttributeBoundary(character: string | undefined): boolean {
+  return character === "<" || character === "/" || isHtmlWhitespace(character);
+}
 
-  if (valueEnd === -1) return null;
+function isAttributeNameMatch(
+  tag: string,
+  attrIndex: number,
+  attrLength: number,
+): boolean {
+  const previousCharacter = tag[attrIndex - 1];
+  const nextCharacter = tag[attrIndex + attrLength];
+  const hasValidStart =
+    attrIndex === 0 || isAttributeBoundary(previousCharacter);
+  const hasValidEnd = nextCharacter === "=" || isHtmlWhitespace(nextCharacter);
 
-  return tag.substring(valueContentStart, valueEnd);
+  return hasValidStart && hasValidEnd;
 }
 
 /**
  * Check if link tag is an alternate feed link
  */
 function isAlternateFeedLink(linkTag: string): boolean {
-  const lowerTag = linkTag.toLowerCase();
-  // Extract rel attribute value and check if it contains "alternate"
-  const relMatch = lowerTag.match(/rel=["']([^"']+)["']/);
-  if (!relMatch) return false;
+  const rel = extractAttributeValue(linkTag, "rel");
+  if (!rel) return false;
 
-  const relValues = relMatch[1].split(/\s+/);
+  const relValues = rel.toLowerCase().split(/\s+/);
   return relValues.includes("alternate");
 }
 
@@ -91,22 +159,12 @@ function extractFeedInfo(
   href: string | null;
   title: string | null;
 } {
-  const lowerTag = linkTag.toLowerCase();
-
-  // Safe type detection with charset support
-  let feedType: string | null = null;
-  for (const type of feedTypes) {
-    // Check for the type with potential charset parameters
-    if (
-      lowerTag.includes(`type="${type}`) ||
-      lowerTag.includes(`type='${type}`)
-    ) {
-      feedType = type;
-      break;
-    }
-  }
-
-  // Safe attribute extraction
+  const detectedType = extractAttributeValue(linkTag, "type")
+    ?.toLowerCase()
+    .split(";")[0]
+    .trim();
+  const feedType =
+    detectedType && feedTypes.includes(detectedType) ? detectedType : null;
   const href = extractAttributeValue(linkTag, "href");
   const title = extractAttributeValue(linkTag, "title");
 
@@ -140,9 +198,11 @@ function parseLinkSection(
     return null;
   }
 
+  const href = feedInfo.href;
+
   // Safe URL creation with Result type
   const urlResult = Result.fromThrowable(
-    () => new URL(feedInfo.href!, baseUrl).href, // Non-null assertion is safe here due to null check above
+    () => new URL(href, baseUrl).href,
     () => null, // Return null for invalid URLs to skip them
   )();
 

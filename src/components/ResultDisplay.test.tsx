@@ -122,6 +122,45 @@ describe("ResultDisplay", () => {
       expect(screen.getByText("Example Atom Feed")).toBeInTheDocument();
     });
 
+    it("should render duplicate feed URLs as separate cards", () => {
+      const consoleErrorSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => undefined);
+      const duplicateUrlResult: SearchResult = {
+        success: true,
+        feeds: [
+          {
+            url: "https://example.com/feed.xml",
+            title: "Primary Feed",
+            type: "RSS",
+            discoveryMethod: "meta-tag",
+          },
+          {
+            url: "https://example.com/feed.xml",
+            title: "Fallback Feed",
+            type: "RSS",
+            discoveryMethod: "common-path",
+          },
+        ],
+        searchedUrl: "https://example.com",
+        totalFound: 2,
+      };
+
+      try {
+        render(<ResultDisplay result={duplicateUrlResult} />);
+
+        expect(screen.getByText("Primary Feed")).toBeInTheDocument();
+        expect(screen.getByText("Fallback Feed")).toBeInTheDocument();
+        expect(screen.getAllByRole("listitem")).toHaveLength(2);
+        expect(consoleErrorSpy).not.toHaveBeenCalledWith(
+          expect.stringContaining("Encountered two children with the same key"),
+          expect.anything(),
+        );
+      } finally {
+        consoleErrorSpy.mockRestore();
+      }
+    });
+
     it("should display feed type badges correctly", () => {
       render(<ResultDisplay result={successResult} />);
 
@@ -242,6 +281,41 @@ describe("ResultDisplay", () => {
       const status = screen.getByRole("status");
       expect(status).toHaveAttribute("aria-live", "polite");
     });
+
+    it("should generate unique labelledby targets for URL-like titles", () => {
+      const collidingTitleResult: SearchResult = {
+        success: true,
+        feeds: [
+          {
+            url: "https://example.com/feed.xml",
+            title: "First Feed",
+            type: "RSS",
+            discoveryMethod: "meta-tag",
+          },
+          {
+            url: "https://example-com/feed-xml",
+            title: "Second Feed",
+            type: "RSS",
+            discoveryMethod: "common-path",
+          },
+        ],
+        searchedUrl: "https://example.com",
+        totalFound: 2,
+      };
+
+      render(<ResultDisplay result={collidingTitleResult} />);
+
+      const articles = document.querySelectorAll("article[aria-labelledby]");
+      const labelledbyValues = Array.from(articles).map((article) =>
+        article.getAttribute("aria-labelledby"),
+      );
+
+      expect(new Set(labelledbyValues).size).toBe(labelledbyValues.length);
+      labelledbyValues.forEach((labelledby) => {
+        expect(labelledby).toBeTruthy();
+        expect(document.getElementById(labelledby!)).toBeTruthy();
+      });
+    });
   });
 
   describe("URL copy functionality", () => {
@@ -307,7 +381,7 @@ describe("ResultDisplay", () => {
       });
     });
 
-    it("should handle keyboard activation for copy button", () => {
+    it("should not copy directly from repeated keydown events", () => {
       render(<ResultDisplay result={successResult} />);
 
       const copyButton = screen.getByLabelText(
@@ -315,9 +389,10 @@ describe("ResultDisplay", () => {
       );
 
       fireEvent.keyDown(copyButton, { key: "Enter" });
-      expect(mockClipboard.writeText).toHaveBeenCalledWith(
-        "https://example.com/feed.xml",
-      );
+      fireEvent.keyDown(copyButton, { key: "Enter", repeat: true });
+      fireEvent.keyDown(copyButton, { key: " ", repeat: true });
+
+      expect(mockClipboard.writeText).not.toHaveBeenCalled();
     });
   });
 
@@ -358,7 +433,7 @@ describe("ResultDisplay", () => {
       );
     });
 
-    it("should handle keyboard activation for open button", () => {
+    it("should not open directly from repeated Enter keydown events", () => {
       render(<ResultDisplay result={successResult} />);
 
       const openButton = screen.getByLabelText(
@@ -366,14 +441,12 @@ describe("ResultDisplay", () => {
       );
 
       fireEvent.keyDown(openButton, { key: "Enter" });
-      expect(mockOpen).toHaveBeenCalledWith(
-        "https://example.com/feed.xml",
-        "_blank",
-        "noopener,noreferrer",
-      );
+      fireEvent.keyDown(openButton, { key: "Enter", repeat: true });
+
+      expect(mockOpen).not.toHaveBeenCalled();
     });
 
-    it("should handle space key activation for open button", () => {
+    it("should not open directly from repeated Space keydown events", () => {
       render(<ResultDisplay result={successResult} />);
 
       const openButton = screen.getByLabelText(
@@ -381,11 +454,9 @@ describe("ResultDisplay", () => {
       );
 
       fireEvent.keyDown(openButton, { key: " " });
-      expect(mockOpen).toHaveBeenCalledWith(
-        "https://example.com/feed.xml",
-        "_blank",
-        "noopener,noreferrer",
-      );
+      fireEvent.keyDown(openButton, { key: " ", repeat: true });
+
+      expect(mockOpen).not.toHaveBeenCalled();
     });
   });
 });
