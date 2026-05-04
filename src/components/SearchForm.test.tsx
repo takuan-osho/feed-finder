@@ -67,6 +67,16 @@ describe("SearchForm URL Validation", () => {
       expect(mockOnSubmit).toHaveBeenCalledWith("https://example.com");
     });
 
+    it("should not use native URL input validation", async () => {
+      render(<SearchForm onSubmit={mockOnSubmit} isLoading={false} />);
+
+      const input = screen.getByLabelText(/Website URL/);
+
+      expect(input).toHaveAttribute("type", "text");
+      expect(input).toHaveAttribute("inputmode", "url");
+      expect(input).toHaveAttribute("autocomplete", "url");
+    });
+
     it("should accept example.technology (long TLD) as valid URL", async () => {
       render(<SearchForm onSubmit={mockOnSubmit} isLoading={false} />);
 

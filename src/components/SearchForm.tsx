@@ -108,7 +108,9 @@ export function SearchForm({
             </label>
             <Input
               id="url-input"
-              type="url"
+              type="text"
+              inputMode="url"
+              autoComplete="url"
               placeholder="example.com or https://example.com"
               value={url}
               onChange={handleUrlChange}

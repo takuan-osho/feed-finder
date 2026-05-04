@@ -461,16 +461,18 @@ describe("URL Validation Security Tests", () => {
       const baseUrl = "https://example.com";
 
       // Dynamically import after module cache is cleared to apply mock
-      const { findMetaFeeds: findMetaFeedsWithMock } = await import(
-        "./discovery/html"
-      );
-      const feeds = findMetaFeedsWithMock(htmlWithUppercaseTags, baseUrl);
-      expect(feeds).toHaveLength(2);
-      expect(feeds[0].type).toBe("RSS");
-      expect(feeds[1].type).toBe("Atom");
-
-      vi.doUnmock("node-html-parser");
-      await vi.resetModules();
+      try {
+        const { findMetaFeeds: findMetaFeedsWithMock } = await import(
+          "./discovery/html"
+        );
+        const feeds = findMetaFeedsWithMock(htmlWithUppercaseTags, baseUrl);
+        expect(feeds).toHaveLength(2);
+        expect(feeds[0].type).toBe("RSS");
+        expect(feeds[1].type).toBe("Atom");
+      } finally {
+        vi.doUnmock("node-html-parser");
+        await vi.resetModules();
+      }
     });
   });
 });

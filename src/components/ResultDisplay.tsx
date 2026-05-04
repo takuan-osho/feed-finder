@@ -96,10 +96,11 @@ export function ResultDisplay({ result, error }: ResultDisplayProps) {
       </header>
 
       <ul className="space-y-3" role="list">
-        {result.feeds.map((feed) => (
+        {result.feeds.map((feed, index) => (
           <li key={feed.url} role="listitem">
             <FeedCard
               feed={feed}
+              itemId={`feed-${index}`}
               onCopyUrl={handleCopyUrl}
               onOpenFeed={handleOpenFeed}
               copiedUrl={copiedUrl}
@@ -113,14 +114,21 @@ export function ResultDisplay({ result, error }: ResultDisplayProps) {
 
 interface FeedCardProps {
   feed: FeedResult;
+  itemId: string;
   onCopyUrl: (url: string) => void;
   onOpenFeed: (url: string) => void;
   copiedUrl: string | null;
 }
 
-function FeedCard({ feed, onCopyUrl, onOpenFeed, copiedUrl }: FeedCardProps) {
+function FeedCard({
+  feed,
+  itemId,
+  onCopyUrl,
+  onOpenFeed,
+  copiedUrl,
+}: FeedCardProps) {
   const isUrlCopied = copiedUrl === feed.url;
-  const feedTitleId = `feed-title-${feed.url.replace(/[^a-zA-Z0-9]/g, "-")}`;
+  const feedTitleId = `${itemId}-title-${feed.url.replace(/[^a-zA-Z0-9]/g, "-")}`;
   const discoveryMethodText =
     feed.discoveryMethod === "meta-tag"
       ? "Discovered via HTML meta tag"

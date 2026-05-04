@@ -242,6 +242,41 @@ describe("ResultDisplay", () => {
       const status = screen.getByRole("status");
       expect(status).toHaveAttribute("aria-live", "polite");
     });
+
+    it("should generate unique labelledby targets for URL-like titles", () => {
+      const collidingTitleResult: SearchResult = {
+        success: true,
+        feeds: [
+          {
+            url: "https://example.com/feed.xml",
+            title: "First Feed",
+            type: "RSS",
+            discoveryMethod: "meta-tag",
+          },
+          {
+            url: "https://example-com/feed-xml",
+            title: "Second Feed",
+            type: "RSS",
+            discoveryMethod: "common-path",
+          },
+        ],
+        searchedUrl: "https://example.com",
+        totalFound: 2,
+      };
+
+      render(<ResultDisplay result={collidingTitleResult} />);
+
+      const articles = document.querySelectorAll("article[aria-labelledby]");
+      const labelledbyValues = Array.from(articles).map((article) =>
+        article.getAttribute("aria-labelledby"),
+      );
+
+      expect(new Set(labelledbyValues).size).toBe(labelledbyValues.length);
+      labelledbyValues.forEach((labelledby) => {
+        expect(labelledby).toBeTruthy();
+        expect(document.getElementById(labelledby!)).toBeTruthy();
+      });
+    });
   });
 
   describe("URL copy functionality", () => {
