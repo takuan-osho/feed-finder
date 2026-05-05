@@ -1,3 +1,4 @@
+import { logger } from "../observability/logger";
 import type { AppError } from "../types";
 
 /**
@@ -33,8 +34,13 @@ export function generateErrorId(): string {
 export function createErrorResponse(error: AppError): Response {
   // Log detailed error information for debugging (server-side only)
   const errorId = generateErrorId();
-  console.error(
-    `[${errorId}] Error type: ${error.type}, Details: ${error.message}`,
+  logger.error(
+    {
+      error_id: errorId,
+      error_type: error.type,
+      details: error.message,
+    },
+    "error_response",
   );
 
   // Return generic user-friendly message to prevent information disclosure

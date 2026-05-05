@@ -2,6 +2,7 @@ import { ResultAsync } from "neverthrow";
 import { discoverFeeds } from "./discovery";
 import { addSecurityHeaders, handleCorsPreflightRequest } from "./http/cors";
 import { createErrorResponse } from "./http/errors";
+import { logAccess } from "./observability/logger";
 import type { ValidationError } from "./types";
 import { normalizeUrl, parseRequestBody } from "./validation/request";
 import { validateTargetUrl } from "./validation/url";
@@ -36,27 +37,44 @@ async function handleFeedSearch(request: Request): Promise<Response> {
   );
 }
 
+async function dispatch(request: Request, url: URL): Promise<Response> {
+  if (request.method === "OPTIONS") {
+    return handleCorsPreflightRequest(request);
+  }
+
+  if (url.pathname.startsWith("/api/")) {
+    if (url.pathname === "/api/search-feeds" && request.method === "POST") {
+      const response = await handleFeedSearch(request);
+      return addSecurityHeaders(response, request);
+    }
+    return addSecurityHeaders(
+      new Response("Not Found", { status: 404 }),
+      request,
+    );
+  }
+
+  return addSecurityHeaders(new Response(null, { status: 404 }), request);
+}
+
 /**
  * Main Worker entry point
  */
 export default {
   async fetch(request: Request): Promise<Response> {
+    const start = Date.now();
     const url = new URL(request.url);
+    const requestId = request.headers.get("cf-ray") ?? undefined;
 
-    // Handle CORS preflight requests
-    if (request.method === "OPTIONS") {
-      return handleCorsPreflightRequest(request);
-    }
+    const response = await dispatch(request, url);
 
-    if (url.pathname.startsWith("/api/")) {
-      if (url.pathname === "/api/search-feeds" && request.method === "POST") {
-        const response = await handleFeedSearch(request);
-        return addSecurityHeaders(response, request);
-      }
-      const notFoundResponse = new Response("Not Found", { status: 404 });
-      return addSecurityHeaders(notFoundResponse, request);
-    }
-    const notFoundResponse = new Response(null, { status: 404 });
-    return addSecurityHeaders(notFoundResponse, request);
+    logAccess({
+      method: request.method,
+      route: url.pathname,
+      status_code: response.status,
+      duration_ms: Date.now() - start,
+      request_id: requestId,
+    });
+
+    return response;
   },
 };
