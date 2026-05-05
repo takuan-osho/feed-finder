@@ -1,4 +1,4 @@
-import pino from "pino";
+import pino from "pino/browser";
 
 interface AccessFields {
   method: string;
@@ -8,37 +8,53 @@ interface AccessFields {
   request_id?: string;
 }
 
-const consoleDestination = {
-  write(chunk: string): void {
-    const line = chunk.endsWith("\n") ? chunk.slice(0, -1) : chunk;
-    let level: string | undefined;
-    try {
-      level = (JSON.parse(line) as { level?: string }).level;
-    } catch {
-      level = undefined;
-    }
-    if (level === "error" || level === "fatal") {
-      console.error(line);
-    } else if (level === "warn") {
-      console.warn(line);
-    } else {
-      // biome-ignore lint/suspicious/noConsole: pino destination — CF Workers Logs ingest console.log JSON
-      console.log(line);
-    }
-  },
+// Pino's Node entry uses node:diagnostics_channel and sonic-boom, which break in
+// Cloudflare Workers (see workerd discussion #3423). The browser entry is the
+// supported path; we still keep all output on the existing console channels so
+// Cloudflare Workers Logs / the Grafana drain ingest unchanged JSON lines.
+const formatLine = (level: string, o: object): string => {
+  // Drop pino's auto-added numeric `level` and epoch `time`; emit the string
+  // level label and an ISO `ts` instead so Loki/Grafana can index them.
+  // `service` is added here rather than via pino's `base` because base bindings
+  // are not auto-applied to root-logger calls in browser mode.
+  const stripped: Record<string, unknown> = {
+    ...(o as Record<string, unknown>),
+  };
+  delete stripped["level"];
+  delete stripped["time"];
+  return JSON.stringify({
+    level,
+    ts: new Date().toISOString(),
+    service: "feed-finder",
+    ...stripped,
+  });
 };
 
-export const logger = pino(
-  {
-    level: "info",
-    base: { service: "feed-finder" },
-    formatters: {
-      level: (label) => ({ level: label }),
+const writeError = (o: object): void => {
+  console.error(formatLine("error", o));
+};
+const writeWarn = (o: object): void => {
+  console.warn(formatLine("warn", o));
+};
+const writeInfo = (o: object): void => {
+  // biome-ignore lint/suspicious/noConsole: pino destination — CF Workers Logs ingest console.log JSON
+  console.log(formatLine("info", o));
+};
+
+export const logger = pino({
+  level: "info",
+  browser: {
+    asObject: true,
+    write: {
+      info: writeInfo,
+      warn: writeWarn,
+      error: writeError,
+      fatal: writeError,
+      debug: writeInfo,
+      trace: writeInfo,
     },
-    timestamp: () => `,"ts":"${new Date().toISOString()}"`,
   },
-  consoleDestination,
-);
+});
 
 export const logAccess = (fields: AccessFields): void => {
   const status = fields.status_code;

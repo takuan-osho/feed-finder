@@ -63,7 +63,7 @@ describe("worker access log", () => {
     expect(access?.level).toBe("warn");
   });
 
-  it("emits http_access info log on 200 (CORS preflight)", async () => {
+  it("emits http_access info log on 204 (CORS preflight)", async () => {
     const { default: worker } = await import("./index");
     const request = new Request("https://test.com/api/search-feeds", {
       method: "OPTIONS",
@@ -74,12 +74,14 @@ describe("worker access log", () => {
     });
     const response = await worker.fetch(request);
 
-    expect(response.status).toBeGreaterThanOrEqual(200);
+    expect(response.status).toBe(204);
 
     const access = findHttpAccess([logSpy, warnSpy, errSpy]);
     expect(access).toBeDefined();
     expect(access?.method).toBe("OPTIONS");
     expect(access?.route).toBe("/api/search-feeds");
+    expect(access?.status_code).toBe(204);
+    expect(access?.level).toBe("info");
   });
 
   it("propagates cf-ray as request_id when present", async () => {
