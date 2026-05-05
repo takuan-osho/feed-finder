@@ -27,7 +27,7 @@ export default defineConfig({
     // Code splitting configuration
     rollupOptions: {
       treeshake: {
-        manualPureFunctions: ["console.log", "console.info", "console.debug"],
+        manualPureFunctions: ["console.info", "console.debug"],
       },
       output: {
         manualChunks(id) {
