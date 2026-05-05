@@ -12,7 +12,20 @@
     "not_found_handling": "single-page-application"
   },
   "observability": {
-    "enabled": true
+    "traces": {
+      "enabled": true,
+      "destinations": ["grafana-traces"],
+      // trace sample rate
+      "head_sampling_rate": 0.05,
+      "persist": false,
+    },
+    "logs": {
+      "enabled": true,
+      "destinations": ["grafana-logs"],
+      // log sample rate
+      "head_sampling_rate": 0.6,
+      "persist": false,
+    }
   },
   "routes": [
     {
