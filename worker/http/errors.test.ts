@@ -174,7 +174,7 @@ describe("http/errors", () => {
       );
     });
 
-    it("should log error details with generated ID", () => {
+    it("should log error details as a structured JSON line", () => {
       const error = {
         type: "NETWORK_ERROR" as const,
         message: "Connection refused",
@@ -184,9 +184,19 @@ describe("http/errors", () => {
 
       expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
       const logCall = consoleErrorSpy.mock.calls[0][0];
-      expect(logCall).toMatch(
-        /^\[\w+\] Error type: NETWORK_ERROR, Details: Connection refused$/,
-      );
+      expect(typeof logCall).toBe("string");
+      const parsed = JSON.parse(logCall as string) as {
+        level: string;
+        msg: string;
+        error_type: string;
+        details: string;
+        error_id: string;
+      };
+      expect(parsed.level).toBe("error");
+      expect(parsed.msg).toBe("error_response");
+      expect(parsed.error_type).toBe("NETWORK_ERROR");
+      expect(parsed.details).toBe("Connection refused");
+      expect(parsed.error_id).toMatch(/^[a-z0-9]{9}$/);
     });
 
     it("should generate unique error IDs", async () => {
