@@ -277,18 +277,8 @@ describe("Security Integration Tests", () => {
         // No closing '>' - this will cause catastrophic backtracking in vulnerable regex
         'rel="alternate" type="application/rss+xml" href="/feed.xml"';
 
-      // TODO: Use vi.useFakeTimers() for deterministic testing instead of performance.now()
-      const startTime = performance.now();
-
       // Test the potentially vulnerable function
       const feeds = findMetaFeeds(maliciousHtml, "https://example.com");
-
-      const endTime = performance.now();
-      const executionTime = endTime - startTime;
-
-      // For now, document that the current implementation is vulnerable
-      // A secure implementation should complete in < 10ms
-      console.log(`findMetaFeeds execution time: ${executionTime}ms`);
 
       // Test expectation: secure implementation should be fast and safe
       expect(feeds).toBeDefined();

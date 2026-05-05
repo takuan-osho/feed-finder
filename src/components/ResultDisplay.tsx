@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle, Copy, ExternalLink, Info, XCircle } from "lucide-react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import type { FeedResult, SearchResult } from "../../shared/types";
@@ -13,6 +13,7 @@ interface ResultDisplayProps {
 
 export function ResultDisplay({ result, error }: ResultDisplayProps) {
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
+  const resultId = useId();
 
   const handleCopyUrl = async (url: string) => {
     try {
@@ -100,7 +101,7 @@ export function ResultDisplay({ result, error }: ResultDisplayProps) {
           <li key={`${feed.url}-${index}`} role="listitem">
             <FeedCard
               feed={feed}
-              itemId={`feed-${index}`}
+              titleId={`${resultId}-feed-${index}-title`}
               onCopyUrl={handleCopyUrl}
               onOpenFeed={handleOpenFeed}
               copiedUrl={copiedUrl}
@@ -114,7 +115,7 @@ export function ResultDisplay({ result, error }: ResultDisplayProps) {
 
 interface FeedCardProps {
   feed: FeedResult;
-  itemId: string;
+  titleId: string;
   onCopyUrl: (url: string) => void;
   onOpenFeed: (url: string) => void;
   copiedUrl: string | null;
@@ -122,13 +123,12 @@ interface FeedCardProps {
 
 function FeedCard({
   feed,
-  itemId,
+  titleId,
   onCopyUrl,
   onOpenFeed,
   copiedUrl,
 }: FeedCardProps) {
   const isUrlCopied = copiedUrl === feed.url;
-  const feedTitleId = `${itemId}-title-${feed.url.replace(/[^a-zA-Z0-9]/g, "-")}`;
   const discoveryMethodText =
     feed.discoveryMethod === "meta-tag"
       ? "Discovered via HTML meta tag"
@@ -137,13 +137,13 @@ function FeedCard({
   return (
     <article
       className="app-surface rounded-lg border shadow-lg transition-colors duration-200 hover:border-[var(--app-accent-border)]"
-      aria-labelledby={feedTitleId}
+      aria-labelledby={titleId}
     >
       <header className="p-6 pb-3">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
             <h3
-              id={feedTitleId}
+              id={titleId}
               className="app-text truncate text-lg font-semibold leading-tight"
             >
               {feed.title || feed.url}
