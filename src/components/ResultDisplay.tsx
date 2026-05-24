@@ -1,9 +1,18 @@
 "use client";
 
-import { CheckCircle, Copy, ExternalLink, Info, XCircle } from "lucide-react";
-import { useId, useState } from "react";
+import {
+  CheckCircle,
+  ChevronDown,
+  Copy,
+  ExternalLink,
+  Info,
+  Rss,
+  XCircle,
+} from "lucide-react";
+import { type KeyboardEvent, useId, useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { getFeedReaderLinks } from "@/lib/feedReaders";
 import type { FeedResult, SearchResult } from "../../shared/types";
 
 interface ResultDisplayProps {
@@ -129,10 +138,25 @@ function FeedCard({
   copiedUrl,
 }: FeedCardProps) {
   const isUrlCopied = copiedUrl === feed.url;
+  const [areReaderLinksOpen, setAreReaderLinksOpen] = useState(false);
+  const readerOptionsButtonRef = useRef<HTMLButtonElement>(null);
+  const readerLinksId = useId();
+  const feedName = feed.title || feed.url;
+  const feedReaderLinks = getFeedReaderLinks(feed.url);
+  const feedAccessibleName = `${feedName} (${feed.url})`;
   const discoveryMethodText =
     feed.discoveryMethod === "meta-tag"
       ? "Discovered via HTML meta tag"
       : "Discovered via common path";
+
+  const handleReaderLinksKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== "Escape") {
+      return;
+    }
+
+    setAreReaderLinksOpen(false);
+    readerOptionsButtonRef.current?.focus();
+  };
 
   return (
     <article
@@ -183,7 +207,7 @@ function FeedCard({
           </div>
 
           <div
-            className="grid gap-2 sm:grid-cols-2"
+            className="grid gap-2 sm:grid-cols-3"
             role="group"
             aria-label="Feed actions"
           >
@@ -223,6 +247,55 @@ function FeedCard({
                 </>
               )}
             </Button>
+
+            {feedReaderLinks.length > 0 && (
+              <div className="relative" onKeyDown={handleReaderLinksKeyDown}>
+                <Button
+                  ref={readerOptionsButtonRef}
+                  type="button"
+                  onClick={() =>
+                    setAreReaderLinksOpen((currentValue) => !currentValue)
+                  }
+                  variant="outline"
+                  size="sm"
+                  className="app-control w-full border focus:outline-none focus:ring-2 focus:ring-offset-2"
+                  aria-expanded={areReaderLinksOpen}
+                  aria-controls={readerLinksId}
+                  aria-label={`Open RSS reader options for ${feedAccessibleName}`}
+                >
+                  <Rss className="h-4 w-4 mr-2" aria-hidden="true" />
+                  Open in reader
+                  <ChevronDown
+                    className={`ml-auto h-4 w-4 transition-transform duration-200 ${
+                      areReaderLinksOpen ? "rotate-180" : ""
+                    }`}
+                    aria-hidden="true"
+                  />
+                </Button>
+
+                {areReaderLinksOpen && (
+                  <div
+                    id={readerLinksId}
+                    role="region"
+                    aria-label={`RSS reader links for ${feedAccessibleName}`}
+                    className="app-surface mt-2 grid rounded-md border p-1 shadow-lg"
+                  >
+                    {feedReaderLinks.map((reader) => (
+                      <a
+                        key={reader.id}
+                        href={reader.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="app-text rounded px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-[var(--app-control-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--app-focus)]"
+                        aria-label={`Open ${feedAccessibleName} in ${reader.label} in a new tab`}
+                      >
+                        {reader.label}
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
