@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { FeedResult, SearchResult } from "../../shared/types";
 import { ResultDisplay } from "./ResultDisplay";
@@ -266,6 +272,11 @@ describe("ResultDisplay", () => {
       expect(
         screen.getByLabelText(/Copy the URL of Example Feed to the clipboard/),
       ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", {
+          name: "Open RSS reader options for Example Feed (https://example.com/feed.xml)",
+        }),
+      ).toBeInTheDocument();
     });
 
     it("should have group role on action buttons", () => {
@@ -335,6 +346,201 @@ describe("ResultDisplay", () => {
         expect(labelledby).toBeTruthy();
         expect(document.getElementById(labelledby!)).toBeTruthy();
       });
+    });
+  });
+
+  describe("RSS reader links", () => {
+    const successResult: SearchResult = {
+      success: true,
+      feeds: [
+        {
+          url: "https://example.com/feed.xml?tag=日本語&format=atom",
+          title: "Example Feed",
+          type: "RSS",
+          discoveryMethod: "meta-tag",
+        },
+      ],
+      searchedUrl: "https://example.com",
+      totalFound: 1,
+    };
+
+    it("should toggle RSS reader links for a feed", () => {
+      render(<ResultDisplay result={successResult} />);
+
+      const readerOptionsButton = screen.getByRole("button", {
+        name: "Open RSS reader options for Example Feed (https://example.com/feed.xml?tag=日本語&format=atom)",
+      });
+
+      expect(readerOptionsButton).toHaveAttribute("aria-expanded", "false");
+      expect(
+        screen.queryByRole("region", {
+          name: "RSS reader links for Example Feed (https://example.com/feed.xml?tag=日本語&format=atom)",
+        }),
+      ).not.toBeInTheDocument();
+
+      fireEvent.click(readerOptionsButton);
+
+      expect(readerOptionsButton).toHaveAttribute("aria-expanded", "true");
+      expect(
+        screen.getByRole("region", {
+          name: "RSS reader links for Example Feed (https://example.com/feed.xml?tag=日本語&format=atom)",
+        }),
+      ).toBeInTheDocument();
+      const readerLinksRegion = screen.getByRole("region", {
+        name: "RSS reader links for Example Feed (https://example.com/feed.xml?tag=日本語&format=atom)",
+      });
+      expect(within(readerLinksRegion).getAllByRole("link")).toHaveLength(5);
+      expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+      expect(screen.queryByRole("menuitem")).not.toBeInTheDocument();
+
+      fireEvent.click(readerOptionsButton);
+
+      expect(readerOptionsButton).toHaveAttribute("aria-expanded", "false");
+      expect(
+        screen.queryByRole("region", {
+          name: "RSS reader links for Example Feed (https://example.com/feed.xml?tag=日本語&format=atom)",
+        }),
+      ).not.toBeInTheDocument();
+    });
+
+    it("should render safe external reader links", () => {
+      render(<ResultDisplay result={successResult} />);
+
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: "Open RSS reader options for Example Feed (https://example.com/feed.xml?tag=日本語&format=atom)",
+        }),
+      );
+
+      const feedlyLink = screen.getByRole("link", {
+        name: "Open Example Feed (https://example.com/feed.xml?tag=日本語&format=atom) in Feedly in a new tab",
+      });
+      const inoreaderLink = screen.getByRole("link", {
+        name: "Open Example Feed (https://example.com/feed.xml?tag=日本語&format=atom) in Inoreader in a new tab",
+      });
+
+      expect(feedlyLink).toHaveAttribute(
+        "href",
+        "https://feedly.com/i/subscription/feed%2Fhttps%3A%2F%2Fexample.com%2Ffeed.xml%3Ftag%3D%E6%97%A5%E6%9C%AC%E8%AA%9E%26format%3Datom",
+      );
+      expect(inoreaderLink).toHaveAttribute(
+        "href",
+        "https://www.inoreader.com?add_feed=https%3A%2F%2Fexample.com%2Ffeed.xml%3Ftag%3D%E6%97%A5%E6%9C%AC%E8%AA%9E%26format%3Datom",
+      );
+
+      const readerLinksRegion = screen.getByRole("region", {
+        name: "RSS reader links for Example Feed (https://example.com/feed.xml?tag=日本語&format=atom)",
+      });
+      for (const link of within(readerLinksRegion).getAllByRole("link")) {
+        expect(link).toHaveAttribute("target", "_blank");
+        expect(link).toHaveAttribute("rel", "noopener noreferrer");
+      }
+    });
+
+    it("should close RSS reader links when Escape is pressed", () => {
+      render(<ResultDisplay result={successResult} />);
+
+      const readerOptionsButton = screen.getByRole("button", {
+        name: "Open RSS reader options for Example Feed (https://example.com/feed.xml?tag=日本語&format=atom)",
+      });
+      fireEvent.click(readerOptionsButton);
+
+      fireEvent.keyDown(readerOptionsButton, { key: "Escape" });
+
+      expect(readerOptionsButton).toHaveAttribute("aria-expanded", "false");
+      expect(
+        screen.queryByRole("region", {
+          name: "RSS reader links for Example Feed (https://example.com/feed.xml?tag=日本語&format=atom)",
+        }),
+      ).not.toBeInTheDocument();
+      expect(readerOptionsButton).toHaveFocus();
+    });
+
+    it("should close RSS reader links when Escape is pressed from a reader link", () => {
+      render(<ResultDisplay result={successResult} />);
+
+      const readerOptionsButton = screen.getByRole("button", {
+        name: "Open RSS reader options for Example Feed (https://example.com/feed.xml?tag=日本語&format=atom)",
+      });
+      fireEvent.click(readerOptionsButton);
+
+      const feedlyLink = screen.getByRole("link", {
+        name: "Open Example Feed (https://example.com/feed.xml?tag=日本語&format=atom) in Feedly in a new tab",
+      });
+      feedlyLink.focus();
+      fireEvent.keyDown(feedlyLink, { key: "Escape" });
+
+      expect(readerOptionsButton).toHaveAttribute("aria-expanded", "false");
+      expect(
+        screen.queryByRole("region", {
+          name: "RSS reader links for Example Feed (https://example.com/feed.xml?tag=日本語&format=atom)",
+        }),
+      ).not.toBeInTheDocument();
+      expect(readerOptionsButton).toHaveFocus();
+    });
+
+    it("should keep RSS reader options independent for feeds with the same title", () => {
+      const duplicateTitleResult: SearchResult = {
+        success: true,
+        feeds: [
+          {
+            url: "https://example.com/feed.xml",
+            title: "Latest posts",
+            type: "RSS",
+            discoveryMethod: "meta-tag",
+          },
+          {
+            url: "https://example.net/feed.xml",
+            title: "Latest posts",
+            type: "RSS",
+            discoveryMethod: "common-path",
+          },
+        ],
+        searchedUrl: "https://example.com",
+        totalFound: 2,
+      };
+
+      render(<ResultDisplay result={duplicateTitleResult} />);
+
+      const firstReaderOptionsButton = screen.getByRole("button", {
+        name: "Open RSS reader options for Latest posts (https://example.com/feed.xml)",
+      });
+      const secondReaderOptionsButton = screen.getByRole("button", {
+        name: "Open RSS reader options for Latest posts (https://example.net/feed.xml)",
+      });
+
+      fireEvent.click(firstReaderOptionsButton);
+
+      const firstReaderLinks = screen.getByRole("region", {
+        name: "RSS reader links for Latest posts (https://example.com/feed.xml)",
+      });
+      expect(
+        screen.queryByRole("region", {
+          name: "RSS reader links for Latest posts (https://example.net/feed.xml)",
+        }),
+      ).not.toBeInTheDocument();
+      expect(
+        within(firstReaderLinks).getByRole("link", {
+          name: "Open Latest posts (https://example.com/feed.xml) in Feedly in a new tab",
+        }),
+      ).toHaveAttribute(
+        "href",
+        "https://feedly.com/i/subscription/feed%2Fhttps%3A%2F%2Fexample.com%2Ffeed.xml",
+      );
+
+      fireEvent.click(secondReaderOptionsButton);
+
+      const secondReaderLinks = screen.getByRole("region", {
+        name: "RSS reader links for Latest posts (https://example.net/feed.xml)",
+      });
+      expect(
+        within(secondReaderLinks).getByRole("link", {
+          name: "Open Latest posts (https://example.net/feed.xml) in Feedly in a new tab",
+        }),
+      ).toHaveAttribute(
+        "href",
+        "https://feedly.com/i/subscription/feed%2Fhttps%3A%2F%2Fexample.net%2Ffeed.xml",
+      );
     });
   });
 
