@@ -35,7 +35,7 @@ feed-finder/
 - `npm run preview`: Build then serve production preview.
 - `npm test`: Run Vitest in watch/interactive mode.
 - `npm run test:run`: Run Vitest once for CI.
-- `npm run lint`: Run Biome checks on `src/`.
+- `npm run lint`: Run Biome checks on `src/` and `worker/`.
 - `npm run deploy`: Build and deploy worker via Wrangler.
 - `npm run cf-typegen`: Generate Cloudflare types.
 
@@ -65,21 +65,18 @@ feed-finder/
 - **Security**: enforce XSS protection and HTML escaping rigorously.
 
 ## Testing Guidelines
-- Framework: Vitest (`**/*.{test,spec}.{js,ts}`), see `vitest.config.ts`.
+- Framework: Vitest (`**/*.{test,spec}.{js,ts,tsx}`), see `vitest.config.ts`.
 - Place worker tests under `worker/` (e.g., `worker/integration.test.ts`).
-- Naming: mirror the module name with `.test.ts`.
-- Run locally with `npm test`; use `npm run test:run` in CI.
+- Naming: mirror the module name with `.test.ts` (`.test.tsx` for components).
+- Run tests once with `npm run test:run`. `npm test` starts watch mode and does not exit.
 - Aim for practical coverage of parsing, URL validation, and error paths.
 
 ## TDD Policy (t-wada style)
 - All implementation work follows t-wada style TDD (Red → Green → Refactor) by default.
 - First write the smallest failing test, then make it pass with the minimum implementation, and finally refactor.
 - For new features and bug fixes, add or strengthen tests before touching the implementation.
-- Test placement and naming follow the "Testing Guidelines" above (under `worker/`, with `.test.ts` files mirroring the modules under test).
+- Test placement and naming follow the "Testing Guidelines" above (next to the module under test, mirroring its name).
 - Always cover failure cases and boundary values to prevent security and performance regressions.
-- CI uses `npm run test:run`; local development uses `npm test`.
-
-**Prompt for developers/agents**: "Implementation follows t-wada style TDD. First add the smallest failing test, then implement just enough to pass it, and finally refactor."
 
 ### Implementation Flow
 1. Review the requirements in the spec files (`.kiro/specs/`).
@@ -95,7 +92,7 @@ feed-finder/
 - Ensure `npm run lint` and tests pass before requesting review.
 
 ## Security & Configuration Tips
-- CORS origins: update `ALLOWED_ORIGINS` in `worker/index.ts` for new domains.
+- CORS origins: update `ALLOWED_ORIGINS` in `worker/config.ts` for new domains.
 - Do not weaken SSRF checks in `validateTargetUrl`; avoid private/loopback hosts and unusual ports.
 - Keep secrets out of the client; use Wrangler/environment configuration for server-side values.
 
