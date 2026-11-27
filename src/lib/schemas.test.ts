@@ -44,6 +44,21 @@ describe("FeedResultSchema", () => {
     expect(result.success).toBe(false);
   });
 
+  it.each([
+    "javascript:alert(document.domain)",
+    "data:text/html,<script>alert(1)</script>",
+    "file:///etc/passwd",
+  ])("should reject a feed URL with a non-HTTP(S) scheme: %s", (url) => {
+    const feedResult = {
+      url,
+      type: "RSS",
+      discoveryMethod: "meta-tag",
+    };
+
+    const result = FeedResultSchema.safeParse(feedResult);
+    expect(result.success).toBe(false);
+  });
+
   it("should reject invalid feed type", () => {
     const feedResult = {
       url: "https://example.com/feed.xml",

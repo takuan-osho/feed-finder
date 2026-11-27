@@ -1,11 +1,17 @@
 import { z } from "zod";
 
+import { isHttpUrl } from "./safeUrl";
+
 /**
  * Zod schema for FeedResult
  * Matches the shared/types.ts FeedResult interface
  */
 export const FeedResultSchema = z.object({
-  url: z.string().url(),
+  // Feed URLs are opened in a new tab, so only http(s) may pass (no javascript:, data:, ...)
+  url: z
+    .string()
+    .url()
+    .refine(isHttpUrl, { message: "Feed URL must use http or https" }),
   title: z.string().optional(),
   type: z.enum(["RSS", "Atom"]),
   description: z.string().optional(),

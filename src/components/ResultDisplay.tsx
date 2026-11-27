@@ -5,6 +5,7 @@ import { useId, useState } from "react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { isHttpUrl } from "@/lib/safeUrl";
 
 import type { FeedResult, SearchResult } from "../../shared/types";
 
@@ -28,6 +29,11 @@ export function ResultDisplay({ result, error }: ResultDisplayProps) {
   };
 
   const handleOpenFeed = (url: string) => {
+    // Defense in depth: never hand a javascript:/data: URL to window.open
+    if (!isHttpUrl(url)) {
+      console.error("Refused to open a feed URL with an unsafe scheme");
+      return;
+    }
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
