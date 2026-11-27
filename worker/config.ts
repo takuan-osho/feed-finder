@@ -36,3 +36,9 @@ export const MAX_LINK_TAG_LENGTH = 1000;
  */
 export const USER_AGENT = "FeedFinder/1.0";
 export const FETCH_TIMEOUT_MS = 5000;
+
+/**
+ * Maximum number of redirects followed by safeFetch.
+ * Every hop is re-validated with validateTargetUrl.
+ */
+export const MAX_REDIRECTS = 5;

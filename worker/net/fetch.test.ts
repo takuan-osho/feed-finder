@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { MAX_REDIRECTS } from "../config";
 import { safeFetch } from "./fetch";
 
 // Mock fetch globally
@@ -254,6 +255,278 @@ describe("net/fetch", () => {
 
       expect(result.isErr()).toBe(true);
       expect(clearTimeoutSpy).toHaveBeenCalled();
+    });
+  });
+  describe("safeFetch redirect handling", () => {
+    const redirect = (location: string | null, status = 302) =>
+      new Response("redirect body", {
+        status,
+        headers: location === null ? {} : { Location: location },
+      });
+
+    it("should request with redirect: manual", async () => {
+      mockFetch.mockResolvedValueOnce(new Response("ok", { status: 200 }));
+
+      await safeFetch("https://example.com");
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        "https://example.com",
+        expect.objectContaining({ redirect: "manual" }),
+      );
+    });
+
+    it.each([301, 302, 303, 307, 308])(
+      "should follow a %i redirect to a validated public URL",
+      async (status) => {
+        const final = new Response("final", { status: 200 });
+        mockFetch
+          .mockResolvedValueOnce(
+            redirect("https://other.example.com/feed", status),
+          )
+          .mockResolvedValueOnce(final);
+
+        const result = await safeFetch("https://example.com/");
+
+        expect(result.isOk()).toBe(true);
+        if (result.isOk()) {
+          expect(result.value).toBe(final);
+        }
+        expect(mockFetch).toHaveBeenCalledTimes(2);
+        expect(mockFetch).toHaveBeenNthCalledWith(
+          2,
+          "https://other.example.com/feed",
+          expect.objectContaining({ redirect: "manual" }),
+        );
+      },
+    );
+
+    it("should resolve a relative Location against the current URL", async () => {
+      mockFetch
+        .mockResolvedValueOnce(redirect("../feed.xml"))
+        .mockResolvedValueOnce(redirect("/atom.xml"))
+        .mockResolvedValueOnce(new Response("ok", { status: 200 }));
+
+      const result = await safeFetch("https://example.com/blog/post/");
+
+      expect(result.isOk()).toBe(true);
+      expect(mockFetch.mock.calls.map((call) => call[0])).toEqual([
+        "https://example.com/blog/post/",
+        "https://example.com/blog/feed.xml",
+        "https://example.com/atom.xml",
+      ]);
+    });
+
+    it("should keep method and headers on every hop", async () => {
+      mockFetch
+        .mockResolvedValueOnce(redirect("https://other.example.com/"))
+        .mockResolvedValueOnce(new Response(null, { status: 200 }));
+
+      await safeFetch("https://example.com/", {
+        method: "HEAD",
+        headers: { Accept: "application/xml" },
+      });
+
+      for (const call of mockFetch.mock.calls) {
+        expect(call[1]).toEqual(
+          expect.objectContaining({
+            method: "HEAD",
+            redirect: "manual",
+            headers: {
+              "User-Agent": "FeedFinder/1.0",
+              Accept: "application/xml",
+            },
+          }),
+        );
+      }
+    });
+
+    it.each([
+      "http://169.254.169.254/latest/meta-data/",
+      "http://127.0.0.1/",
+      "http://[::1]/",
+      "http://localhost/",
+      "http://example.com:22/",
+      "ftp://example.com/",
+    ])("should refuse to follow a redirect to %s", async (location) => {
+      const hop = redirect(location);
+      const cancel = vi.spyOn(hop.body!, "cancel");
+      mockFetch.mockResolvedValueOnce(hop);
+
+      const result = await safeFetch("https://example.com/");
+
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.type).toBe("FETCH_FAILED");
+        expect(result.error.message).toContain("Redirect target not permitted");
+      }
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(cancel).toHaveBeenCalled();
+    });
+
+    it("should fail when a redirect has no Location header", async () => {
+      mockFetch.mockResolvedValueOnce(redirect(null));
+
+      const result = await safeFetch("https://example.com/");
+
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.type).toBe("FETCH_FAILED");
+        expect(result.error.message).toBe("Redirect without Location header");
+      }
+    });
+
+    it("should fail when the Location header is not a valid URL", async () => {
+      mockFetch.mockResolvedValueOnce(redirect("http://[invalid"));
+
+      const result = await safeFetch("https://example.com/");
+
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.type).toBe("FETCH_FAILED");
+        expect(result.error.message).toContain("Invalid redirect location");
+      }
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it("should follow exactly MAX_REDIRECTS redirects", async () => {
+      expect(MAX_REDIRECTS).toBe(5);
+      for (let i = 0; i < MAX_REDIRECTS; i++) {
+        mockFetch.mockResolvedValueOnce(
+          redirect(`https://example.com/${i + 1}`),
+        );
+      }
+      mockFetch.mockResolvedValueOnce(new Response("ok", { status: 200 }));
+
+      const result = await safeFetch("https://example.com/0");
+
+      expect(result.isOk()).toBe(true);
+      expect(mockFetch).toHaveBeenCalledTimes(MAX_REDIRECTS + 1);
+    });
+
+    it("should fail after more than MAX_REDIRECTS redirects", async () => {
+      mockFetch.mockImplementation(async () =>
+        redirect("https://example.com/loop"),
+      );
+
+      const result = await safeFetch("https://example.com/");
+
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.type).toBe("FETCH_FAILED");
+        expect(result.error.message).toBe(
+          `Too many redirects (max ${MAX_REDIRECTS})`,
+        );
+      }
+      expect(mockFetch).toHaveBeenCalledTimes(MAX_REDIRECTS + 1);
+    });
+
+    it("should cancel the body of each followed redirect response", async () => {
+      const first = redirect("https://example.com/a");
+      const second = redirect("https://example.com/b");
+      const cancelFirst = vi.spyOn(first.body!, "cancel");
+      const cancelSecond = vi.spyOn(second.body!, "cancel");
+      mockFetch
+        .mockResolvedValueOnce(first)
+        .mockResolvedValueOnce(second)
+        .mockResolvedValueOnce(new Response("ok", { status: 200 }));
+
+      await safeFetch("https://example.com/");
+
+      expect(cancelFirst).toHaveBeenCalled();
+      expect(cancelSecond).toHaveBeenCalled();
+    });
+
+    it("should ignore errors when cancelling a redirect body", async () => {
+      const hop = redirect("https://example.com/a");
+      vi.spyOn(hop.body!, "cancel").mockRejectedValue(new Error("boom"));
+      mockFetch
+        .mockResolvedValueOnce(hop)
+        .mockResolvedValueOnce(new Response("ok", { status: 200 }));
+
+      const result = await safeFetch("https://example.com/");
+
+      expect(result.isOk()).toBe(true);
+    });
+
+    it("should follow a redirect response without a body", async () => {
+      mockFetch
+        .mockResolvedValueOnce(
+          new Response(null, {
+            status: 301,
+            headers: { Location: "https://example.com/a" },
+          }),
+        )
+        .mockResolvedValueOnce(new Response("ok", { status: 200 }));
+
+      const result = await safeFetch("https://example.com/");
+
+      expect(result.isOk()).toBe(true);
+    });
+
+    it("should not treat a non-redirect 3xx as a redirect", async () => {
+      mockFetch.mockResolvedValueOnce(
+        new Response(null, {
+          status: 304,
+          headers: { Location: "https://example.com/a" },
+        }),
+      );
+
+      const result = await safeFetch("https://example.com/");
+
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.type).toBe("FETCH_FAILED");
+        expect(result.error.message).toBe("HTTP 304");
+      }
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it("should use one timeout for the whole redirect chain", async () => {
+      const setTimeoutSpy = vi.spyOn(globalThis, "setTimeout");
+      let firstSignal: AbortSignal | undefined;
+      mockFetch.mockImplementation((_url, options: RequestInit) => {
+        firstSignal ??= options.signal ?? undefined;
+        expect(options.signal).toBe(firstSignal);
+        if (mockFetch.mock.calls.length < 3) {
+          return Promise.resolve(redirect("https://example.com/next"));
+        }
+        return Promise.resolve(new Response("ok", { status: 200 }));
+      });
+
+      const result = await safeFetch("https://example.com/");
+
+      expect(result.isOk()).toBe(true);
+      expect(mockFetch).toHaveBeenCalledTimes(3);
+      expect(setTimeoutSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("should time out when the chain exceeds FETCH_TIMEOUT_MS", async () => {
+      mockFetch.mockImplementation(
+        (_url, options: RequestInit) =>
+          new Promise((resolve, reject) => {
+            const timer = setTimeout(
+              () => resolve(redirect("https://example.com/next")),
+              2000,
+            );
+            options.signal?.addEventListener("abort", () => {
+              clearTimeout(timer);
+              reject(
+                Object.assign(new Error("aborted"), { name: "AbortError" }),
+              );
+            });
+          }),
+      );
+
+      const pending = safeFetch("https://example.com/");
+      await vi.advanceTimersByTimeAsync(6000);
+      const result = await pending;
+
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.type).toBe("TIMEOUT_ERROR");
+      }
+      // 2s + 2s + aborted during the third hop (5s total budget)
+      expect(mockFetch).toHaveBeenCalledTimes(3);
     });
   });
 });
