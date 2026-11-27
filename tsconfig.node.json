@@ -23,5 +23,10 @@
     "noImplicitReturns": true,
     "noPropertyAccessFromIndexSignature": true
   },
-  "include": ["vite.config.ts", "cloudflare.config.ts"]
+  "include": [
+    "vite.config.ts",
+    "cloudflare.config.ts",
+    "vite.config.test.ts",
+    "securityHeaders.test.ts"
+  ]
 }
