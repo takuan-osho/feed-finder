@@ -1,6 +1,22 @@
 import { ALLOWED_ORIGINS } from "../config";
 
 /**
+ * Appends `Origin` to the Vary header unless it is already listed.
+ * The Access-Control-Allow-Origin value depends on the request Origin, so
+ * shared caches must not reuse a response across origins.
+ */
+function addVaryOrigin(headers: Headers): void {
+  const vary = headers.get("Vary");
+  const alreadyVariesOnOrigin = vary
+    ?.split(",")
+    .some((value) => value.trim().toLowerCase() === "origin");
+
+  if (!alreadyVariesOnOrigin) {
+    headers.set("Vary", vary ? `${vary}, Origin` : "Origin");
+  }
+}
+
+/**
  * Adds security headers and CORS headers to the response
  */
 export function addSecurityHeaders(
@@ -20,6 +36,14 @@ export function addSecurityHeaders(
     "Content-Security-Policy",
     "default-src 'none'; script-src 'none'; object-src 'none'; frame-ancestors 'none'",
   );
+
+  // Tell browsers to use HTTPS only for this host (one year)
+  headers.set(
+    "Strict-Transport-Security",
+    "max-age=31536000; includeSubDomains",
+  );
+
+  addVaryOrigin(headers);
 
   // Add CORS headers with proper origin validation
   if (request) {
@@ -53,6 +77,7 @@ export function handleCorsPreflightRequest(request: Request): Response {
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
     "Access-Control-Max-Age": "86400",
+    Vary: "Origin",
   });
 
   return new Response(null, { status: 204, headers });

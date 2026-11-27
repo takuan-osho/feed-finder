@@ -5,10 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Feed Finder</title>
 
-    <!-- Performance optimizations -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="dns-prefetch" href="//fonts.googleapis.com">
-
     <!-- Meta tags for performance and SEO -->
     <meta name="description" content="RSS / Atom Feed Discovery - Enter a website URL to automatically discover its RSS and Atom feeds">
     <meta name="theme-color" content="#f8fafc">
@@ -16,39 +12,8 @@
     <!-- Preload critical resources -->
     <link rel="modulepreload" href="/src/main.tsx">
 
-    <script>
-      (() => {
-        const storageKey = "feed-finder-theme";
-        const lightThemeColor = "#f8fafc";
-        const darkThemeColor = "#0b1118";
-
-        try {
-          const storedTheme = localStorage.getItem(storageKey);
-          const prefersDark = window.matchMedia(
-            "(prefers-color-scheme: dark)",
-          ).matches;
-          const theme =
-            storedTheme === "light" || storedTheme === "dark"
-              ? storedTheme
-              : prefersDark
-                ? "dark"
-                : "light";
-
-          document.documentElement.dataset.theme = theme;
-          document.documentElement.classList.toggle("dark", theme === "dark");
-          document.documentElement.style.colorScheme = theme;
-          document
-            .querySelector('meta[name="theme-color"]')
-            ?.setAttribute(
-              "content",
-              theme === "dark" ? darkThemeColor : lightThemeColor,
-            );
-        } catch {
-          document.documentElement.dataset.theme = "light";
-          document.documentElement.style.colorScheme = "light";
-        }
-      })();
-    </script>
+    <!-- Theme bootstrap: an external file because the CSP (public/_headers) forbids inline scripts -->
+    <script src="/theme-init.js"></script>
 
     <!-- Optimize rendering -->
     <style>
