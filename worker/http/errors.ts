@@ -4,6 +4,8 @@ import type { AppError } from "../types";
 /**
  * Secure error response helper that prevents information leakage
  */
+const GENERIC_ERROR_MESSAGE =
+  "An unexpected error occurred. Please try again later.";
 const ERROR_ID_ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyz";
 const ERROR_ID_LENGTH = 9;
 const MAX_UNBIASED_BYTE = 252;
@@ -63,7 +65,7 @@ export function createErrorResponse(error: AppError): Response {
       case "PARSING_ERROR":
         return "Unable to analyze the website content. Please try a different URL.";
       default:
-        return "An unexpected error occurred. Please try again later.";
+        return GENERIC_ERROR_MESSAGE;
     }
   })();
 
@@ -95,5 +97,32 @@ export function createErrorResponse(error: AppError): Response {
       errorId, // Include error ID for support purposes
     },
     { status: statusCode },
+  );
+}
+
+/**
+ * Converts an exception that escaped the request handler into a generic 500.
+ * The name, message and stack go to the log only, never to the client.
+ */
+export function createUnhandledExceptionResponse(
+  error: unknown,
+  requestId?: string,
+): Response {
+  const errorId = generateErrorId();
+  const isError = error instanceof Error;
+  logger.error(
+    {
+      error_id: errorId,
+      error_name: isError ? error.name : "NonError",
+      error_message: isError ? error.message : String(error),
+      ...(isError && error.stack !== undefined ? { stack: error.stack } : {}),
+      ...(requestId !== undefined ? { request_id: requestId } : {}),
+    },
+    "unhandled_exception",
+  );
+
+  return Response.json(
+    { success: false, error: GENERIC_ERROR_MESSAGE, errorId },
+    { status: 500 },
   );
 }
