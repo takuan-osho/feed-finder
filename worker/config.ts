@@ -42,3 +42,9 @@ export const FETCH_TIMEOUT_MS = 5000;
  * Every hop is re-validated with validateTargetUrl.
  */
 export const MAX_REDIRECTS = 5;
+
+/**
+ * Maximum number of response body bytes read when parsing a page.
+ * Larger bodies are truncated (feed <link> tags live in <head>).
+ */
+export const MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
