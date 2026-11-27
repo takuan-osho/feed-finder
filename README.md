@@ -24,7 +24,7 @@ https://feedfinder.takuan-osho.com
 - **UI**: shadcn/ui + TailwindCSS v4
 - **Backend**: Cloudflare Workers
 - **Testing**: Vitest (63 tests passing)
-- **Code Quality**: Biome (lint/format) + lefthook
+- **Code Quality**: Vite+ (Oxlint + Oxfmt) + lefthook
 - **Error Handling**: neverthrow
 
 ## Requirements

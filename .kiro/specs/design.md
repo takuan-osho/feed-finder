@@ -771,7 +771,7 @@ Adopt staged checks plus file scoping.
 
 - pre-push only inspects the `src` directory.
 - Generated files (`*.d.ts`) are excluded.
-- Biome configuration is optimized.
+- Vite+ lint / format configuration (Oxlint + Oxfmt) is optimized.
 - GitHub Actions still runs the full set of checks.
 
 ## ADR-016: HTML Parsing Strategy
