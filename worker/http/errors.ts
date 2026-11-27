@@ -50,7 +50,12 @@ export function createErrorResponse(error: AppError): Response {
       case "MISSING_URL":
       case "INVALID_URL_FORMAT":
       case "URL_NOT_PERMITTED":
+      case "URL_TOO_LONG":
         return "Invalid request. Please check your input and try again.";
+      case "PAYLOAD_TOO_LARGE":
+        return "Request is too large. Please shorten your input and try again.";
+      case "UNSUPPORTED_MEDIA_TYPE":
+        return "Unsupported request format. Please send a JSON request.";
       case "FETCH_FAILED":
       case "NETWORK_ERROR":
       case "TIMEOUT_ERROR":
@@ -68,7 +73,12 @@ export function createErrorResponse(error: AppError): Response {
       case "MISSING_URL":
       case "INVALID_URL_FORMAT":
       case "URL_NOT_PERMITTED":
+      case "URL_TOO_LONG":
         return 400;
+      case "PAYLOAD_TOO_LARGE":
+        return 413;
+      case "UNSUPPORTED_MEDIA_TYPE":
+        return 415;
       case "TIMEOUT_ERROR":
         return 408;
       case "FETCH_FAILED":

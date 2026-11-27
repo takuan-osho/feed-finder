@@ -8,7 +8,10 @@ export type ValidationError =
   | { type: "INVALID_REQUEST_BODY"; message: string }
   | { type: "MISSING_URL"; message: string }
   | { type: "INVALID_URL_FORMAT"; message: string }
-  | { type: "URL_NOT_PERMITTED"; message: string };
+  | { type: "URL_NOT_PERMITTED"; message: string }
+  | { type: "URL_TOO_LONG"; message: string }
+  | { type: "PAYLOAD_TOO_LARGE"; message: string }
+  | { type: "UNSUPPORTED_MEDIA_TYPE"; message: string };
 
 export type FeedDiscoveryError =
   | { type: "FETCH_FAILED"; message: string; status?: number }
