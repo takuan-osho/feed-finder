@@ -1,5 +1,6 @@
 import { Result } from "neverthrow";
 import { parse } from "node-html-parser";
+
 import {
   DEFAULT_FEED_TITLE,
   MAX_LINK_TAG_LENGTH,

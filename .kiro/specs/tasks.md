@@ -223,7 +223,7 @@ This implementation plan breaks Feed Finder down into tasks based on the require
   - [x] 11.2 GitHub Actions workflows
 
     - Create `.github/workflows/ci.yml`.
-    - Run Biome lint / format / type check automatically.
+    - Run Vite+ lint / format (Oxlint + Oxfmt) and type check automatically.
     - Run tests automatically on pull requests.
     - Integrate the security audit.
     - _Requirements: 7 (CI/CD automation)._

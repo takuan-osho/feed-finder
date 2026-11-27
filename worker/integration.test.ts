@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { findMetaFeeds } from "./discovery/html";
 import { generateErrorId } from "./http/errors";
 

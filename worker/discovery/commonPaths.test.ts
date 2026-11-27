@@ -1,5 +1,6 @@
 import { err, ok, ResultAsync } from "neverthrow";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { tryCommonPaths } from "./commonPaths";
 
 // Mock dependencies

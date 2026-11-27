@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
 import type { AppError } from "../types";
 import { createErrorResponse, generateErrorId } from "./errors";
 

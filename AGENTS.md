@@ -10,7 +10,7 @@ Feed Finder is a web application that takes a website URL as input, automaticall
 - **UI**: shadcn/ui + TailwindCSS v4
 - **Backend**: Cloudflare Workers
 - **Testing**: Vitest
-- **Code Quality**: Biome (lint/format) + lefthook
+- **Code Quality**: Vite+ (`vp check`: Oxlint + Oxfmt) + lefthook
 - **Error Handling**: neverthrow (ResultAsync)
 
 ## Project Structure & Module Organization
@@ -26,7 +26,7 @@ feed-finder/
 ├── worker/               # Cloudflare Worker API (feed discovery, CORS, SSRF protections)
 ├── public/               # Static assets served by Vite
 ├── dist/                 # Build output (ignored in VCS)
-└── Config files: vite.config.ts, vitest.config.ts, cloudflare.config.ts, biome.json, lefthook.yml
+└── Config files: vite.config.ts, vitest.config.ts, cloudflare.config.ts, lefthook.yml
 ```
 
 ## Build, Test, and Development Commands
@@ -35,7 +35,8 @@ feed-finder/
 - `npm run preview`: Build then serve production preview.
 - `npm test`: Run Vitest in watch/interactive mode.
 - `npm run test:run`: Run Vitest once for CI.
-- `npm run lint`: Run Biome checks on `src/` and `worker/`.
+- `npm run check`: Run Vite+ format and lint checks (Oxfmt + Oxlint) on `src/` and `worker/`.
+- `npm run lint` / `npm run fmt`: Run only Oxlint, or apply Oxfmt formatting.
 - `npm run deploy`: Build and deploy the worker via the `cf` CLI.
 - `npm run cf-typegen`: Generate Cloudflare types into `.cloudflare/types/` (`cf workers types`).
 - Cloudflare tooling uses the `cf` CLI (config: `cloudflare.config.ts`). Wrangler is not a project dependency; use `npx wrangler <cmd> --name feed-finder` only for commands `cf` does not support yet.
@@ -58,7 +59,7 @@ feed-finder/
 
 ## Coding Style & Naming Conventions
 - Use TypeScript and React function components with hooks.
-- Formatting/linting: Biome (spaces for indentation, double quotes per `biome.json`).
+- Formatting/linting: Oxfmt + Oxlint via Vite+ (2-space indent, double quotes, 80 columns; config in the `fmt` / `lint` blocks of `vite.config.ts`).
 - No CommonJS; prefer ESM imports.
 - File names: components `PascalCase.tsx` (e.g., `SearchForm.tsx`), utilities `camelCase.ts` (e.g., `variants.ts`).
 - Keep modules focused; colocate small helpers under `src/lib/`.
@@ -114,4 +115,4 @@ feed-finder/
 - Browser dev tools.
 - Vite dev server logs.
 - Vitest test output.
-- Biome lint output.
+- `vp check` output.

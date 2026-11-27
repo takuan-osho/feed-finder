@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { discoverFeeds } from "./index";
 
 // Mock dependencies
@@ -19,6 +20,7 @@ vi.mock("./commonPaths", () => ({
 }));
 
 import { err, ok, ResultAsync } from "neverthrow";
+
 import { safeFetch } from "../net/fetch";
 import { validateTargetUrl } from "../validation/url";
 import { tryCommonPaths } from "./commonPaths";

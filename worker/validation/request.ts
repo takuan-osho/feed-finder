@@ -1,4 +1,5 @@
 import { err, ok, Result } from "neverthrow";
+
 import type { ValidationError } from "../types";
 import { safeCreateUrl } from "./url";
 
@@ -63,10 +64,8 @@ export function normalizeUrl(url: string): Result<string, ValidationError> {
   // Validate that the normalized URL is properly formed
   return safeCreateUrl(normalizedUrl)
     .map(() => normalizedUrl)
-    .mapErr(
-      (): ValidationError => ({
-        type: "INVALID_URL_FORMAT" as const,
-        message: "Invalid URL format",
-      }),
-    );
+    .mapErr((): ValidationError => ({
+      type: "INVALID_URL_FORMAT" as const,
+      message: "Invalid URL format",
+    }));
 }

@@ -37,7 +37,7 @@ const writeWarn = (o: object): void => {
   console.warn(formatLine("warn", o));
 };
 const writeInfo = (o: object): void => {
-  // biome-ignore lint/suspicious/noConsole: pino destination — CF Workers Logs ingest console.log JSON
+  // oxlint-disable-next-line no-console -- pino destination — CF Workers Logs ingest console.log JSON
   console.log(formatLine("info", o));
 };
 

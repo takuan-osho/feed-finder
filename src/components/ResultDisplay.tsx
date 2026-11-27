@@ -2,8 +2,10 @@
 
 import { CheckCircle, Copy, ExternalLink, Info, XCircle } from "lucide-react";
 import { useId, useState } from "react";
+
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+
 import type { FeedResult, SearchResult } from "../../shared/types";
 
 interface ResultDisplayProps {

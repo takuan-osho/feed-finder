@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
 import { logAccess, logger } from "./logger";
 
 interface ParsedLog {

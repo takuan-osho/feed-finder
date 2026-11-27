@@ -1,8 +1,8 @@
 pre-commit:
   commands:
-    biome:
+    vp-check:
       glob: "{src,worker}/**/*.{js,ts,jsx,tsx}"
-      run: npx @biomejs/biome check --write --no-errors-on-unmatched --files-ignore-unknown=true --colors=off {staged_files}
+      run: npx vp check --fix --no-error-on-unmatched-pattern {staged_files}
       stage_fixed: true
 
     typecheck:
@@ -11,9 +11,9 @@ pre-commit:
 
 pre-push:
   commands:
-    biome:
+    vp-check:
       glob: "{src,worker}/**/*.{js,ts,jsx,tsx}"
-      run: npx @biomejs/biome check --no-errors-on-unmatched --files-ignore-unknown=true --colors=off {push_files}
+      run: npx vp check --no-error-on-unmatched-pattern {push_files}
 
     typecheck:
       run: npx tsc --noEmit
