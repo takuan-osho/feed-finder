@@ -1,7 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { MAX_REDIRECTS } from "../config";
-import { safeFetch } from "./fetch";
+import { FETCH_TIMEOUT_MS, MAX_REDIRECTS, MAX_RESPONSE_BYTES } from "../config";
+import {
+  fetchText,
+  isTextLikeContentType,
+  readBodyWithLimit,
+  safeFetch,
+} from "./fetch";
 
 // Mock fetch globally
 const mockFetch = vi.fn();
@@ -527,6 +532,293 @@ describe("net/fetch", () => {
       }
       // 2s + 2s + aborted during the third hop (5s total budget)
       expect(mockFetch).toHaveBeenCalledTimes(3);
+    });
+  });
+  describe("readBodyWithLimit", () => {
+    const encoder = new TextEncoder();
+
+    /** Builds a stream from byte chunks and records whether it was cancelled */
+    const streamOf = (chunks: Uint8Array[]) => {
+      const state = { cancelled: false, pulls: 0 };
+      let index = 0;
+      const stream = new ReadableStream<Uint8Array>({
+        pull(controller) {
+          state.pulls++;
+          if (index < chunks.length) {
+            controller.enqueue(chunks[index++]);
+          } else {
+            controller.close();
+          }
+        },
+        cancel() {
+          state.cancelled = true;
+        },
+      });
+      return { response: new Response(stream), state };
+    };
+
+    it("should read a body under the limit", async () => {
+      const { response, state } = streamOf([encoder.encode("hello")]);
+
+      const result = await readBodyWithLimit(response, 10);
+
+      expect(result._unsafeUnwrap()).toBe("hello");
+      expect(state.cancelled).toBe(false);
+    });
+
+    it("should read a body exactly at the limit", async () => {
+      const { response, state } = streamOf([encoder.encode("0123456789")]);
+
+      const result = await readBodyWithLimit(response, 10);
+
+      expect(result._unsafeUnwrap()).toBe("0123456789");
+      expect(state.cancelled).toBe(false);
+    });
+
+    it("should truncate a body over the limit and cancel the stream", async () => {
+      const { response, state } = streamOf([
+        encoder.encode("0123456"),
+        encoder.encode("789abc"),
+        encoder.encode("never read"),
+      ]);
+
+      const result = await readBodyWithLimit(response, 10);
+
+      expect(result._unsafeUnwrap()).toBe("0123456789");
+      expect(state.cancelled).toBe(true);
+      expect(state.pulls).toBeLessThan(4);
+    });
+
+    it("should concatenate multiple chunks", async () => {
+      const { response } = streamOf([
+        encoder.encode("<html>"),
+        encoder.encode("<head>"),
+        encoder.encode("</head>"),
+      ]);
+
+      const result = await readBodyWithLimit(response, 100);
+
+      expect(result._unsafeUnwrap()).toBe("<html><head></head>");
+    });
+
+    it("should decode multi-byte UTF-8 split across chunks", async () => {
+      const bytes = encoder.encode("フィード"); // 3 bytes per character
+      const { response } = streamOf([
+        bytes.slice(0, 2),
+        bytes.slice(2, 4),
+        bytes.slice(4),
+      ]);
+
+      const result = await readBodyWithLimit(response, 100);
+
+      expect(result._unsafeUnwrap()).toBe("フィード");
+    });
+
+    it("should return an empty string for an empty body", async () => {
+      const { response } = streamOf([]);
+
+      const result = await readBodyWithLimit(response, 10);
+
+      expect(result._unsafeUnwrap()).toBe("");
+    });
+
+    it("should return an empty string when body is null", async () => {
+      const response = new Response(null);
+      expect(response.body).toBeNull();
+
+      const result = await readBodyWithLimit(response, 10);
+
+      expect(result._unsafeUnwrap()).toBe("");
+    });
+
+    it("should return PARSING_ERROR when the stream errors", async () => {
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(encoder.encode("partial"));
+          controller.error(new Error("connection reset"));
+        },
+      });
+
+      const result = await readBodyWithLimit(new Response(stream), 100);
+
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.type).toBe("PARSING_ERROR");
+      }
+    });
+
+    it("should return TIMEOUT_ERROR when the signal aborts during the read", async () => {
+      let cancelled = false;
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(encoder.encode("slow"));
+          // never closes: simulates a slow-drip body
+        },
+        cancel() {
+          cancelled = true;
+        },
+      });
+      const controller = new AbortController();
+
+      const pending = readBodyWithLimit(
+        new Response(stream),
+        100,
+        controller.signal,
+      );
+      setTimeout(() => controller.abort(), 100);
+      await vi.advanceTimersByTimeAsync(100);
+      const result = await pending;
+
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.type).toBe("TIMEOUT_ERROR");
+      }
+      expect(cancelled).toBe(true);
+    });
+
+    it("should return TIMEOUT_ERROR when the signal is already aborted", async () => {
+      const { response, state } = streamOf([encoder.encode("hello")]);
+      const controller = new AbortController();
+      controller.abort();
+
+      const result = await readBodyWithLimit(response, 10, controller.signal);
+
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.type).toBe("TIMEOUT_ERROR");
+      }
+      expect(state.cancelled).toBe(true);
+    });
+  });
+
+  describe("isTextLikeContentType", () => {
+    it.each([
+      null,
+      "",
+      "text/html",
+      "TEXT/HTML; charset=utf-8",
+      "text/plain",
+      "application/xhtml+xml",
+      "application/xml",
+      "application/rss+xml",
+    ])("should treat %s as text", (contentType) => {
+      expect(isTextLikeContentType(contentType)).toBe(true);
+    });
+
+    it.each([
+      "application/octet-stream",
+      "image/png",
+      "video/mp4",
+      "application/json",
+      "application/pdf",
+    ])("should not treat %s as text", (contentType) => {
+      expect(isTextLikeContentType(contentType)).toBe(false);
+    });
+  });
+
+  describe("fetchText", () => {
+    it("should use a 2 MiB response limit", () => {
+      expect(MAX_RESPONSE_BYTES).toBe(2 * 1024 * 1024);
+    });
+
+    it("should return the body of a text response", async () => {
+      mockFetch.mockResolvedValueOnce(
+        new Response("<html></html>", {
+          headers: { "content-type": "text/html" },
+        }),
+      );
+
+      const result = await fetchText("https://example.com/");
+
+      expect(result._unsafeUnwrap()).toBe("<html></html>");
+    });
+
+    it("should read the body when Content-Type is missing", async () => {
+      const response = new Response("<html></html>");
+      response.headers.delete("content-type");
+      mockFetch.mockResolvedValueOnce(response);
+
+      const result = await fetchText("https://example.com/");
+
+      expect(result._unsafeUnwrap()).toBe("<html></html>");
+    });
+
+    it("should skip and cancel a non-text body", async () => {
+      const response = new Response("binary", {
+        headers: { "content-type": "application/octet-stream" },
+      });
+      const cancel = vi.spyOn(response.body!, "cancel");
+      mockFetch.mockResolvedValueOnce(response);
+
+      const result = await fetchText("https://example.com/");
+
+      expect(result._unsafeUnwrap()).toBeNull();
+      expect(cancel).toHaveBeenCalled();
+    });
+
+    it("should truncate a body larger than MAX_RESPONSE_BYTES", async () => {
+      const head = "<html><head></head>";
+      const big = head + "x".repeat(MAX_RESPONSE_BYTES);
+      mockFetch.mockResolvedValueOnce(
+        new Response(big, { headers: { "content-type": "text/html" } }),
+      );
+
+      const result = await fetchText("https://example.com/");
+
+      const text = result._unsafeUnwrap();
+      expect(text).not.toBeNull();
+      expect(text!.length).toBe(MAX_RESPONSE_BYTES);
+      expect(text!.startsWith(head)).toBe(true);
+    });
+
+    it("should propagate fetch errors", async () => {
+      mockFetch.mockResolvedValueOnce(new Response("nope", { status: 404 }));
+
+      const result = await fetchText("https://example.com/");
+
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.type).toBe("FETCH_FAILED");
+      }
+    });
+
+    it("should time out while reading a slow body", async () => {
+      mockFetch.mockImplementation((_url, options: RequestInit) => {
+        const stream = new ReadableStream<Uint8Array>({
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode("<html>"));
+            options.signal?.addEventListener("abort", () => {
+              controller.error(
+                Object.assign(new Error("aborted"), { name: "AbortError" }),
+              );
+            });
+          },
+        });
+        return Promise.resolve(
+          new Response(stream, { headers: { "content-type": "text/html" } }),
+        );
+      });
+
+      const pending = fetchText("https://example.com/");
+      await vi.advanceTimersByTimeAsync(FETCH_TIMEOUT_MS);
+      const result = await pending;
+
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.type).toBe("TIMEOUT_ERROR");
+      }
+    });
+
+    it("should clear the timeout once the body is read", async () => {
+      const clearTimeoutSpy = vi.spyOn(globalThis, "clearTimeout");
+      mockFetch.mockResolvedValueOnce(
+        new Response("ok", { headers: { "content-type": "text/html" } }),
+      );
+
+      await fetchText("https://example.com/");
+
+      expect(clearTimeoutSpy).toHaveBeenCalled();
+      expect(vi.getTimerCount()).toBe(0);
     });
   });
 });
