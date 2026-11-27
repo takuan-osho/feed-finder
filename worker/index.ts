@@ -1,6 +1,9 @@
 import { discoverFeeds } from "./discovery";
 import { addSecurityHeaders, handleCorsPreflightRequest } from "./http/cors";
-import { createErrorResponse } from "./http/errors";
+import {
+  createErrorResponse,
+  createUnhandledExceptionResponse,
+} from "./http/errors";
 import { logAccess } from "./observability/logger";
 import {
   checkContentLength,
@@ -66,7 +69,15 @@ export default {
     const url = new URL(request.url);
     const requestId = request.headers.get("cf-ray") ?? undefined;
 
-    const response = await dispatch(request, url);
+    let response: Response;
+    try {
+      response = await dispatch(request, url);
+    } catch (error) {
+      response = addSecurityHeaders(
+        createUnhandledExceptionResponse(error, requestId),
+        request,
+      );
+    }
 
     logAccess({
       method: request.method,

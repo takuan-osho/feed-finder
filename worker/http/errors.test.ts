@@ -1,7 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AppError } from "../types";
-import { createErrorResponse, generateErrorId } from "./errors";
+import {
+  createErrorResponse,
+  createUnhandledExceptionResponse,
+  generateErrorId,
+} from "./errors";
 
 // Type for error response JSON
 interface ErrorResponseData {
@@ -313,6 +317,61 @@ describe("http/errors", () => {
       );
 
       expect(generateErrorId()).toBe("0z0zz1234");
+    });
+  });
+
+  describe("createUnhandledExceptionResponse", () => {
+    interface UnhandledLog {
+      level: string;
+      msg: string;
+      error_id: string;
+      error_name: string;
+      error_message: string;
+      stack?: string;
+      request_id?: string;
+    }
+
+    const lastLog = (): UnhandledLog =>
+      JSON.parse(consoleErrorSpy.mock.calls[0][0] as string) as UnhandledLog;
+
+    it("returns a generic 500 body whose errorId matches the single log line", async () => {
+      const error = new TypeError("secret detail: db password=hunter2");
+
+      const response = createUnhandledExceptionResponse(error, "ray-123");
+
+      expect(response.status).toBe(500);
+      const text = await response.text();
+      expect(text).not.toContain("hunter2");
+      expect(text).not.toContain("TypeError");
+      expect(text).not.toContain("errors.test.ts"); // no stack frames
+      const body = JSON.parse(text) as ErrorResponseData;
+      expect(body).toEqual({
+        success: false,
+        error: "An unexpected error occurred. Please try again later.",
+        errorId: expect.stringMatching(/^[0-9a-z]{9}$/),
+      });
+
+      expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
+      const log = lastLog();
+      expect(log.level).toBe("error");
+      expect(log.msg).toBe("unhandled_exception");
+      expect(log.error_id).toBe(body.errorId);
+      expect(log.error_name).toBe("TypeError");
+      expect(log.error_message).toBe("secret detail: db password=hunter2");
+      expect(log.stack).toContain("TypeError");
+      expect(log.request_id).toBe("ray-123");
+    });
+
+    it("handles non-Error throw values", async () => {
+      const response = createUnhandledExceptionResponse("plain string");
+
+      expect(response.status).toBe(500);
+      expect(await response.text()).not.toContain("plain string");
+      const log = lastLog();
+      expect(log.error_name).toBe("NonError");
+      expect(log.error_message).toBe("plain string");
+      expect(log.stack).toBeUndefined();
+      expect(log).not.toHaveProperty("request_id");
     });
   });
 });
