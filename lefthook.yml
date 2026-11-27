@@ -7,7 +7,7 @@ pre-commit:
 
     typecheck:
       glob: "*.{ts,tsx}"
-      run: npx tsc --noEmit
+      run: npm run typecheck
 
 pre-push:
   commands:
@@ -16,7 +16,7 @@ pre-push:
       run: npx vp check --no-error-on-unmatched-pattern {push_files}
 
     typecheck:
-      run: npx tsc --noEmit
+      run: npm run typecheck
 
     security-audit:
       run: npm audit --audit-level moderate
