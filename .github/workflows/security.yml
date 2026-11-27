@@ -41,7 +41,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
       with:
-        node-version: '24'
+        node-version-file: '.node-version'
         cache: 'npm'
 
     - name: Install dependencies
@@ -84,15 +84,18 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
       with:
-        node-version: '24'
-        cache: 'npm'
+        node-version-file: '.node-version'
 
-    - name: Install dependencies
-      run: npm ci
-
+    # npm audit reads package-lock.json, so this job needs no install
+    # (and runs no dependency install scripts).
+    # The job fails on advisories of moderate severity or higher.
+    # The JSON report is uploaded in both cases.
     - name: Run npm audit
       run: |
-        npm audit --audit-level moderate --json > audit-results.json || true
+        if ! npm audit --audit-level moderate --json > audit-results.json; then
+          npm audit --audit-level moderate || true
+          exit 1
+        fi
 
     - name: Upload audit results
       uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
