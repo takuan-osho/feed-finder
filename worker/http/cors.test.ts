@@ -23,6 +23,49 @@ describe("http/cors", () => {
       expect(csp).toContain("frame-ancestors 'none'");
     });
 
+    it("should enforce HTTPS with Strict-Transport-Security", () => {
+      const result = addSecurityHeaders(new Response("test"));
+
+      const hsts = result.headers.get("Strict-Transport-Security") ?? "";
+      const maxAge = Number(/max-age=(\d+)/.exec(hsts)?.[1] ?? 0);
+      expect(maxAge).toBeGreaterThanOrEqual(31536000);
+      expect(hsts).toContain("includeSubDomains");
+    });
+
+    it.each([
+      ["an allowed origin", "http://localhost:5173"],
+      ["a disallowed origin", "https://evil.example.com"],
+      ["no origin", null],
+    ])("should set Vary: Origin for %s", (_label, origin) => {
+      const request = new Request("https://example.com", {
+        headers: origin ? { Origin: origin } : {},
+      });
+
+      const result = addSecurityHeaders(new Response("test"), request);
+
+      expect(result.headers.get("Vary")).toBe("Origin");
+    });
+
+    it("should keep existing Vary values when adding Origin", () => {
+      const originalResponse = new Response("test", {
+        headers: { Vary: "Accept-Encoding" },
+      });
+
+      const result = addSecurityHeaders(originalResponse);
+
+      expect(result.headers.get("Vary")).toBe("Accept-Encoding, Origin");
+    });
+
+    it("should not duplicate Origin in Vary", () => {
+      const originalResponse = new Response("test", {
+        headers: { Vary: "origin" },
+      });
+
+      const result = addSecurityHeaders(originalResponse);
+
+      expect(result.headers.get("Vary")).toBe("origin");
+    });
+
     it("should add CORS headers for allowed origins", () => {
       const originalResponse = new Response("test", { status: 200 });
       const request = new Request("https://example.com", {
@@ -132,6 +175,7 @@ describe("http/cors", () => {
         "Content-Type",
       );
       expect(result.headers.get("Access-Control-Max-Age")).toBe("86400");
+      expect(result.headers.get("Vary")).toBe("Origin");
     });
 
     it("should reject preflight request from disallowed origin", () => {
