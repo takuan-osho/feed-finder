@@ -20,10 +20,10 @@ interface LogLine {
 
 const parseLines = (spies: ReturnType<typeof vi.spyOn>[]): LogLine[] =>
   spies.flatMap((spy) =>
-    spy.mock.calls
-      .map((call) => call[0])
-      .filter((raw): raw is string => typeof raw === "string")
-      .map((raw) => JSON.parse(raw) as LogLine),
+    (spy.mock.calls as unknown[][])
+      .map((call): unknown => call[0])
+      .filter((raw: unknown): raw is string => typeof raw === "string")
+      .map((raw: string) => JSON.parse(raw) as LogLine),
   );
 
 const searchRequest = (): Request =>
