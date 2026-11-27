@@ -1,4 +1,5 @@
 import { ok, Result, ResultAsync } from "neverthrow";
+
 import { safeFetch } from "../net/fetch";
 import type { FeedDiscoveryError, FeedResult } from "../types";
 import { validateTargetUrl } from "../validation/url";

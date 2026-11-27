@@ -1,4 +1,5 @@
 import { err, ok, Result } from "neverthrow";
+
 import type { ValidationError } from "../types";
 
 /**

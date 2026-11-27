@@ -1,4 +1,5 @@
 import { err, ok, ResultAsync } from "neverthrow";
+
 import { FETCH_TIMEOUT_MS, USER_AGENT } from "../config";
 import type { FeedDiscoveryError } from "../types";
 

@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
 import { safeFetch } from "./fetch";
 
 // Mock fetch globally

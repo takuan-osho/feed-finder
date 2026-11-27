@@ -6,6 +6,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
 import { SearchForm } from "./SearchForm";
 
 describe("SearchForm URL Validation", () => {

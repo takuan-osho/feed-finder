@@ -462,9 +462,8 @@ describe("URL Validation Security Tests", () => {
 
       // Dynamically import after module cache is cleared to apply mock
       try {
-        const { findMetaFeeds: findMetaFeedsWithMock } = await import(
-          "./discovery/html"
-        );
+        const { findMetaFeeds: findMetaFeedsWithMock } =
+          await import("./discovery/html");
         const feeds = findMetaFeedsWithMock(htmlWithUppercaseTags, baseUrl);
         expect(feeds).toHaveLength(2);
         expect(feeds[0].type).toBe("RSS");

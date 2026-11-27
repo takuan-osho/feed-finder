@@ -6,7 +6,9 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
 import { THEME_COLORS, THEME_STORAGE_KEY } from "@/lib/theme";
+
 import App from "./App";
 
 function mockColorSchemePreference(prefersDark: boolean) {

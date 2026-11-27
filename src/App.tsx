@@ -1,9 +1,11 @@
 import { Moon, Rss, Sun } from "lucide-react";
 import { lazy, Suspense, useEffect, useState } from "react";
+
 import { SearchForm } from "@/components/SearchForm";
 import { Button } from "@/components/ui/button";
 import { parseApiError, parseSearchResult } from "@/lib/schemas";
 import { applyTheme, getInitialTheme, type Theme } from "@/lib/theme";
+
 import type { SearchResult } from "../shared/types";
 
 // Lazy load the ResultDisplay component to reduce initial bundle size
