@@ -1,6 +1,6 @@
 import { ResultAsync } from "neverthrow";
 
-import { safeFetch } from "../net/fetch";
+import { fetchText } from "../net/fetch";
 import type { FeedDiscoveryError, FeedResult } from "../types";
 import { validateTargetUrl } from "../validation/url";
 import { tryCommonPaths } from "./commonPaths";
@@ -19,14 +19,11 @@ export function discoverFeeds(
     }))
     .asyncAndThen((validatedUrl) => {
       // Run HTML fetch and common paths discovery in parallel
-      const htmlFetchPromise = safeFetch(validatedUrl.href)
-        .andThen((response) =>
-          ResultAsync.fromPromise(response.text(), (): FeedDiscoveryError => ({
-            type: "PARSING_ERROR",
-            message: "Failed to parse response body",
-          })),
-        )
-        .map((html) => findMetaFeeds(html, validatedUrl.href));
+      // fetchText bounds the body size and keeps the timeout running while
+      // the body is read; non-text responses yield null (no meta feeds)
+      const htmlFetchPromise = fetchText(validatedUrl.href).map((html) =>
+        html === null ? [] : findMetaFeeds(html, validatedUrl.href),
+      );
 
       const commonPathsPromise = tryCommonPaths(validatedUrl.href);
 

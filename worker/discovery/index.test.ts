@@ -8,7 +8,7 @@ vi.mock("../validation/url", () => ({
 }));
 
 vi.mock("../net/fetch", () => ({
-  safeFetch: vi.fn(),
+  fetchText: vi.fn(),
 }));
 
 vi.mock("./html", () => ({
@@ -19,15 +19,15 @@ vi.mock("./commonPaths", () => ({
   tryCommonPaths: vi.fn(),
 }));
 
-import { err, ok, ResultAsync } from "neverthrow";
+import { err, errAsync, ok, okAsync, ResultAsync } from "neverthrow";
 
-import { safeFetch } from "../net/fetch";
+import { fetchText } from "../net/fetch";
 import { validateTargetUrl } from "../validation/url";
 import { tryCommonPaths } from "./commonPaths";
 import { findMetaFeeds } from "./html";
 
 const mockValidateTargetUrl = vi.mocked(validateTargetUrl);
-const mockSafeFetch = vi.mocked(safeFetch);
+const mockFetchText = vi.mocked(fetchText);
 const mockFindMetaFeeds = vi.mocked(findMetaFeeds);
 const mockTryCommonPaths = vi.mocked(tryCommonPaths);
 
@@ -38,23 +38,12 @@ describe("discovery/index", () => {
 
   describe("discoverFeeds", () => {
     const validUrl = new URL("https://example.com");
-    const mockResponse = new Response(
-      "<html><head></head><body></body></html>",
-    );
-
     it("should successfully discover feeds from both HTML and common paths", async () => {
       // Mock validation success
       mockValidateTargetUrl.mockReturnValue(ok(validUrl));
 
-      // Mock successful HTML fetch
-      mockSafeFetch.mockReturnValue(
-        ResultAsync.fromSafePromise(Promise.resolve(mockResponse)),
-      );
-
-      // Mock HTML response text
-      const textSpy = vi
-        .spyOn(mockResponse, "text")
-        .mockResolvedValue("<html></html>");
+      // Mock successful bounded HTML fetch
+      mockFetchText.mockReturnValue(okAsync("<html></html>"));
 
       // Mock feed discovery methods
       const metaFeeds = [
@@ -90,8 +79,7 @@ describe("discovery/index", () => {
       }
 
       expect(mockValidateTargetUrl).toHaveBeenCalledWith("https://example.com");
-      expect(mockSafeFetch).toHaveBeenCalledWith("https://example.com/");
-      expect(textSpy).toHaveBeenCalled();
+      expect(mockFetchText).toHaveBeenCalledWith("https://example.com/");
       expect(mockFindMetaFeeds).toHaveBeenCalledWith(
         "<html></html>",
         "https://example.com/",
@@ -126,9 +114,7 @@ describe("discovery/index", () => {
         type: "NETWORK_ERROR" as const,
         message: "Network failed",
       };
-      mockSafeFetch.mockReturnValue(
-        ResultAsync.fromPromise(Promise.reject(fetchError), () => fetchError),
-      );
+      mockFetchText.mockReturnValue(errAsync(fetchError));
 
       // Mock common paths success
       const commonFeeds = [
@@ -156,11 +142,7 @@ describe("discovery/index", () => {
 
     it("should deduplicate feeds with same URL", async () => {
       mockValidateTargetUrl.mockReturnValue(ok(validUrl));
-      mockSafeFetch.mockReturnValue(
-        ResultAsync.fromSafePromise(Promise.resolve(mockResponse)),
-      );
-
-      vi.spyOn(mockResponse, "text").mockResolvedValue("<html></html>");
+      mockFetchText.mockReturnValue(okAsync("<html></html>"));
 
       // Both methods return the same feed URL
       const duplicateFeedUrl = "https://example.com/feed.xml";
@@ -196,16 +178,14 @@ describe("discovery/index", () => {
       }
     });
 
-    it("should handle HTML parsing errors", async () => {
+    it.each([
+      { type: "PARSING_ERROR" as const, message: "Failed to read body" },
+      { type: "TIMEOUT_ERROR" as const, message: "Timed out reading body" },
+    ])("should fall back to common paths on body $type", async (bodyError) => {
       mockValidateTargetUrl.mockReturnValue(ok(validUrl));
 
-      // Mock successful fetch but text parsing fails
-      mockSafeFetch.mockReturnValue(
-        ResultAsync.fromSafePromise(Promise.resolve(mockResponse)),
-      );
-      const textSpy = vi
-        .spyOn(mockResponse, "text")
-        .mockRejectedValue(new Error("Parse error"));
+      // Mock successful fetch but reading the body fails
+      mockFetchText.mockReturnValue(errAsync(bodyError));
 
       // Mock common paths fallback
       const commonFeeds = [
@@ -228,8 +208,32 @@ describe("discovery/index", () => {
         expect(result.value[0]).toEqual(commonFeeds[0]);
       }
 
-      expect(textSpy).toHaveBeenCalled();
-      expect(mockFindMetaFeeds).not.toHaveBeenCalled(); // Should not be called due to text parse error
+      expect(mockFindMetaFeeds).not.toHaveBeenCalled(); // Should not be called due to body read error
+    });
+
+    it("should skip meta-tag parsing for non-text responses", async () => {
+      mockValidateTargetUrl.mockReturnValue(ok(validUrl));
+      // fetchText returns null when Content-Type is clearly not text
+      mockFetchText.mockReturnValue(okAsync(null));
+
+      const commonFeeds = [
+        {
+          url: "https://example.com/feed.xml",
+          title: "/feed feed",
+          type: "RSS" as const,
+          discoveryMethod: "common-path" as const,
+        },
+      ];
+      mockTryCommonPaths.mockReturnValue(okAsync(commonFeeds));
+
+      const result = await discoverFeeds("https://example.com");
+
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
+        expect(result.value).toEqual(commonFeeds);
+      }
+      expect(mockFindMetaFeeds).not.toHaveBeenCalled();
+      expect(mockTryCommonPaths).toHaveBeenCalledTimes(1); // no fallback needed
     });
 
     it("should return empty array when all discovery methods fail", async () => {
@@ -240,9 +244,7 @@ describe("discovery/index", () => {
         type: "NETWORK_ERROR" as const,
         message: "Network failed",
       };
-      mockSafeFetch.mockReturnValue(
-        ResultAsync.fromPromise(Promise.reject(fetchError), () => fetchError),
-      );
+      mockFetchText.mockReturnValue(errAsync(fetchError));
 
       // Mock common paths failure
       const commonPathsError = {
