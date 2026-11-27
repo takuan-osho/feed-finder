@@ -38,6 +38,11 @@ export const MAX_REQUEST_BODY_BYTES = 8 * 1024; // 8 KiB
 export const MAX_URL_LENGTH = 2048;
 
 /**
+ * Rate limiting (RATE_LIMITER binding: 20 requests / 60 s per client IP)
+ */
+export const RATE_LIMIT_RETRY_AFTER_SECONDS = 60;
+
+/**
  * Network configuration
  */
 export const USER_AGENT = "FeedFinder/1.0";

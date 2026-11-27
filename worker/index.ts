@@ -4,6 +4,11 @@ import {
   createErrorResponse,
   createUnhandledExceptionResponse,
 } from "./http/errors";
+import {
+  createRateLimitedResponse,
+  isRateLimited,
+  type RateLimitEnv,
+} from "./http/rateLimit";
 import { logAccess } from "./observability/logger";
 import {
   checkContentLength,
@@ -41,13 +46,24 @@ async function handleFeedSearch(request: Request): Promise<Response> {
   );
 }
 
-async function dispatch(request: Request, url: URL): Promise<Response> {
+async function dispatch(
+  request: Request,
+  url: URL,
+  env: RateLimitEnv,
+  requestId: string | undefined,
+): Promise<Response> {
   if (request.method === "OPTIONS") {
     return handleCorsPreflightRequest(request);
   }
 
   if (url.pathname.startsWith("/api/")) {
     if (url.pathname === "/api/search-feeds" && request.method === "POST") {
+      if (await isRateLimited(request, env, requestId)) {
+        return addSecurityHeaders(
+          createRateLimitedResponse(requestId),
+          request,
+        );
+      }
       const response = await handleFeedSearch(request);
       return addSecurityHeaders(response, request);
     }
@@ -64,14 +80,14 @@ async function dispatch(request: Request, url: URL): Promise<Response> {
  * Main Worker entry point
  */
 export default {
-  async fetch(request: Request): Promise<Response> {
+  async fetch(request: Request, env: RateLimitEnv = {}): Promise<Response> {
     const start = Date.now();
     const url = new URL(request.url);
     const requestId = request.headers.get("cf-ray") ?? undefined;
 
     let response: Response;
     try {
-      response = await dispatch(request, url);
+      response = await dispatch(request, url, env, requestId);
     } catch (error) {
       response = addSecurityHeaders(
         createUnhandledExceptionResponse(error, requestId),
@@ -89,4 +105,4 @@ export default {
 
     return response;
   },
-};
+} satisfies ExportedHandler<Env>;
