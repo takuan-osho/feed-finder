@@ -1,26 +1,26 @@
-import { ResultAsync } from "neverthrow";
-
 import { discoverFeeds } from "./discovery";
 import { addSecurityHeaders, handleCorsPreflightRequest } from "./http/cors";
 import { createErrorResponse } from "./http/errors";
 import { logAccess } from "./observability/logger";
-import type { ValidationError } from "./types";
-import { normalizeUrl, parseRequestBody } from "./validation/request";
+import {
+  checkContentLength,
+  checkJsonContentType,
+  checkUrlLength,
+  normalizeUrl,
+  parseRequestBody,
+  readJsonBody,
+} from "./validation/request";
 import { validateTargetUrl } from "./validation/url";
 
 /**
  * Handle feed search requests
  */
 async function handleFeedSearch(request: Request): Promise<Response> {
-  const result = await ResultAsync.fromPromise(
-    request.json(),
-    () =>
-      ({
-        type: "INVALID_REQUEST_BODY" as const,
-        message: "Invalid JSON in request body",
-      }) as ValidationError,
-  )
+  const result = await checkJsonContentType(request.headers)
+    .andThen(checkContentLength)
+    .asyncAndThen(() => readJsonBody(request))
     .andThen(parseRequestBody)
+    .andThen(checkUrlLength)
     .andThen(normalizeUrl)
     .andThen(validateTargetUrl)
     .andThen((validatedUrl) =>
