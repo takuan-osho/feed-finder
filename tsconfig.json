@@ -12,7 +12,7 @@
     }
   ],
   "compilerOptions": {
-    "types": ["./worker-configuration.d.ts"],
+    "types": ["./.cloudflare/types/index.d.ts"],
     "paths": {
       "@/*": ["./src/*"]
     }

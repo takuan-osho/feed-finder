@@ -127,3 +127,6 @@ public/styles.build.css
 
 # lsmcp cache
 .lsmcp/cache
+
+# Cloudflare cf CLI output (types, build output, local state)
+.cloudflare/
