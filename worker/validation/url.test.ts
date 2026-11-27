@@ -403,12 +403,30 @@ describe("validation/url", () => {
         });
 
         it.each([
+          "http://[::127.0.0.1]/", // deprecated IPv4-compatible form of loopback
+          "http://[::a9fe:a9fe]/", // IPv4-compatible form of 169.254.169.254
+          "http://[64:ff9c::1]/", // reserved ::/8 block, next to NAT64
+          "http://[100::1]/", // discard-only prefix
+          "http://[1fff:ffff::1]/", // last address below global unicast
+          "http://[4000::1]/", // first address above global unicast
+          "http://[fbff::1]/", // unallocated, below unique local
+          "http://[fec0::1]/", // deprecated site-local
+        ])(
+          "should block IPv6 address %s outside global unicast (2000::/3)",
+          (url) => {
+            expectBlocked(
+              url,
+              "Access to private IP addresses is not permitted",
+            );
+          },
+        );
+
+        it.each([
           "http://[2606:4700:4700::1111]/",
           "http://[2001:4860:4860::8888]/",
-          "http://[fbff::1]/",
-          "http://[fec0::1]/",
+          "http://[2000::1]/",
           "http://[2003::1]/",
-          "http://[64:ff9c::1]/",
+          "http://[3fff:ffff::1]/",
         ])("should still allow public IPv6 address %s", (url) => {
           expectAllowed(url);
         });

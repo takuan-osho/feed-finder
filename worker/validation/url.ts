@@ -51,6 +51,14 @@ const IPV6_BLOCKED_PREFIXES: readonly (readonly [number[], number])[] = [
   [[0x2002], 16], // 6to4
 ];
 
+/**
+ * Global unicast space (2000::/3). Public IPv6 hosts live only here, so
+ * everything outside it is rejected. This also covers ranges that are not
+ * listed above, such as the reserved ::/8 block (IPv4-compatible addresses
+ * like ::127.0.0.1), the discard prefix 100::/64 and site-local fec0::/10.
+ */
+const IPV6_GLOBAL_UNICAST: readonly [number[], number] = [[0x2000], 3];
+
 const localhostError = (): ValidationError => ({
   type: "URL_NOT_PERMITTED" as const,
   message: "Access to localhost is not permitted",
@@ -166,6 +174,10 @@ function checkIpv6(hostname: string): Result<void, ValidationError> {
   if (
     IPV6_BLOCKED_PREFIXES.some((prefix) => matchesIpv6Prefix(hextets, prefix))
   ) {
+    return err(privateIpError());
+  }
+  // Allowlist: only global unicast addresses may be fetched
+  if (!matchesIpv6Prefix(hextets, IPV6_GLOBAL_UNICAST)) {
     return err(privateIpError());
   }
   return ok(undefined);
