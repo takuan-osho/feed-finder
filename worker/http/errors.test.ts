@@ -159,6 +159,49 @@ describe("http/errors", () => {
       );
     });
 
+    it("should map PAYLOAD_TOO_LARGE to 413 with a generic message", async () => {
+      const response = createErrorResponse({
+        type: "PAYLOAD_TOO_LARGE",
+        message: "Request body exceeds 8192 bytes (content-length: 99999)",
+      });
+
+      expect(response.status).toBe(413);
+      const responseData = (await response.json()) as ErrorResponseData;
+      expect(responseData.success).toBe(false);
+      expect(responseData.error).toBe(
+        "Request is too large. Please shorten your input and try again.",
+      );
+      expect(JSON.stringify(responseData)).not.toContain("99999");
+    });
+
+    it("should map UNSUPPORTED_MEDIA_TYPE to 415 with a generic message", async () => {
+      const response = createErrorResponse({
+        type: "UNSUPPORTED_MEDIA_TYPE",
+        message: "Unsupported content-type: text/plain",
+      });
+
+      expect(response.status).toBe(415);
+      const responseData = (await response.json()) as ErrorResponseData;
+      expect(responseData.success).toBe(false);
+      expect(responseData.error).toBe(
+        "Unsupported request format. Please send a JSON request.",
+      );
+      expect(JSON.stringify(responseData)).not.toContain("text/plain");
+    });
+
+    it("should map URL_TOO_LONG to 400 with the generic input message", async () => {
+      const response = createErrorResponse({
+        type: "URL_TOO_LONG",
+        message: "URL length 5000 exceeds 2048",
+      });
+
+      expect(response.status).toBe(400);
+      const responseData = (await response.json()) as ErrorResponseData;
+      expect(responseData.error).toBe(
+        "Invalid request. Please check your input and try again.",
+      );
+    });
+
     it("should handle unknown error types", async () => {
       const error = {
         type: "UNKNOWN_ERROR" as AppError["type"],

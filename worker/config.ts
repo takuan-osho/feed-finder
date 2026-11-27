@@ -32,6 +32,12 @@ export const ALLOWED_ORIGINS = [
 export const MAX_LINK_TAG_LENGTH = 1000;
 
 /**
+ * Request limits for POST /api/search-feeds
+ */
+export const MAX_REQUEST_BODY_BYTES = 8 * 1024; // 8 KiB
+export const MAX_URL_LENGTH = 2048;
+
+/**
  * Network configuration
  */
 export const USER_AGENT = "FeedFinder/1.0";
