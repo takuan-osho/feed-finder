@@ -36,3 +36,9 @@ export const MAX_LINK_TAG_LENGTH = 1000;
  */
 export const USER_AGENT = "FeedFinder/1.0";
 export const FETCH_TIMEOUT_MS = 5000;
+
+/**
+ * Request limits for POST /api/search-feeds
+ */
+export const MAX_REQUEST_BODY_BYTES = 8 * 1024; // 8 KiB
+export const MAX_URL_LENGTH = 2048;
