@@ -180,6 +180,47 @@ describe("discovery/html", () => {
       expect(result[0].url).toBe("https://other.example.com/feed.xml");
     });
 
+    it.each([
+      ["javascript:", "javascript:alert(document.domain)"],
+      ["mixed-case javascript:", "JaVaScRiPt:alert(1)"],
+      ["data:", "data:text/html,<script>alert(1)</script>"],
+      ["vbscript:", "vbscript:msgbox(1)"],
+      ["file:", "file:///etc/passwd"],
+      ["ftp:", "ftp://example.com/feed.xml"],
+    ])("should skip feed links with a %s URL scheme", (_label, href) => {
+      const html = `
+        <html>
+          <head>
+            <link rel="alternate" type="application/rss+xml" href="${href}">
+            <link rel="alternate" type="application/rss+xml" href="/feed.xml">
+          </head>
+        </html>
+      `;
+
+      const result = findMetaFeeds(html, baseUrl);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].url).toBe("https://example.com/feed.xml");
+    });
+
+    it("should keep http and https feed links", () => {
+      const html = `
+        <html>
+          <head>
+            <link rel="alternate" type="application/rss+xml" href="http://example.com/rss.xml">
+            <link rel="alternate" type="application/atom+xml" href="https://example.com/atom.xml">
+          </head>
+        </html>
+      `;
+
+      const result = findMetaFeeds(html, baseUrl);
+
+      expect(result.map((feed) => feed.url)).toEqual([
+        "http://example.com/rss.xml",
+        "https://example.com/atom.xml",
+      ]);
+    });
+
     it("should use default title when title is missing", () => {
       const html = `
         <html>
@@ -375,5 +416,24 @@ describe("discovery/html", () => {
       expect(result).toHaveLength(1);
       expect(result[0].url).toBe("https://example.com/feed.xml");
     });
+
+    it.each([
+      ["javascript:", "javascript:alert(document.domain)"],
+      ["data:", "data:text/html,payload"],
+      ["file:", "file:///etc/passwd"],
+    ])(
+      "should skip feed links with a %s URL scheme in fallback parsing",
+      (_label, href) => {
+        const html = `
+          <link rel="alternate" type="application/rss+xml" href="${href}">
+          <link rel="alternate" type="application/rss+xml" href="/feed.xml">
+        `;
+
+        const result = findMetaFeedsWithStringParsing(html, baseUrl);
+
+        expect(result).toHaveLength(1);
+        expect(result[0].url).toBe("https://example.com/feed.xml");
+      },
+    );
   });
 });
