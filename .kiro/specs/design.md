@@ -346,7 +346,7 @@ Adopt GitHub Actions plus manual deploys.
 - **Integration**: works seamlessly with the GitHub repo.
 - **Ecosystem**: rich Actions marketplace.
 - **Cost**: free for public repositories.
-- **Cloudflare support**: integrates well with `wrangler`.
+- **Cloudflare support**: integrates well with the `cf` CLI (`cloudflare.config.ts`).
 - **Security**: manual deploys give us control and reduce risk.
 - **Flexibility**: easy to author custom workflows.
 

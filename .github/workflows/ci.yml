@@ -17,7 +17,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
       with:
-        node-version: '24'
+        node-version-file: '.node-version'
         cache: 'npm'
 
     - name: Install dependencies
@@ -36,7 +36,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
       with:
-        node-version: '24'
+        node-version-file: '.node-version'
         cache: 'npm'
 
     - name: Install dependencies
@@ -50,8 +50,14 @@ jobs:
     - name: Run Biome check
       run: biome check --no-errors-on-unmatched --files-ignore-unknown=true src worker
 
+    - name: Generate Cloudflare types
+      run: npm run cf-typegen
+
     - name: TypeScript type checking
       run: npx tsc --noEmit
 
     - name: Build project
       run: npm run build
+
+    - name: Validate deploy (dry run, no credentials)
+      run: npx cf deploy --prebuilt --dry-run

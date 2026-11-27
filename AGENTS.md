@@ -26,18 +26,19 @@ feed-finder/
 ├── worker/               # Cloudflare Worker API (feed discovery, CORS, SSRF protections)
 ├── public/               # Static assets served by Vite
 ├── dist/                 # Build output (ignored in VCS)
-└── Config files: vite.config.ts, vitest.config.ts, wrangler.jsonc, biome.json, lefthook.yml
+└── Config files: vite.config.ts, vitest.config.ts, cloudflare.config.ts, biome.json, lefthook.yml
 ```
 
 ## Build, Test, and Development Commands
-- `npm run dev`: Start Vite dev server.
-- `npm run build`: Type-check then build app and worker.
+- `npm run dev`: Start the dev server (`cf dev`, Vite + Cloudflare plugin).
+- `npm run build`: Generate Cloudflare types, type-check, then build app and worker (`cf build`).
 - `npm run preview`: Build then serve production preview.
 - `npm test`: Run Vitest in watch/interactive mode.
 - `npm run test:run`: Run Vitest once for CI.
 - `npm run lint`: Run Biome checks on `src/` and `worker/`.
-- `npm run deploy`: Build and deploy worker via Wrangler.
-- `npm run cf-typegen`: Generate Cloudflare types.
+- `npm run deploy`: Build and deploy the worker via the `cf` CLI.
+- `npm run cf-typegen`: Generate Cloudflare types into `.cloudflare/types/` (`cf workers types`).
+- Cloudflare tooling uses the `cf` CLI (config: `cloudflare.config.ts`). Wrangler is not a project dependency; use `npx wrangler <cmd> --name feed-finder` only for commands `cf` does not support yet.
 
 ## Core Development Principles
 
