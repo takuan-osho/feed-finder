@@ -8,7 +8,8 @@
   },
   "scripts": {
     "dev": "cf dev",
-    "build": "npm run cf-typegen && tsc -b && cf build",
+    "build": "npm run typecheck && cf build",
+    "typecheck": "npm run cf-typegen && tsc -b",
     "lint": "vp lint src worker",
     "test": "vitest",
     "test:run": "vitest run",
