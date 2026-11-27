@@ -454,6 +454,25 @@ describe("ResultDisplay", () => {
       );
     });
 
+    it.each([
+      "javascript:alert(document.domain)",
+      "data:text/html,<script>alert(1)</script>",
+    ])("should not open a feed URL with an unsafe scheme: %s", (url) => {
+      const unsafeResult: SearchResult = {
+        ...successResult,
+        feeds: [{ ...successResult.feeds[0], url }],
+      };
+
+      render(<ResultDisplay result={unsafeResult} />);
+
+      const openButton = screen.getByLabelText(
+        /Open the feed for Example Feed in a new tab/,
+      );
+      fireEvent.click(openButton);
+
+      expect(mockOpen).not.toHaveBeenCalled();
+    });
+
     it("should not open directly from repeated Enter keydown events", () => {
       render(<ResultDisplay result={successResult} />);
 

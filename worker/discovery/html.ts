@@ -9,6 +9,32 @@ import {
 import type { FeedResult } from "../types";
 
 /**
+ * URL schemes a discovered feed URL may use.
+ * The target page controls the `href` value, so schemes such as `javascript:`
+ * or `data:` must never reach the client, where the URL is opened in a new tab.
+ */
+const ALLOWED_FEED_URL_PROTOCOLS = ["http:", "https:"];
+
+/**
+ * Resolve a feed link `href` against the page URL.
+ * Returns null for invalid URLs and for URLs with a non-HTTP(S) scheme.
+ */
+export function resolveFeedUrl(href: string, baseUrl: string): string | null {
+  const urlResult = Result.fromThrowable(
+    () => new URL(href, baseUrl),
+    () => null,
+  )();
+
+  if (urlResult.isErr()) {
+    return null;
+  }
+
+  return ALLOWED_FEED_URL_PROTOCOLS.includes(urlResult.value.protocol)
+    ? urlResult.value.href
+    : null;
+}
+
+/**
  * Extract feed type title from MIME type
  */
 export function extractFeedTypeTitle(type: string): "RSS" | "Atom" {
@@ -199,20 +225,14 @@ function parseLinkSection(
     return null;
   }
 
-  const href = feedInfo.href;
-
-  // Safe URL creation with Result type
-  const urlResult = Result.fromThrowable(
-    () => new URL(href, baseUrl).href,
-    () => null, // Return null for invalid URLs to skip them
-  )();
-
-  if (!urlResult.isOk()) {
+  // Skip invalid URLs and non-HTTP(S) schemes
+  const feedUrl = resolveFeedUrl(feedInfo.href, baseUrl);
+  if (!feedUrl) {
     return null;
   }
 
   return {
-    url: urlResult.value,
+    url: feedUrl,
     title: feedInfo.title || DEFAULT_FEED_TITLE,
     type: feedInfo.type.includes("atom") ? "Atom" : "RSS",
     discoveryMethod: "meta-tag",
@@ -277,18 +297,18 @@ export function findMetaFeeds(html: string, baseUrl: string): FeedResult[] {
         href &&
         SUPPORTED_FEED_TYPES.includes(type.toLowerCase().split(";")[0].trim())
       ) {
-        try {
-          const feedUrl = new URL(href, baseUrl).toString();
-          feeds.push({
-            title: title || DEFAULT_FEED_TITLE,
-            url: feedUrl,
-            type: extractFeedTypeTitle(type),
-            discoveryMethod: "meta-tag" as const,
-          });
-        } catch {
-          // Skip invalid URLs
+        // Skip invalid URLs and non-HTTP(S) schemes
+        const feedUrl = resolveFeedUrl(href, baseUrl);
+        if (!feedUrl) {
           continue;
         }
+
+        feeds.push({
+          title: title || DEFAULT_FEED_TITLE,
+          url: feedUrl,
+          type: extractFeedTypeTitle(type),
+          discoveryMethod: "meta-tag" as const,
+        });
       }
     }
   } catch {
